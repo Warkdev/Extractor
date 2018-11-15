@@ -5,6 +5,9 @@
  */
 package eu.mangos.extractor.file.chunk;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author Warkdev
@@ -38,7 +41,17 @@ public class MCNK {
     private float posZ;
     private int offsetMCCV;
     private int offsetMCLV;
+    private MCVT vertices = new MCVT();
+    private MCNR normals = new MCNR();     
+    private MCLY[] textureLayers = new MCLY[4];
+    private List<Integer> mcrfList = new ArrayList<>();
 
+    public MCNK() {
+        for(int i = 0; i < this.textureLayers.length; i++) {
+            textureLayers[i] = new MCLY();
+        }
+    }    
+    
     public int getFlags() {
         return flags;
     }
@@ -229,8 +242,8 @@ public class MCNK {
 
     public void setPosX(float posX) {
         this.posX = posX;
-    }
-
+    }    
+    
     public float getPosY() {
         return posY;
     }
@@ -262,7 +275,36 @@ public class MCNK {
     public void setOffsetMCLV(int offsetMCLV) {
         this.offsetMCLV = offsetMCLV;
     }
-    
-    
-    
+
+    public MCVT getVertices() {
+        return vertices;
+    }
+
+    public void setVertices(MCVT vertices) {
+        this.vertices = vertices;
+    }
+
+    public MCNR getNormals() {
+        return normals;
+    }
+
+    public void setNormals(MCNR normals) {
+        this.normals = normals;
+    }
+
+    public MCLY[] getTextureLayers() {
+        return textureLayers;
+    }
+
+    public void setTextureLayers(MCLY[] textureLayers) {
+        this.textureLayers = textureLayers;
+    }
+
+    public List<Integer> getMcrfList() {
+        return mcrfList;
+    }
+
+    public void setMcrfList(List<Integer> mcrfList) {
+        this.mcrfList = mcrfList;
+    }            
 }

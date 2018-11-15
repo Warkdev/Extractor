@@ -3,16 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.mangos.extractor.file.exception;
+package eu.mangos.extractor.file.chunk;
 
 /**
  *
  * @author Warkdev
  */
-public class ADTException extends Exception {
-
-    public ADTException(String string) {
-        super(string);
-    }
+public class MCSH {
     
 }
