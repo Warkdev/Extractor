@@ -21,7 +21,7 @@ import java.util.List;
  *
  * @author Warkdev
  */
-public class ADTFile {
+public class ADTFileReader {
 
     private static final String HEADER_VERSION = "MVER";
     private static final String HEADER_MHDR = "MHDR";
@@ -46,10 +46,10 @@ public class ADTFile {
     private static final String HEADER_MH2O = "MH2O";
     private static final String HEADER_MTFX = "MTFX";
 
-    private static final float TILE_SIZE = 533.33333f;
-    private static final float CHUNK_SIZE = TILE_SIZE / 16.0f;
-    private static final float UNIT_SIZE = CHUNK_SIZE / 8.0f;
-    private static final float ZERO_POINT = 32.0f * TILE_SIZE;
+    public static final float TILE_SIZE = 533.33333f;
+    public static final float CHUNK_SIZE = TILE_SIZE / 16.0f;
+    public static final float UNIT_SIZE = CHUNK_SIZE / 8.0f;
+    public static final float ZERO_POINT = 32.0f * TILE_SIZE;
 
     private byte[] data;
 
@@ -75,7 +75,7 @@ public class ADTFile {
     private int offsetMH2O;
     private int offsetMTFX;
 
-    public ADTFile() {
+    public ADTFileReader() {
     }
 
     public void init(byte[] data) throws IOException, ADTException {
@@ -411,9 +411,11 @@ public class ADTFile {
             chunk.setnSndEmitters(in.getInt());
             chunk.setOffsetMCLQ(in.getInt());
             chunk.setSizeLiquid(in.getInt());
-            chunk.setPosX(in.getFloat() * (-1.0f) + ZERO_POINT);
+            //chunk.setPosX(in.getFloat() * (-1.0f) + ZERO_POINT);
+            chunk.setPosX(in.getFloat());
             chunk.setPosY(in.getFloat());
-            chunk.setPosZ(in.getFloat() * (-1.0f) + ZERO_POINT);
+            //chunk.setPosZ(in.getFloat() * (-1.0f) + ZERO_POINT);
+            chunk.setPosZ(in.getFloat());
             chunk.setOffsetMCCV(in.getInt());
             chunk.setOffsetMCLV(in.getInt());
             // Unused
@@ -601,4 +603,86 @@ public class ADTFile {
 
         return sb.toString();
     }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public MCIN[] getChunkIndex() {
+        return chunkIndex;
+    }
+
+    public void setChunkIndex(MCIN[] chunkIndex) {
+        this.chunkIndex = chunkIndex;
+    }
+
+    public List<String> getListTextures() {
+        return listTextures;
+    }
+
+    public void setListTextures(List<String> listTextures) {
+        this.listTextures = listTextures;
+    }
+
+    public List<String> getListDoodad() {
+        return listDoodad;
+    }
+
+    public void setListDoodad(List<String> listDoodad) {
+        this.listDoodad = listDoodad;
+    }
+
+    public List<Integer> getListDoodadLookup() {
+        return listDoodadLookup;
+    }
+
+    public void setListDoodadLookup(List<Integer> listDoodadLookup) {
+        this.listDoodadLookup = listDoodadLookup;
+    }
+
+    public List<String> getListWMOFiles() {
+        return listWMOFiles;
+    }
+
+    public void setListWMOFiles(List<String> listWMOFiles) {
+        this.listWMOFiles = listWMOFiles;
+    }
+
+    public List<Integer> getListWMOLookup() {
+        return listWMOLookup;
+    }
+
+    public void setListWMOLookup(List<Integer> listWMOLookup) {
+        this.listWMOLookup = listWMOLookup;
+    }
+
+    public List<MDDF> getListMDDF() {
+        return listMDDF;
+    }
+
+    public void setListMDDF(List<MDDF> listMDDF) {
+        this.listMDDF = listMDDF;
+    }
+
+    public List<MODF> getListMODF() {
+        return listMODF;
+    }
+
+    public void setListMODF(List<MODF> listMODF) {
+        this.listMODF = listMODF;
+    }
+
+    public List<MCNK> getListMapChunks() {
+        return listMapChunks;
+    }
+
+    public void setListMapChunks(List<MCNK> listMapChunks) {
+        this.listMapChunks = listMapChunks;
+    }
+    
+    
 }

@@ -23,5 +23,10 @@
             <artifactId>JMPQ3</artifactId>
             <version>1.4.3</version>
         </dependency>
+        <dependency>
+            <groupId>de.javagl</groupId>
+            <artifactId>obj</artifactId>
+            <version>0.3.0</version>
+        </dependency>
     </dependencies>
 </project>

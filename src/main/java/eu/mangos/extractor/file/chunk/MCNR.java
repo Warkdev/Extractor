@@ -9,7 +9,7 @@ package eu.mangos.extractor.file.chunk;
  *
  * @author Warkdev
  */
-public class MCNR {
+public class MCNR {    
     private Vector[] points = new Vector[145];
 
     public Vector[] getPoints() {
