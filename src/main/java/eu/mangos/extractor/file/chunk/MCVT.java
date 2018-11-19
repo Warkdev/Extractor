@@ -10,13 +10,13 @@ package eu.mangos.extractor.file.chunk;
  * @author Warkdev
  */
 public class MCVT {
-    private Vector[] points = new Vector[145];
+    private float[] points = new float[145];
 
-    public Vector[] getPoints() {
+    public float[] getPoints() {
         return points;
     }
 
-    public void setPoints(Vector[] points) {
+    public void setPoints(float[] points) {
         this.points = points;
     }
     

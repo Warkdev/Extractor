@@ -28,5 +28,10 @@
             <artifactId>obj</artifactId>
             <version>0.3.0</version>
         </dependency>
+        <dependency>
+            <groupId>eu.mangos</groupId>
+            <artifactId>MangosSharedEnum</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 </project>

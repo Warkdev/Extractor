@@ -435,8 +435,9 @@ public class ADTFileReader {
             // We ignore size.
             in.getInt();
 
-            for (int j = 0; j < 17; j++) {
-                for (int k = 0; k < ((j % 2 != 0) ? 8 : 9); k++) {
+            for (int j = 0; j < 145; j++) {
+                chunk.getVertices().getPoints()[j] = in.getFloat();
+                /**for (int k = 0; k < ((j % 2 != 0) ? 8 : 9); k++) {
                     Vector vector = new Vector();
                     float h, posX, posZ;
                     posX = j * UNIT_SIZE;
@@ -449,7 +450,7 @@ public class ADTFileReader {
                     vector.setY(chunk.getPosY() + h);
                     vector.setZ(chunk.getPosZ() + posZ);
                     chunk.getVertices().getPoints()[j] = vector;
-                }
+                }*/
             }
 
             // Must now parse MCNR
