@@ -27,6 +27,8 @@ public class CAaBox {
     private Vec3f max;
 
     public CAaBox() {
+        this.min = new Vec3f();
+        this.max = new Vec3f();
     }
 
     public Vec3f getMin() {
@@ -44,4 +46,9 @@ public class CAaBox {
     public void setMax(Vec3f max) {
         this.max = max;
     }        
+    
+    public void read(ByteBuffer data) {
+        this.min.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.max.set(data.getFloat(), data.getFloat(), data.getFloat());
+    }
 }

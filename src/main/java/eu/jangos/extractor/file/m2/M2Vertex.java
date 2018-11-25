@@ -17,6 +17,7 @@ package eu.jangos.extractor.file.m2;
 
 import com.sun.javafx.geom.Vec2f;
 import com.sun.javafx.geom.Vec3f;
+import java.nio.ByteBuffer;
 
 /**
  *
@@ -30,8 +31,23 @@ public class M2Vertex {
     private Vec2f[] texCoords = new Vec2f[2];
 
     public M2Vertex() {
+        this.position = new Vec3f();
+        this.normal = new Vec3f();
+        for(int i = 0; i < texCoords.length; i++) {
+            this.texCoords[i] = new Vec2f();
+        }
     }
 
+    public void read(ByteBuffer data) {
+        this.position.set(data.getFloat(), data.getFloat(), data.getFloat());
+        data.get(this.boneWeights);
+        data.get(this.boneIndices);
+        this.normal.set(data.getFloat(), data.getFloat(), data.getFloat());
+        for(int i = 0; i < this.texCoords.length; i++) {
+            texCoords[i].set(data.getFloat(), data.getFloat());
+        }
+    }
+    
     public Vec3f getPosition() {
         return position;
     }
@@ -70,7 +86,5 @@ public class M2Vertex {
 
     public void setTexCoords(Vec2f[] texCoords) {
         this.texCoords = texCoords;
-    }
-    
-    
+    }        
 }

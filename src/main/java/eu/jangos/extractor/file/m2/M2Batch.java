@@ -15,11 +15,13 @@
  */
 package eu.jangos.extractor.file.m2;
 
+import java.nio.ByteBuffer;
+
 /**
  *
  * @author Warkdev
  */
-class M2Batch {
+public class M2Batch {
     private byte flags;
     private byte priorityPlane;
     private short shaderId;
@@ -37,6 +39,22 @@ class M2Batch {
     public M2Batch() {
     }
 
+    public void read(ByteBuffer data) {
+        this.flags = data.get();
+        this.priorityPlane = data.get();
+        this.shaderId = data.getShort();
+        this.skinSectionIndex = data.getShort();
+        this.geosetIndex = data.getShort();
+        this.colorIndex = data.getShort();
+        this.materialIndex = data.getShort();
+        this.materialLayer = data.getShort();
+        this.textureCount = data.getShort();
+        this.textureComboIndex = data.getShort();
+        this.textureCoordComboIndex = data.getShort();
+        this.textureWeightComboIndex = data.getShort();
+        this.textureTransformComboIndex = data.getShort();
+    }
+    
     public byte getFlags() {
         return flags;
     }

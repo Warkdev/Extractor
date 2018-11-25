@@ -24,41 +24,67 @@ import eu.jangos.extractor.file.adt.chunk.MCNK;
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
 import eu.mangos.shared.flags.FlagUtils;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
+ * ADT2OBJConverter will take an ADT file in input and create all necessary
+ * assets to generate a standard an valid OBJ Wavefront fileformat. It includes
+ * vertices, indices, materials and faces. After having generated a new
+ * ADT2OBJConverter, please use the method "convert()". Without this call, all
+ * list will remain empty.
  *
+ * @see https://en.wikipedia.org/wiki/Wavefront_.obj_file
  * @author Warkdev
  */
 public class ADT2OBJConverter {
 
     // The reader will hold ADT information.
-    private ADTFileReader reader;    
-    
+    private ADTFileReader reader;
+
     List<RenderBatch> renderBatches;
     List<Vertex> verticeList;
     List<Integer> indiceList;
     Map<Integer, String> materials;
 
+    /**
+     * Creates an ADT2OBJConverter file.
+     *
+     * @param reader The ADTFileReader from which you're expecting conversion.
+     */
     public ADT2OBJConverter(ADTFileReader reader) {
         this.reader = reader;
         this.renderBatches = new ArrayList<>();
         this.verticeList = new ArrayList<>();
         this.indiceList = new ArrayList<>();
-        this.materials = new HashMap<>();        
-    }   
-    
+        this.materials = new HashMap<>();
+    }
+
+    /**
+     * Convert the actual ADT File to expected OBJ informations (vertices,
+     * batches, indices & materials).
+     *
+     * @throws ConverterException If there's any validation error while
+     * converting the ADT to OBJ.
+     */
     public void convert() throws ConverterException {
+        if (this.reader == null) {
+            throw new ConverterException("ADTFileReader is null");
+        }
+
         List<MCNK> mapChunks;
         try {
             mapChunks = reader.getMapChunks();
         } catch (ADTException exception) {
             throw new ConverterException(exception.getMessage());
         }
-        
+
         float initialChunkX = mapChunks.get(0).getPosX();
         float initialChunkY = mapChunks.get(0).getPosY();
         int index = 0;
@@ -141,19 +167,67 @@ public class ADT2OBJConverter {
 
             renderBatches.add(batch);
             index++;
-        }                
+        }
     }
 
-    public void saveToFile(String file) {
+    /**
+     * This method is saving the OBJ file structure to the file given in
+     * parameters.
+     *
+     * @param file The OBJ file (including path) where the structure needs to be
+     * saved.
+     * @throws ConverterException
+     */
+    public void saveToFile(String file) throws ConverterException, IOException {
+        if (file == null || file.isEmpty()) {
+            throw new ConverterException("Provide file is null or empty.");
+        }
 
+        File objFile = new File(file);
+        if (objFile.exists()) {
+            objFile.delete();
+        }
+
+        OutputStreamWriter writer = new FileWriter(objFile);
+        writer.write(getOBJasAString());
+        writer.close();
     }
 
+    /**
+     * This methid returns the OBJ file as a String representation (including
+     * carriage return).
+     *
+     * @return A String object representing the corresponding OBJ file
+     * structure.
+     */
     public String getOBJasAString() {
         StringBuilder sb = new StringBuilder();
 
+        for (Vertex v : verticeList) {
+            sb.append("v " + v.getPosition().x + " " + v.getPosition().y + " " + v.getPosition().z + "\n");
+            sb.append("vt " + v.getTextCoord().x + " " + (-1) * v.getTextCoord().y + "\n");
+            sb.append("vn " + v.getNormal().x + " " + v.getNormal().y + " " + v.getNormal().z + "\n");
+        }
+
+        for (RenderBatch batch : renderBatches) {
+            int i = batch.getFirstFace();
+            if (materials.containsKey(batch.getMaterialID())) {
+                sb.append("usemtl " + materials.get(batch.getMaterialID()) + "\n");
+                sb.append("s 1" + "\n");
+            }
+
+            while (i < batch.getFirstFace() + batch.getNumFaces()) {
+                sb.append("f " + (indiceList.get(i + 2) + 1) + "/" + (indiceList.get(i + 2) + 1) + "/"
+                        + (indiceList.get(i + 2) + 1) + " " + (indiceList.get(i + 1) + 1) + "/"
+                        + (indiceList.get(i + 1) + 1) + "/" + (indiceList.get(i + 1) + 1) + " "
+                        + (indiceList.get(i) + 1) + "/" + (indiceList.get(i) + 1) + "/" + (indiceList.get(i) + 1) + "\n");
+                i += 3;
+            }
+        }
+
         return sb.toString();
     }
-    
+
     public List<RenderBatch> getRenderBatches() {
         return renderBatches;
     }
@@ -196,5 +270,5 @@ public class ADT2OBJConverter {
         this.verticeList.clear();
         this.indiceList.clear();
         this.materials.clear();
-    }            
+    }
 }

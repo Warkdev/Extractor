@@ -70,28 +70,22 @@ public class FXMLController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         String PATH = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\patch.MPQ";
-        String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
-        String obj = "D:\\Downloads\\Test\\Azeroth_32_48.obj";
+        String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";        
         String MODEL = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\model.MPQ";
         ADTFileReader adt = new ADTFileReader();
         ADT2OBJConverter adtConverter = new ADT2OBJConverter(adt);
         M2FileReader m2 = new M2FileReader();
         File mpq = new File(PATH);
         File modelFile = new File(MODEL);
-        File objFile = new File(obj);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        
         try {
             JMpqEditor editor = new JMpqEditor(mpq, MPQOpenOption.READ_ONLY);
             JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
 
             adt.init(editor.extractFileAsBytes(map));
             adtConverter.convert();
-
-            // Now, the truth.
-            if (objFile.exists()) {
-                objFile.delete();
-            }
-            OutputStreamWriter writer = new FileWriter(objFile);            
+                        
             TriangleMesh mesh = new TriangleMesh();
             mesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
             terrain.setMesh(mesh);
@@ -99,35 +93,26 @@ public class FXMLController implements Initializable {
             for (Vertex v : adtConverter.getVerticeList()) {
                 mesh.getPoints().addAll(v.getPosition().x, (-1) * v.getPosition().y, v.getPosition().z * (-1));
                 mesh.getTexCoords().addAll(v.getTextCoord().x, (-1) * v.getTextCoord().y);
-                mesh.getNormals().addAll(v.getNormal().x, v.getNormal().y, v.getNormal().z);
-                writer.write("v " + v.getPosition().x + " " + v.getPosition().y + " " + v.getPosition().z + "\n");
-                writer.write("vt " + v.getTextCoord().x + " " + (-1) * v.getTextCoord().y + "\n");
-                writer.write("vn " + v.getNormal().x + " " + v.getNormal().y + " " + v.getNormal().z + "\n");
+                mesh.getNormals().addAll(v.getNormal().x, v.getNormal().y, v.getNormal().z);                
             }
 
             for (RenderBatch batch : adtConverter.getRenderBatches()) {
                 int i = batch.getFirstFace();
                 if (adtConverter.getMaterials().containsKey(batch.getMaterialID())) {                    
-                    writer.write("usemtl " + adtConverter.getMaterials().get(batch.getMaterialID()) + "\n");
-                    writer.write("s 1" + "\n");
+                    /**writer.write("usemtl " + adtConverter.getMaterials().get(batch.getMaterialID()) + "\n");
+                    writer.write("s 1" + "\n");*/                    
                 }
 
                 // There's one iteration too much.
-                while (i < batch.getFirstFace() + batch.getNumFaces()) {         
+                while (i < batch.getFirstFace() + batch.getNumFaces()) {                          
                     mesh.getFaceSmoothingGroups().addAll(1);
                     mesh.getFaces().addAll(
                             (adtConverter.getIndiceList().get(i + 2)), (adtConverter.getIndiceList().get(i + 2)), (adtConverter.getIndiceList().get(i + 2)),
                             (adtConverter.getIndiceList().get(i + 1)),  (adtConverter.getIndiceList().get(i + 1)), (adtConverter.getIndiceList().get(i + 1)),
-                            (adtConverter.getIndiceList().get(i)), (adtConverter.getIndiceList().get(i)), (adtConverter.getIndiceList().get(i)));
-                    writer.write("f " + (adtConverter.getIndiceList().get(i + 2) + 1) + "/" + (adtConverter.getIndiceList().get(i + 2) + 1) + "/"
-                            + (adtConverter.getIndiceList().get(i + 2) + 1) + " " + (adtConverter.getIndiceList().get(i + 1) + 1) + "/"
-                            + (adtConverter.getIndiceList().get(i + 1) + 1) + "/" + (adtConverter.getIndiceList().get(i + 1) + 1) + " "
-                            + (adtConverter.getIndiceList().get(i) + 1) + "/" + (adtConverter.getIndiceList().get(i) + 1) + "/" + (adtConverter.getIndiceList().get(i) + 1) + "\n");
-                    i += 3;
+                            (adtConverter.getIndiceList().get(i)), (adtConverter.getIndiceList().get(i)), (adtConverter.getIndiceList().get(i)));     
+                    i+= 3;
                 }
-            }
-
-            validateFaces(mesh);
+            }            
 
             // Exporting M2.
             for (MDDF doodad : adt.getDoodadPlacement()) {

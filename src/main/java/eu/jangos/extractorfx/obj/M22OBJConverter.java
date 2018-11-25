@@ -13,39 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.jangos.extractor.file.m2;
-
-import java.nio.ByteBuffer;
+package eu.jangos.extractorfx.obj;
 
 /**
  *
  * @author Warkdev
  */
-public class M2Array<T> {
-    
-    private int size;
-    // Pointer to T, relative to begin of m2 data block.
-    private int offset; 
-
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
-    }
-
-    public int getOffset() {
-        return (int) offset;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-    
-    public void read(ByteBuffer buffer) {
-        this.size = buffer.getInt();
-        this.offset = buffer.getInt();
-    }
+public class M22OBJConverter {
     
 }

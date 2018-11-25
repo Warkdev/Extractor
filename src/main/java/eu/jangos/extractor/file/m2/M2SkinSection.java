@@ -16,14 +16,15 @@
 package eu.jangos.extractor.file.m2;
 
 import com.sun.javafx.geom.Vec3f;
+import java.nio.ByteBuffer;
 
 /**
  *
  * @author Warkdev
  */
-class M2SkinSection {
-    private short SkinSectionId;
-    private short Level;
+public class M2SkinSection {
+    private short id;
+    private short level;
     private short vertexStart;
     private short vertexCount;
     private short indexStart;
@@ -35,22 +36,37 @@ class M2SkinSection {
     private Vec3f centerPosition;
 
     public M2SkinSection() {
+        this.centerPosition = new Vec3f();
     }
 
-    public short getSkinSectionId() {
-        return SkinSectionId;
+    public void read(ByteBuffer data) {
+        this.id = data.getShort();
+        this.level = data.getShort();
+        this.vertexStart = data.getShort();
+        this.vertexCount = data.getShort();
+        this.indexStart = data.getShort();
+        this.indexCount = data.getShort();
+        this.boneCount = data.getShort();
+        this.boneComboIndex = data.getShort();
+        this.boneInfluences = data.getShort();
+        this.centerBoneIndex = data.getShort();
+        this.centerPosition.set(data.getFloat(), data.getFloat(), data.getFloat());
+    }
+    
+    public short getId() {
+        return id;
     }
 
-    public void setSkinSectionId(short SkinSectionId) {
-        this.SkinSectionId = SkinSectionId;
+    public void setId(short id) {
+        this.id = id;
     }
 
     public short getLevel() {
-        return Level;
+        return level;
     }
 
     public void setLevel(short Level) {
-        this.Level = Level;
+        this.level = Level;
     }
 
     public short getVertexStart() {
