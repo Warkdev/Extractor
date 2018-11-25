@@ -45,32 +45,30 @@ public class ADTFileReader {
     private static final String HEADER_MFBO = "MFBO";
     private static final String HEADER_MH2O = "MH2O";
     private static final String HEADER_MTFX = "MTFX";
-
+    
+    // Size as from which the offset calculation is made.
+    private static final int GLOBAL_OFFSET = 0x14;
+    
     public static final float TILE_SIZE = 533.33333f;
     public static final float CHUNK_SIZE = TILE_SIZE / 16.0f;
     public static final float UNIT_SIZE = CHUNK_SIZE / 8.0f;
     public static final float ZERO_POINT = 32.0f * TILE_SIZE;
 
-    private byte[] data;
-
+    private ByteBuffer data;
+    // Indicates whether this file has been initialized or not.
+    private boolean init = false;
+    
     private int version;
-    private int offsetMCIN;
-    private MCIN[] chunkIndex;
-    private int offsetMTEX;
-    private List<String> listTextures;
-    private int offsetMMDX;
-    private List<String> listDoodad;
-    private int offsetMMID;
-    private List<Integer> listDoodadLookup;
-    private int offsetMWMO;
-    private List<String> listWMOFiles;
-    private int offsetMWID;
-    private List<Integer> listWMOLookup;
-    private int offsetMDDF;
-    private List<MDDF> listMDDF;
-    private int offsetMODF;
-    private List<MODF> listMODF;
-    private List<MCNK> listMapChunks;
+    private int mfboEnum;
+    private int headerFlags;    
+    private int offsetMCIN;    
+    private int offsetMTEX;    
+    private int offsetMMDX;    
+    private int offsetMMID;    
+    private int offsetMWMO;    
+    private int offsetMWID;    
+    private int offsetMDDF;    
+    private int offsetMODF;        
     private int offsetMFBO;
     private int offsetMH2O;
     private int offsetMTFX;
@@ -79,39 +77,14 @@ public class ADTFileReader {
     }
 
     public void init(byte[] data) throws IOException, ADTException {
-        this.data = data;
-        this.chunkIndex = new MCIN[256];
-        this.listTextures = new ArrayList<>();
-        this.listDoodad = new ArrayList<>();
-        this.listDoodadLookup = new ArrayList<>();
-        this.listWMOFiles = new ArrayList<>();
-        this.listWMOLookup = new ArrayList<>();
-        this.listMDDF = new ArrayList<>();
-        this.listMODF = new ArrayList<>();
-        this.listMapChunks = new ArrayList<>();
-        readFile();
-    }
-
-    private void readFile() throws IOException, ADTException {
-        ByteBuffer in = ByteBuffer.wrap(data);
-        in.order(ByteOrder.LITTLE_ENDIAN);
-        readVersion(in);
-        readMHDR(in);
-        readMCIN(in);
-        readMTEX(in);
-        readMMDX(in);
-        readMMID(in);
-        readMWMO(in);
-        readMWID(in);
-        readMDDF(in);
-        readMODF(in);
-        readMCNK(in);
-        readNextHeader(in);
-        //readNextHeader(in);
-        //readNextHeader(in);
-        //readNextHeader(in);
-        //readNextHeader(in);
-    }
+        this.data = ByteBuffer.wrap(data);        
+        this.data.order(ByteOrder.LITTLE_ENDIAN);
+        
+        // This is all what we need to read our file. Initialize the offset and check the version.
+        readVersion(this.data);
+        readHeader(this.data);   
+        init = true;
+    }    
 
     /**
      * Reading the ADT version. The ADT version is expected to be located at the
@@ -127,7 +100,7 @@ public class ADTFileReader {
     private void readVersion(ByteBuffer in) throws ADTException {
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
-
+        
         in.get(header);
 
         sb = sb.append(new String(header)).reverse();
@@ -149,11 +122,10 @@ public class ADTFileReader {
      * @throws IOException
      * @throws ADTException
      */
-    private void readMHDR(ByteBuffer in) throws ADTException {
+    private void readHeader(ByteBuffer in) throws ADTException {
         StringBuilder sb = new StringBuilder();
-        byte[] header = new byte[4];
-        int size = 0;
-
+        byte[] header = new byte[4];               
+        
         in.get(header);
 
         sb = sb.append(new String(header)).reverse();
@@ -161,7 +133,8 @@ public class ADTFileReader {
             throw new ADTException("Expected header " + HEADER_MHDR + ", received header: " + sb.toString());
         }
 
-        size = in.getInt();
+        this.mfboEnum = in.getInt();
+        this.headerFlags = in.getInt();        
         this.offsetMCIN = in.getInt();
         this.offsetMTEX = in.getInt();
         this.offsetMMDX = in.getInt();
@@ -172,208 +145,190 @@ public class ADTFileReader {
         this.offsetMODF = in.getInt();
         this.offsetMFBO = in.getInt();
         this.offsetMH2O = in.getInt();
-        this.offsetMTFX = in.getInt();
-        // Size of MHDR chunk + size of MVER chunk is 72+12. That's the start of MCIN chunk.
-        in.position(84);
+        this.offsetMTFX = in.getInt();        
     }
 
-    private void readMCIN(ByteBuffer in) throws ADTException {
+    private MCIN[] readMCIN() throws ADTException {
+        if(!init) {
+            throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
+        }
+        
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
-
-        in.get(header);
+        
+        this.data.position(GLOBAL_OFFSET + this.offsetMCIN);                
+        
+        this.data.get(header);
 
         sb = sb.append(new String(header)).reverse();
         if (!sb.toString().equals(HEADER_MCIN)) {
             throw new ADTException("Expected header " + HEADER_MCIN + ", received header: " + sb.toString());
         }
 
-        int size = in.getInt();
+        int size = this.data.getInt();        
         MCIN index;
-        for (int i = 0; i < this.chunkIndex.length; i++) {
+        MCIN[] chunkIndex = new MCIN[size/MCIN.getOBJECT_SIZE()];
+        for (int i = 0; i < chunkIndex.length; i++) {
             index = new MCIN();
-            index.setOffsetMCNK(in.getInt());
-            index.setSize(in.getInt());
-            index.setFlags(in.getInt());
-            index.setAsyncId(in.getInt());
+            index.setOffsetMCNK(this.data.getInt());
+            index.setSize(this.data.getInt());
+            index.setFlags(this.data.getInt());
+            index.setAsyncId(this.data.getInt());
             chunkIndex[i] = index;
         }
 
+        return chunkIndex;
     }
 
-    private void readMTEX(ByteBuffer in) throws ADTException {
+    public List<String> getTextures() throws ADTException {
+        if(!init) {
+            throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
+        }
+        
+        return readStringChunk(this.offsetMTEX, HEADER_MTEX);        
+    }
+
+    public List<String> getModels() throws ADTException {
+        if(!init) {
+            throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
+        }
+        
+        return readStringChunk(this.offsetMMDX, HEADER_MMDX);
+    }
+
+    private List<Integer> getModelOffsets() throws ADTException {
+        if(!init) {
+            throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
+        }
+        
+        return readIntegerChunk(this.offsetMMID, HEADER_MMID);
+    }
+
+    public List<String> getWorldObjects() throws ADTException {
+        if(!init) {
+            throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
+        }
+        
+        return readStringChunk(this.offsetMWMO, HEADER_MWMO);        
+    }
+
+    private List<Integer> getWorldObjectsOffsets() throws ADTException {
+        if(!init) {
+            throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
+        }
+        
+        return readIntegerChunk(this.offsetMWID, HEADER_MWID);
+    }
+
+    public List<MDDF> getDoodadPlacement() throws ADTException {
+        if(!init) {
+            throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
+        }
+        
+        List<MDDF> listPlacement = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
 
-        in.get(header);
-
-        sb = sb.append(new String(header)).reverse();
-        if (!sb.toString().equals(HEADER_MTEX)) {
-            throw new ADTException("Expected header " + HEADER_MTEX + ", received header: " + sb.toString());
-        }
-
-        int size = in.getInt();
-        int start = in.position();
-        while (in.position() - start < size) {
-            this.listTextures.add(readString(in));
-        }
-    }
-
-    private void readMMDX(ByteBuffer in) throws ADTException {
-        StringBuilder sb = new StringBuilder();
-        byte[] header = new byte[4];
-
-        in.get(header);
-
-        sb = sb.append(new String(header)).reverse();
-        if (!sb.toString().equals(HEADER_MMDX)) {
-            throw new ADTException("Expected header " + HEADER_MMDX + ", received header: " + sb.toString());
-        }
-
-        int size = in.getInt();
-        int start = in.position();
-        while (in.position() - start < size) {
-            this.listDoodad.add(readString(in));
-        }
-    }
-
-    private void readMMID(ByteBuffer in) throws ADTException {
-        StringBuilder sb = new StringBuilder();
-        byte[] header = new byte[4];
-
-        in.get(header);
-
-        sb = sb.append(new String(header)).reverse();
-        if (!sb.toString().equals(HEADER_MMID)) {
-            throw new ADTException("Expected header " + HEADER_MMID + ", received header: " + sb.toString());
-        }
-
-        int size = in.getInt();
-        int start = in.position();
-        while (in.position() - start < size) {
-            this.listDoodadLookup.add(in.getInt());
-        }
-    }
-
-    private void readMWMO(ByteBuffer in) throws ADTException {
-        StringBuilder sb = new StringBuilder();
-        byte[] header = new byte[4];
-
-        in.get(header);
-
-        sb = sb.append(new String(header)).reverse();
-        if (!sb.toString().equals(HEADER_MWMO)) {
-            throw new ADTException("Expected header " + HEADER_MWMO + ", received header: " + sb.toString());
-        }
-
-        int size = in.getInt();
-        int start = in.position();
-        while (in.position() - start < size) {
-            this.listWMOFiles.add(readString(in));
-        }
-    }
-
-    private void readMWID(ByteBuffer in) throws ADTException {
-        StringBuilder sb = new StringBuilder();
-        byte[] header = new byte[4];
-
-        in.get(header);
-
-        sb = sb.append(new String(header)).reverse();
-        if (!sb.toString().equals(HEADER_MWID)) {
-            throw new ADTException("Expected header " + HEADER_MWID + ", received header: " + sb.toString());
-        }
-
-        int size = in.getInt();
-        int start = in.position();
-        while (in.position() - start < size) {
-            this.listWMOLookup.add(in.getInt());
-        }
-    }
-
-    private void readMDDF(ByteBuffer in) throws ADTException {
-        StringBuilder sb = new StringBuilder();
-        byte[] header = new byte[4];
-
-        in.get(header);
+        this.data.position(this.offsetMDDF + GLOBAL_OFFSET);
+        
+        this.data.get(header);
 
         sb = sb.append(new String(header)).reverse();
         if (!sb.toString().equals(HEADER_MDDF)) {
             throw new ADTException("Expected header " + HEADER_MDDF + ", received header: " + sb.toString());
         }
 
-        int size = in.getInt();
-        int start = in.position();
+        int size = this.data.getInt();
+        int start = this.data.position();
         MDDF placement;
-        while (in.position() - start < size) {
+        while (this.data.position() - start < size) {
             placement = new MDDF();
 
-            placement.setMmidEntry(in.getInt());
-            placement.setUniqueId(in.getInt());
-            placement.setX(in.getFloat());
-            placement.setY(in.getFloat());
-            placement.setZ(in.getFloat());
-            placement.setOrX(in.getFloat());
-            placement.setOrY(in.getFloat());
-            placement.setOrZ(in.getFloat());
-            placement.setScale(in.getShort());
-            placement.setFlags(in.getShort());
+            placement.setMmidEntry(this.data.getInt());
+            placement.setUniqueId(this.data.getInt());
+            placement.setX(this.data.getFloat());
+            placement.setY(this.data.getFloat());
+            placement.setZ(this.data.getFloat());
+            placement.setOrX(this.data.getFloat());
+            placement.setOrY(this.data.getFloat());
+            placement.setOrZ(this.data.getFloat());
+            placement.setScale(this.data.getShort());
+            placement.setFlags(this.data.getShort());
 
-            this.listMDDF.add(placement);
+            listPlacement.add(placement);
         }
+        
+        return listPlacement;
     }
 
-    private void readMODF(ByteBuffer in) throws ADTException {
+    public List<MODF> getWorldObjectsPlacement() throws ADTException {
+        if(!init) {
+            throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
+        }
+        
+        List<MODF> listPlacement = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
 
-        in.get(header);
+        this.data.position(this.offsetMODF + GLOBAL_OFFSET);
+        
+        this.data.get(header);
 
         sb = sb.append(new String(header)).reverse();
         if (!sb.toString().equals(HEADER_MODF)) {
             throw new ADTException("Expected header " + HEADER_MODF + ", received header: " + sb.toString());
         }
 
-        int size = in.getInt();
-        int start = in.position();
+        int size = this.data.getInt();
+        int start = this.data.position();
         MODF placement;
-        while (in.position() - start < size) {
+        while (this.data.position() - start < size) {
             placement = new MODF();
 
-            placement.setMwidEntry(in.getInt());
-            placement.setUniqueId(in.getInt());
-            placement.setX(in.getFloat());
-            placement.setY(in.getFloat());
-            placement.setZ(in.getFloat());
-            placement.setOrX(in.getFloat());
-            placement.setOrY(in.getFloat());
-            placement.setOrZ(in.getFloat());
-            placement.setLowerBoundX(in.getFloat());
-            placement.setLowerBoundY(in.getFloat());
-            placement.setLowerBoundZ(in.getFloat());
-            placement.setUpperBoundX(in.getFloat());
-            placement.setUpperBoundX(in.getFloat());
-            placement.setUpperBoundX(in.getFloat());
-            placement.setFlags(in.getShort());
-            placement.setDoodadSet(in.getShort());
-            placement.setNameSet(in.getShort());
-            placement.setPadding(in.getShort());
+            placement.setMwidEntry(this.data.getInt());
+            placement.setUniqueId(this.data.getInt());
+            placement.setX(this.data.getFloat());
+            placement.setY(this.data.getFloat());
+            placement.setZ(this.data.getFloat());
+            placement.setOrX(this.data.getFloat());
+            placement.setOrY(this.data.getFloat());
+            placement.setOrZ(this.data.getFloat());
+            placement.setLowerBoundX(this.data.getFloat());
+            placement.setLowerBoundY(this.data.getFloat());
+            placement.setLowerBoundZ(this.data.getFloat());
+            placement.setUpperBoundX(this.data.getFloat());
+            placement.setUpperBoundX(this.data.getFloat());
+            placement.setUpperBoundX(this.data.getFloat());
+            placement.setFlags(this.data.getShort());
+            placement.setDoodadSet(this.data.getShort());
+            placement.setNameSet(this.data.getShort());
+            placement.setPadding(this.data.getShort());
 
-            this.listMODF.add(placement);
+            listPlacement.add(placement);
         }
+        
+        return listPlacement;
     }
 
-    private void readMCNK(ByteBuffer in) throws ADTException {
+    public List<MCNK> getMapChunks() throws ADTException {
+        if(!init) {
+            throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
+        }
+        
+        List<MCNK> listMapChunks = new ArrayList<>();
+        
         StringBuilder sb;
         byte[] header = new byte[4];
-
+        MCIN[] chunks = readMCIN();
+                        
         int size;
-        int start;
-
+        int start;        
+        
         MCNK chunk;
-        for (int i = 0; i < 256; i++) {            
+        for (int i = 0; i < chunks.length; i++) {            
+            this.data.position(chunks[i].getOffsetMCNK());
             sb = new StringBuilder();
-            in.get(header);
+            this.data.get(header);
 
             sb = sb.append(new String(header)).reverse();
             if (!sb.toString().equals(HEADER_MCNK)) {
@@ -381,49 +336,49 @@ public class ADTFileReader {
             }
 
             // We ignore size.
-            in.getInt();
+            this.data.getInt();
 
             chunk = new MCNK();
 
-            chunk.setFlags(in.getInt());
-            chunk.setIndexX(in.getInt());
-            chunk.setIndexY(in.getInt());
-            chunk.setNbLayers(in.getInt());
-            chunk.setnDoodadRefs(in.getInt());
-            chunk.setOffsetMCVT(in.getInt());
-            chunk.setOffsetMCNR(in.getInt());
-            chunk.setOffsetMCLY(in.getInt());
-            chunk.setOffsetMCRF(in.getInt());
-            chunk.setOffsetMCAL(in.getInt());
-            chunk.setSizeAlpha(in.getInt());
-            chunk.setOffsetMCSH(in.getInt());
-            chunk.setSizeShadow(in.getInt());
-            chunk.setAreadId(in.getInt());
-            chunk.setnMapObjRefs(in.getInt());
-            chunk.setHoles(in.getInt());
+            chunk.setFlags(this.data.getInt());
+            chunk.setIndexX(this.data.getInt());
+            chunk.setIndexY(this.data.getInt());
+            chunk.setNbLayers(this.data.getInt());
+            chunk.setnDoodadRefs(this.data.getInt());
+            chunk.setOffsetMCVT(this.data.getInt());
+            chunk.setOffsetMCNR(this.data.getInt());
+            chunk.setOffsetMCLY(this.data.getInt());
+            chunk.setOffsetMCRF(this.data.getInt());
+            chunk.setOffsetMCAL(this.data.getInt());
+            chunk.setSizeAlpha(this.data.getInt());
+            chunk.setOffsetMCSH(this.data.getInt());
+            chunk.setSizeShadow(this.data.getInt());
+            chunk.setAreadId(this.data.getInt());
+            chunk.setnMapObjRefs(this.data.getInt());
+            chunk.setHoles(this.data.getInt());
             for (int j = 0; j < 16; j++) {
                 // Skipping low quality text map for now. (64 bytes)
-                in.get();
+                this.data.get();
             }
-            chunk.setPredTex(in.getInt());
-            chunk.setNoEffectDoodad(in.getInt());
-            chunk.setOffsetMCSE(in.getInt());
-            chunk.setnSndEmitters(in.getInt());
-            chunk.setOffsetMCLQ(in.getInt());
-            chunk.setSizeLiquid(in.getInt());            
-            chunk.setPosX(in.getFloat());
-            chunk.setPosY(in.getFloat());            
-            chunk.setPosZ(in.getFloat());
-            chunk.setOffsetMCCV(in.getInt());
-            chunk.setOffsetMCLV(in.getInt());
+            chunk.setPredTex(this.data.getInt());
+            chunk.setNoEffectDoodad(this.data.getInt());
+            chunk.setOffsetMCSE(this.data.getInt());
+            chunk.setnSndEmitters(this.data.getInt());
+            chunk.setOffsetMCLQ(this.data.getInt());
+            chunk.setSizeLiquid(this.data.getInt());            
+            chunk.setPosX(this.data.getFloat());
+            chunk.setPosY(this.data.getFloat());            
+            chunk.setPosZ(this.data.getFloat());
+            chunk.setOffsetMCCV(this.data.getInt());
+            chunk.setOffsetMCLV(this.data.getInt());
             // Unused
-            in.getInt();
+            this.data.getInt();
 
             // Must now parse MCVT
             sb = new StringBuilder();
             header = new byte[4];
 
-            in.get(header);
+            this.data.get(header);
 
             sb = sb.append(new String(header)).reverse();
             if (!sb.toString().equals(HEADER_MCVT)) {
@@ -431,17 +386,17 @@ public class ADTFileReader {
             }
 
             // We ignore size.
-            in.getInt();
+            this.data.getInt();
 
             for (int j = 0; j < 145; j++) {
-                chunk.getVertices().getPoints()[j] = in.getFloat();
+                chunk.getVertices().getPoints()[j] = this.data.getFloat();
             }
 
             // Must now parse MCNR
             sb = new StringBuilder();
             header = new byte[4];
 
-            in.get(header);
+            this.data.get(header);
 
             sb = sb.append(new String(header)).reverse();
             if (!sb.toString().equals(HEADER_MCNR)) {
@@ -449,21 +404,21 @@ public class ADTFileReader {
             }
 
             // We ignore size.
-            in.getInt();
+            this.data.getInt();
             for (int j = 0; j < 145; j++) {
-                chunk.getNormals().getPoints()[j] = new Vector((int) in.get(), (int) in.get(), (int) in.get());
+                chunk.getNormals().getPoints()[j] = new Vector((int) this.data.get(), (int) this.data.get(), (int) this.data.get());
             }
 
             // 13 unknown bytes at the end of normals:
             for (int j = 0; j < 13; j++) {
-                in.get();
+                this.data.get();
             }
 
             // Must now parse MCLY.
             sb = new StringBuilder();
             header = new byte[4];
 
-            in.get(header);
+            this.data.get(header);
 
             sb = sb.append(new String(header)).reverse();
             if (!sb.toString().equals(HEADER_MCLY)) {
@@ -471,68 +426,68 @@ public class ADTFileReader {
             }
 
             // We ignore size.
-            in.getInt();
+            this.data.getInt();
             for (int j = 0; j < chunk.getNbLayers(); j++) {
-                chunk.getTextureLayers()[j].setTextureId(in.getInt());
-                chunk.getTextureLayers()[j].setFlags(in.getInt());
-                chunk.getTextureLayers()[j].setOffsetinMCAL(in.getInt());
-                chunk.getTextureLayers()[j].setEffectId(in.getInt());
+                chunk.getTextureLayers()[j].setTextureId(this.data.getInt());
+                chunk.getTextureLayers()[j].setFlags(this.data.getInt());
+                chunk.getTextureLayers()[j].setOffsetinMCAL(this.data.getInt());
+                chunk.getTextureLayers()[j].setEffectId(this.data.getInt());
             }
 
             // Must now parse MCRF.
             sb = new StringBuilder();
             header = new byte[4];
 
-            in.get(header);
+            this.data.get(header);
 
             sb = sb.append(new String(header)).reverse();
             if (!sb.toString().equals(HEADER_MCRF)) {
                 throw new ADTException("Expected header " + HEADER_MCRF + ", received header: " + sb.toString());
             }
 
-            size = in.getInt();
-            start = in.position();
-            while (in.position() - start < size) {
-                chunk.getMcrfList().add(in.getInt());
+            size = this.data.getInt();
+            start = this.data.position();
+            while (this.data.position() - start < size) {
+                chunk.getMcrfList().add(this.data.getInt());
             }
 
             // Must now parse MCSH.
             sb = new StringBuilder();
             header = new byte[4];
 
-            in.get(header);
+            this.data.get(header);
 
             sb = sb.append(new String(header)).reverse();
             if (!sb.toString().equals(HEADER_MCSH)) {
                 throw new ADTException("Expected header " + HEADER_MCSH + ", received header: " + sb.toString());
             }
 
-            size = in.getInt();
+            size = this.data.getInt();
             for (int j = 0; j < size; j++) {
-                in.get();
+                this.data.get();
             }
 
             // Must now parse MCAL.
             sb = new StringBuilder();
             header = new byte[4];
 
-            in.get(header);
+            this.data.get(header);
 
             sb = sb.append(new String(header)).reverse();
             if (!sb.toString().equals(HEADER_MCAL)) {
                 throw new ADTException("Expected header " + HEADER_MCAL + ", received header: " + sb.toString());
             }
 
-            size = in.getInt();
+            size = this.data.getInt();
             for (int j = 0; j < size; j++) {
-                in.get();
+                this.data.get();
             }
 
             // Must now parse MCLQ.
             sb = new StringBuilder();
             header = new byte[4];
 
-            in.get(header);
+            this.data.get(header);
 
             sb = sb.append(new String(header)).reverse();
             if (!sb.toString().equals(HEADER_MCLQ)) {
@@ -541,14 +496,14 @@ public class ADTFileReader {
 
             size = chunk.getSizeLiquid() - 4;
             for (int j = 0; j < size; j++) {
-                in.get();
+                this.data.get();
             }
 
             // Must now parse MCSE.
             sb = new StringBuilder();
             header = new byte[4];
 
-            in.get(header);
+            this.data.get(header);
 
             sb = sb.append(new String(header)).reverse();
             if (!sb.toString().equals(HEADER_MCSE)) {
@@ -556,25 +511,62 @@ public class ADTFileReader {
             }
             
             // Flag value not well documented.
-            in.getInt();
+            this.data.getInt();
             
-            this.listMapChunks.add(chunk);
+            listMapChunks.add(chunk);
         }
+        
+        return listMapChunks;
     }
 
-    private void readNextHeader(ByteBuffer in) {
-        if(in.remaining() == 0) {
-            return;
-        }
+    private List<String> readStringChunk(int offset, String expectedHeader) throws ADTException {
+        List<String> stringList = new ArrayList<>();
+                        
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
 
-        in.get(header);
+        this.data.position(offset + GLOBAL_OFFSET);
+        
+        this.data.get(header);
 
         sb = sb.append(new String(header)).reverse();
-        System.out.println(sb.toString());
+        if (!sb.toString().equals(expectedHeader)) {
+            throw new ADTException("Expected header " + expectedHeader + ", received header: " + sb.toString());
+        }
+
+        int size = this.data.getInt();
+        int start = this.data.position();
+        while (this.data.position() - start < size) {
+            stringList.add(readString(this.data));
+        }
+        
+        return stringList;
     }
 
+    private List<Integer> readIntegerChunk(int offset, String expectedHeader) throws ADTException {
+        List<Integer> intList = new ArrayList<>();
+        
+        StringBuilder sb = new StringBuilder();
+        byte[] header = new byte[4];
+
+        this.data.position(offset + GLOBAL_OFFSET);
+        
+        this.data.get(header);
+
+        sb = sb.append(new String(header)).reverse();
+        if (!sb.toString().equals(expectedHeader)) {
+            throw new ADTException("Expected header " + expectedHeader + ", received header: " + sb.toString());
+        }
+
+        int size = this.data.getInt();
+        int start = this.data.position();
+        while (this.data.position() - start < size) {
+            intList.add(this.data.getInt());
+        }
+        
+        return intList;
+    }
+    
     private String readString(ByteBuffer in) {
         StringBuilder sb = new StringBuilder();
 
@@ -595,78 +587,6 @@ public class ADTFileReader {
 
     public void setVersion(int version) {
         this.version = version;
-    }
-
-    public MCIN[] getChunkIndex() {
-        return chunkIndex;
-    }
-
-    public void setChunkIndex(MCIN[] chunkIndex) {
-        this.chunkIndex = chunkIndex;
-    }
-
-    public List<String> getListTextures() {
-        return listTextures;
-    }
-
-    public void setListTextures(List<String> listTextures) {
-        this.listTextures = listTextures;
-    }
-
-    public List<String> getListDoodad() {
-        return listDoodad;
-    }
-
-    public void setListDoodad(List<String> listDoodad) {
-        this.listDoodad = listDoodad;
-    }
-
-    public List<Integer> getListDoodadLookup() {
-        return listDoodadLookup;
-    }
-
-    public void setListDoodadLookup(List<Integer> listDoodadLookup) {
-        this.listDoodadLookup = listDoodadLookup;
-    }
-
-    public List<String> getListWMOFiles() {
-        return listWMOFiles;
-    }
-
-    public void setListWMOFiles(List<String> listWMOFiles) {
-        this.listWMOFiles = listWMOFiles;
-    }
-
-    public List<Integer> getListWMOLookup() {
-        return listWMOLookup;
-    }
-
-    public void setListWMOLookup(List<Integer> listWMOLookup) {
-        this.listWMOLookup = listWMOLookup;
-    }
-
-    public List<MDDF> getListMDDF() {
-        return listMDDF;
-    }
-
-    public void setListMDDF(List<MDDF> listMDDF) {
-        this.listMDDF = listMDDF;
-    }
-
-    public List<MODF> getListMODF() {
-        return listMODF;
-    }
-
-    public void setListMODF(List<MODF> listMODF) {
-        this.listMODF = listMODF;
-    }
-
-    public List<MCNK> getListMapChunks() {
-        return listMapChunks;
-    }
-
-    public void setListMapChunks(List<MCNK> listMapChunks) {
-        this.listMapChunks = listMapChunks;
     }
     
     

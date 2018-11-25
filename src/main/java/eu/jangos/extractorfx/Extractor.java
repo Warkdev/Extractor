@@ -43,8 +43,8 @@ public class Extractor {
     public static void main(String[] args) {
 
         String PATH = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\patch.MPQ";
-        String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
-        String obj = "D:\\Downloads\\Test\\Azeroth_32_48.obj";
+        String map = "World\\Maps\\Azeroth\\Azeroth_31_49.adt";
+        String obj = "D:\\Downloads\\Test\\Azeroth_31_49.obj";
         String MODEL = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\model.MPQ";
         ADTFileReader adt = new ADTFileReader();
         M2FileReader m2 = new M2FileReader();
@@ -65,11 +65,12 @@ public class Extractor {
             List<Integer> indiceList = new ArrayList<>();
             Map<Integer, String> materials = new HashMap<>();
 
-            float initialChunkX = adt.getListMapChunks().get(0).getPosX();
-            float initialChunkY = adt.getListMapChunks().get(0).getPosY();
+            List<MCNK> mapChunks = adt.getMapChunks();
+            float initialChunkX = mapChunks.get(0).getPosX();
+            float initialChunkY = mapChunks.get(0).getPosY();
             int index = 0;
 
-            for (MCNK chunk : adt.getListMapChunks()) {
+            for (MCNK chunk : adt.getMapChunks()) {
                 int offset = verticeList.size();
                 RenderBatch batch = new RenderBatch();
 
@@ -187,8 +188,8 @@ public class Extractor {
             }                        
             
             // Exporting M2.
-            for(MDDF doodad : adt.getListMDDF()) {
-                String mdx = FilenameUtils.removeExtension(adt.getListDoodad().get(doodad.getMmidEntry()))+".m2";
+            for(MDDF doodad : adt.getDoodadPlacement()) {
+                String mdx = FilenameUtils.removeExtension(adt.getModels().get(doodad.getMmidEntry()))+".m2";
                 File mdxFile = new File("D:\\Downloads\\Test\\"+mdx);
                 if(!mdxFile.exists() && modelEditor.hasFile(mdx)) {                    
                     m2.init(modelEditor.extractFileAsBytes(mdx));

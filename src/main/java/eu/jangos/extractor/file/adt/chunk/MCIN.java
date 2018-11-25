@@ -14,7 +14,8 @@ public class MCIN {
     private int size;
     private int flags;
     private int asyncId;
-
+    private static final int OBJECT_SIZE = 16;
+    
     public int getOffsetMCNK() {
         return offsetMCNK;
     }
@@ -45,5 +46,9 @@ public class MCIN {
 
     public void setAsyncId(int asyncId) {
         this.asyncId = asyncId;
+    }        
+
+    public static int getOBJECT_SIZE() {
+        return OBJECT_SIZE;
     }        
 }
