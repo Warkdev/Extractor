@@ -78,6 +78,11 @@ public class ADT2OBJConverter {
             throw new ConverterException("ADTFileReader is null");
         }
 
+        this.renderBatches.clear();
+        this.verticeList.clear();
+        this.indiceList.clear();
+        this.materials.clear();
+        
         List<MCNK> mapChunks;
         try {
             mapChunks = reader.getMapChunks();

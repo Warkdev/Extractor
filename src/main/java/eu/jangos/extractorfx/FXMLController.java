@@ -11,6 +11,7 @@ import eu.jangos.extractor.file.adt.chunk.MDDF;
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractorfx.obj.ADT2OBJConverter;
+import eu.jangos.extractorfx.obj.M22OBJConverter;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
 import eu.mangos.shared.flags.FlagUtils;
 import java.io.ByteArrayOutputStream;
@@ -72,9 +73,11 @@ public class FXMLController implements Initializable {
         String PATH = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\patch.MPQ";
         String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";        
         String MODEL = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\model.MPQ";
+        String mdx = "world\\azeroth\\elwynn\\passivedoodads\\detail\\elwynnvineyard\\elwynnvineyard01.m2";
         ADTFileReader adt = new ADTFileReader();
         ADT2OBJConverter adtConverter = new ADT2OBJConverter(adt);
         M2FileReader m2 = new M2FileReader();
+        M22OBJConverter m2Converter = new M22OBJConverter(m2);
         File mpq = new File(PATH);
         File modelFile = new File(MODEL);
 
@@ -85,18 +88,21 @@ public class FXMLController implements Initializable {
 
             adt.init(editor.extractFileAsBytes(map));
             adtConverter.convert();
-                        
+                     
+            m2.init(editor.extractFileAsBytes(mdx));
+            m2Converter.convert(1);
+            
             TriangleMesh mesh = new TriangleMesh();
             mesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
             terrain.setMesh(mesh);
 
-            for (Vertex v : adtConverter.getVerticeList()) {
+            for (Vertex v : m2Converter.getVerticeList()) {
                 mesh.getPoints().addAll(v.getPosition().x, (-1) * v.getPosition().y, v.getPosition().z * (-1));
                 mesh.getTexCoords().addAll(v.getTextCoord().x, (-1) * v.getTextCoord().y);
                 mesh.getNormals().addAll(v.getNormal().x, v.getNormal().y, v.getNormal().z);                
             }
 
-            for (RenderBatch batch : adtConverter.getRenderBatches()) {
+            for (RenderBatch batch : m2Converter.getRenderBatches()) {
                 int i = batch.getFirstFace();
                 if (adtConverter.getMaterials().containsKey(batch.getMaterialID())) {                    
                     /**writer.write("usemtl " + adtConverter.getMaterials().get(batch.getMaterialID()) + "\n");
@@ -107,21 +113,12 @@ public class FXMLController implements Initializable {
                 while (i < batch.getFirstFace() + batch.getNumFaces()) {                          
                     mesh.getFaceSmoothingGroups().addAll(1);
                     mesh.getFaces().addAll(
-                            (adtConverter.getIndiceList().get(i + 2)), (adtConverter.getIndiceList().get(i + 2)), (adtConverter.getIndiceList().get(i + 2)),
-                            (adtConverter.getIndiceList().get(i + 1)),  (adtConverter.getIndiceList().get(i + 1)), (adtConverter.getIndiceList().get(i + 1)),
-                            (adtConverter.getIndiceList().get(i)), (adtConverter.getIndiceList().get(i)), (adtConverter.getIndiceList().get(i)));     
+                            (m2Converter.getIndiceList().get(i + 2)), (m2Converter.getIndiceList().get(i + 2)), (m2Converter.getIndiceList().get(i + 2)),
+                            (m2Converter.getIndiceList().get(i + 1)),  (m2Converter.getIndiceList().get(i + 1)), (m2Converter.getIndiceList().get(i + 1)),
+                            (m2Converter.getIndiceList().get(i)), (m2Converter.getIndiceList().get(i)), (m2Converter.getIndiceList().get(i)));     
                     i+= 3;
                 }
             }            
-
-            // Exporting M2.
-            for (MDDF doodad : adt.getDoodadPlacement()) {
-                String mdx = FilenameUtils.removeExtension(adt.getModels().get(doodad.getMmidEntry())) + ".m2";
-                File mdxFile = new File("D:\\Downloads\\Test\\" + mdx);
-                if (!mdxFile.exists() && modelEditor.hasFile(mdx)) {
-                    m2.init(modelEditor.extractFileAsBytes(mdx));
-                }
-            }
 
         } catch (IOException ex) {
             Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
