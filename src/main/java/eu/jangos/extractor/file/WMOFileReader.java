@@ -16,13 +16,20 @@
 package eu.jangos.extractor.file;
 
 import com.sun.javafx.geom.Vec3f;
+import eu.jangos.extractor.file.common.C4Plane;
 import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.common.CArgb;
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.WMOException;
+import eu.jangos.extractor.file.wmo.WMOBlock;
+import eu.jangos.extractor.file.wmo.WMODoodadDef;
+import eu.jangos.extractor.file.wmo.WMODoodadSet;
+import eu.jangos.extractor.file.wmo.WMOFog;
 import eu.jangos.extractor.file.wmo.WMOGroupInfo;
+import eu.jangos.extractor.file.wmo.WMOLight;
 import eu.jangos.extractor.file.wmo.WMOMaterials;
 import eu.jangos.extractor.file.wmo.WMOPortal;
+import eu.jangos.extractor.file.wmo.WMOPortalRef;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -47,6 +54,23 @@ public class WMOFileReader {
     private static final int SIZE_MOPV = 12;
     private static final String HEADER_MOPT = "MOPT";
     private static final int SIZE_MOPT = 20;
+    private static final String HEADER_MOPR = "MOPR";
+    private static final int SIZE_MOPR = 8;
+    private static final String HEADER_MOVV = "MOVV";
+    private static final int SIZE_MOVV = 12;
+    private static final String HEADER_MOVB = "MOVB";
+    private static final int SIZE_MOVB = 4;
+    private static final String HEADER_MOLT = "MOLT";
+    private static final int SIZE_MOLT = 48;
+    private static final String HEADER_MODS = "MODS";
+    private static final int SIZE_MODS = 32;
+    private static final String HEADER_MODN = "MODN";    
+    private static final String HEADER_MODD = "MODD";
+    private static final int SIZE_MODD = 40;
+    private static final String HEADER_MFOG = "MFOG";
+    private static final int SIZE_MFOG = 48;
+    private static final String HEADER_MCVP = "MCVP";
+    private static final int SIZE_MCVP = 16;
     
     private static final int SUPPORTED_VERSION = 17;
 
@@ -80,7 +104,16 @@ public class WMOFileReader {
     private String skyBoxName;
     private List<Vec3f> portalVertexList = new ArrayList<>();
     private List<WMOPortal> portalList = new ArrayList<>();
-    
+    private List<WMOPortalRef> portalRefList = new ArrayList<>();
+    private List<Vec3f> visibleBlockVerticesList = new ArrayList<>();
+    private List<WMOBlock> visibleBlockList = new ArrayList<>();
+    private List<WMOLight> lightList = new ArrayList<>();
+    private List<WMODoodadSet> doodadSetList = new ArrayList<>();
+    private List<String> doodadNameList = new ArrayList<>();
+    private List<WMODoodadDef> doodadDefList = new ArrayList<>();
+    private List<WMOFog> fogList = new ArrayList<>();
+    private List<C4Plane> convexVolumePlanesList = new ArrayList<>();
+            
     public WMOFileReader() {
 
     }
@@ -173,7 +206,93 @@ public class WMOFileReader {
             this.portalList.add(portal);
         }
         
-        System.out.println(this.data.position());
+        checkHeader(HEADER_MOPR);
+        chunkSize = this.data.getInt() / SIZE_MOPR;
+        
+        WMOPortalRef portalRef;
+        for(int i = 0; i < chunkSize; i++) {
+            portalRef = new WMOPortalRef();
+            portalRef.read(this.data);
+            this.portalRefList.add(portalRef);
+        }
+        
+        checkHeader(HEADER_MOVV);
+        chunkSize = this.data.getInt() / SIZE_MOVV;
+        
+        Vec3f visibleBlockVertices;
+        for(int i = 0; i < chunkSize; i++) {
+            visibleBlockVertices = new Vec3f();
+            visibleBlockVertices.set(this.data.getFloat(), this.data.getFloat(), this.data.getFloat());
+            this.visibleBlockVerticesList.add(visibleBlockVertices);
+        }
+        
+        checkHeader(HEADER_MOVB);
+        chunkSize = this.data.getInt() / SIZE_MOVB;
+        
+        WMOBlock visibleBlock;
+        for(int i = 0; i < chunkSize; i++) {
+            visibleBlock = new WMOBlock();
+            visibleBlock.read(this.data);
+            this.visibleBlockList.add(visibleBlock);
+        }
+        
+        checkHeader(HEADER_MOLT);
+        chunkSize = this.data.getInt() / SIZE_MOLT;
+        
+        WMOLight light;
+        for(int i = 0; i < chunkSize; i++) {
+            light = new WMOLight();
+            light.read(this.data);
+            this.lightList.add(light);
+        }                
+        
+        checkHeader(HEADER_MODS);
+        chunkSize = this.data.getInt() / SIZE_MODS;
+        
+        WMODoodadSet doodadSet;
+        for(int i = 0; i < chunkSize; i++) {
+            doodadSet = new WMODoodadSet();
+            doodadSet.read(this.data);
+            this.doodadSetList.add(doodadSet);
+        }                                
+        
+        this.doodadNameList = readStringChunk(this.data.position(), HEADER_MODN);
+        
+        checkHeader(HEADER_MODD);
+        chunkSize = this.data.getInt() / SIZE_MODD;
+        
+        WMODoodadDef doodadDef;
+        for(int i = 0; i < chunkSize; i++) {
+            doodadDef = new WMODoodadDef();
+            doodadDef.read(this.data);
+            this.doodadDefList.add(doodadDef);
+        }
+        
+        checkHeader(HEADER_MFOG);
+        chunkSize = this.data.getInt() / SIZE_MFOG;
+        
+        WMOFog fog;
+        for(int i = 0; i < chunkSize; i++) {
+            fog = new WMOFog();
+            fog.read(this.data);
+            this.fogList.add(fog);
+        }
+        
+        // MCVP is an optional header.
+        if(data.hasRemaining()) {
+            checkHeader(HEADER_MCVP);
+            chunkSize = this.data.getInt() / SIZE_MCVP;
+
+            C4Plane convexVolume;
+            for(int i = 0; i < chunkSize; i++) {
+                convexVolume = new C4Plane();
+                convexVolume.getNormal().set(this.data.getFloat(), this.data.getFloat(), this.data.getFloat());
+                convexVolume.setDistance(this.data.getFloat());
+                this.convexVolumePlanesList.add(convexVolume);
+            }
+        }
+        
+        init = true;
     }
 
     private List<String> readStringChunk(int offset, String expectedHeader) throws WMOException {

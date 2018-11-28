@@ -52,13 +52,13 @@ public class Extractor {
         ADTFileReader adt = new ADTFileReader();
         ADT2OBJConverter adtConverter = new ADT2OBJConverter(adt);
         M2FileReader m2 = new M2FileReader();
-        M22OBJConverter m2Converter = new M22OBJConverter(m2);     
+        M22OBJConverter m2Converter = new M22OBJConverter(m2);
         WMOFileReader wmoReader = new WMOFileReader();
         WMO2OBJConverter wmoConverter = new WMO2OBJConverter(wmoReader);
         File mpq = new File(PATH);
         File modelFile = new File(MODEL);
         File wmoFile = new File(WMO);
-        
+
         try {
             JMpqEditor editor = new JMpqEditor(mpq, MPQOpenOption.READ_ONLY);
             JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
@@ -69,13 +69,13 @@ public class Extractor {
             //adtConverter.saveToFile(obj);
 
             // Exporting M2.
-            for (MDDF doodad : adt.getDoodadPlacement()) {                
-                String mdx = FilenameUtils.removeExtension(adt.getModels().get(doodad.getMmidEntry())) + ".m2";                              
+            for (MDDF doodad : adt.getDoodadPlacement()) {
+                String mdx = FilenameUtils.removeExtension(adt.getModels().get(doodad.getMmidEntry())) + ".m2";
                 int view = 1;
-                
+
                 //world\azeroth\elwynn\passivedoodads\detail\elwynnvineyard\elwynnvineyard01.m2
-                String m2ObjFile = "D:\\Downloads\\Test\\" + FilenameUtils.removeExtension(mdx) + "_"+view+".obj";
-                if (modelEditor.hasFile(mdx)) {                                  
+                String m2ObjFile = "D:\\Downloads\\Test\\" + FilenameUtils.removeExtension(mdx) + "_" + view + ".obj";
+                if (modelEditor.hasFile(mdx)) {
                     m2.init(modelEditor.extractFileAsBytes(mdx));
                     m2Converter.convert(view);
                     //m2Converter.saveToFile(m2ObjFile);                    
@@ -84,15 +84,14 @@ public class Extractor {
 
             // Exporting WMO.
             for (MODF wmo : adt.getWorldObjectsPlacement()) {
-                String wmoPath = adt.getWorldObjects().get(wmo.getMwidEntry());                
-                if(wmoEditor.hasFile(wmoPath)) {
-                    System.out.print(wmoPath+" : ");
-                        wmoReader.init(wmoEditor.extractFileAsBytes(wmoPath));
+                String wmoPath = adt.getWorldObjects().get(wmo.getMwidEntry());
+                if (wmoEditor.hasFile(wmoPath)) {
+                    wmoReader.init(wmoEditor.extractFileAsBytes(wmoPath));
                 } else {
-                    System.out.println(wmoPath+ ": NOK");
+                    System.out.println(wmoPath + ": NOK");
                 }
             }
-            
+
         } catch (IOException ex) {
             Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ADTException ex) {
