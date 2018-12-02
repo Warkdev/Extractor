@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.jangos.extractor.file.common;
+package eu.jangos.extractor.file.wmo.group;
 
 import java.nio.ByteBuffer;
 
@@ -21,50 +21,38 @@ import java.nio.ByteBuffer;
  *
  * @author Warkdev
  */
-public class CImVector {
-    private byte b;
-    private byte g;
-    private byte r;
-    private byte a;
+public class WMOMVert extends WMOLiquid {
+    private short s;    
+    private short t;    
+    private float height;
 
     public void read(ByteBuffer data) {
-        this.b = data.get();
-        this.g = data.get();
-        this.r = data.get();
-        this.a = data.get();
-    }
-    
-    public byte getB() {
-        return b;
+        this.s = data.getShort();
+        this.t = data.getShort();                
+        this.height = data.getFloat();
     }
 
-    public void setB(byte b) {
-        this.b = b;
+    public short getS() {
+        return s;
     }
 
-    public byte getG() {
-        return g;
+    public void setS(short s) {
+        this.s = s;
     }
 
-    public void setG(byte g) {
-        this.g = g;
+    public short getT() {
+        return t;
     }
 
-    public byte getR() {
-        return r;
+    public void setT(short t) {
+        this.t = t;
+    }
+        
+    public float getHeight() {
+        return height;
     }
 
-    public void setR(byte r) {
-        this.r = r;
-    }
-
-    public byte getA() {
-        return a;
-    }
-
-    public void setA(byte a) {
-        this.a = a;
-    }
-    
-    
+    public void setHeight(float height) {
+        this.height = height;
+    }        
 }

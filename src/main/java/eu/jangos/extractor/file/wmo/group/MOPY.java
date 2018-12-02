@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.jangos.extractor.file.common;
+package eu.jangos.extractor.file.wmo.group;
 
 import java.nio.ByteBuffer;
 
@@ -21,50 +21,30 @@ import java.nio.ByteBuffer;
  *
  * @author Warkdev
  */
-public class CImVector {
-    private byte b;
-    private byte g;
-    private byte r;
-    private byte a;
+public class MOPY {
+    
+    private byte flags;
+    private byte materialId;
 
     public void read(ByteBuffer data) {
-        this.b = data.get();
-        this.g = data.get();
-        this.r = data.get();
-        this.a = data.get();
+        this.flags = data.get();
+        this.materialId = data.get();
     }
     
-    public byte getB() {
-        return b;
+    public byte getFlags() {
+        return flags;
     }
 
-    public void setB(byte b) {
-        this.b = b;
+    public void setFlags(byte flags) {
+        this.flags = flags;
     }
 
-    public byte getG() {
-        return g;
+    public byte getMaterialId() {
+        return materialId;
     }
 
-    public void setG(byte g) {
-        this.g = g;
+    public void setMaterialId(byte materialId) {
+        this.materialId = materialId;
     }
-
-    public byte getR() {
-        return r;
-    }
-
-    public void setR(byte r) {
-        this.r = r;
-    }
-
-    public byte getA() {
-        return a;
-    }
-
-    public void setA(byte a) {
-        this.a = a;
-    }
-    
-    
+            
 }

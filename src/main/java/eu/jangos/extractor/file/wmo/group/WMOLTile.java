@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.jangos.extractor.file.common;
+package eu.jangos.extractor.file.wmo.group;
 
 import java.nio.ByteBuffer;
 
@@ -21,50 +21,18 @@ import java.nio.ByteBuffer;
  *
  * @author Warkdev
  */
-public class CImVector {
-    private byte b;
-    private byte g;
-    private byte r;
-    private byte a;
+public class WMOLTile {
+    private byte flags;
 
     public void read(ByteBuffer data) {
-        this.b = data.get();
-        this.g = data.get();
-        this.r = data.get();
-        this.a = data.get();
-    }
-    
-    public byte getB() {
-        return b;
+        flags = data.get();        
     }
 
-    public void setB(byte b) {
-        this.b = b;
+    public byte getFlags() {
+        return flags;
     }
 
-    public byte getG() {
-        return g;
-    }
-
-    public void setG(byte g) {
-        this.g = g;
-    }
-
-    public byte getR() {
-        return r;
-    }
-
-    public void setR(byte r) {
-        this.r = r;
-    }
-
-    public byte getA() {
-        return a;
-    }
-
-    public void setA(byte a) {
-        this.a = a;
-    }
-    
-    
+    public void setFlags(byte flags) {
+        this.flags = flags;
+    }            
 }

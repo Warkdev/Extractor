@@ -5,30 +5,22 @@
  */
 package eu.jangos.extractorfx;
 
-import com.sun.javafx.geom.Vec2f;
-import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.ADTFileReader;
 import eu.jangos.extractor.file.M2FileReader;
-import eu.jangos.extractor.file.RenderBatch;
-import eu.jangos.extractor.file.Vertex;
 import eu.jangos.extractor.file.WMOFileReader;
 import eu.jangos.extractor.file.adt.chunk.MDDF;
 import eu.jangos.extractor.file.adt.chunk.MODF;
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractor.file.exception.WMOException;
-import eu.jangos.extractor.file.m2.M2Vertex;
 import eu.jangos.extractorfx.obj.ADT2OBJConverter;
 import eu.jangos.extractorfx.obj.M22OBJConverter;
 import eu.jangos.extractorfx.obj.WMO2OBJConverter;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.List;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
@@ -53,8 +45,9 @@ public class Extractor {
         ADT2OBJConverter adtConverter = new ADT2OBJConverter(adt);
         M2FileReader m2 = new M2FileReader();
         M22OBJConverter m2Converter = new M22OBJConverter(m2);
-        WMOFileReader wmoReader = new WMOFileReader();
+        WMOFileReader wmoReader = new WMOFileReader();        
         WMO2OBJConverter wmoConverter = new WMO2OBJConverter(wmoReader);
+        NumberFormat formatter = new DecimalFormat("000");
         File mpq = new File(PATH);
         File modelFile = new File(MODEL);
         File wmoFile = new File(WMO);
@@ -86,7 +79,17 @@ public class Extractor {
             for (MODF wmo : adt.getWorldObjectsPlacement()) {
                 String wmoPath = adt.getWorldObjects().get(wmo.getMwidEntry());
                 if (wmoEditor.hasFile(wmoPath)) {
-                    wmoReader.init(wmoEditor.extractFileAsBytes(wmoPath));
+                    wmoReader.init(wmoEditor.extractFileAsBytes(wmoPath));                    
+                    for(int i = 0; i < wmoReader.getnGroups(); i++) {
+                        String wmoGroupPath = FilenameUtils.removeExtension(wmoPath) + "_" + formatter.format(i) + ".wmo";
+                        if(wmoEditor.hasFile(wmoGroupPath)) {
+                            System.out.println(wmoGroupPath);
+                            wmoReader.initGroup(wmoEditor.extractFileAsBytes(wmoGroupPath));                            
+                        } else {
+                            System.out.println(wmoGroupPath + ": NOK");
+                        }
+                        
+                    }
                 } else {
                     System.out.println(wmoPath + ": NOK");
                 }
