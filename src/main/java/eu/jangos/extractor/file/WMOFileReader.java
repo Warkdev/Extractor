@@ -561,6 +561,14 @@ public class WMOFileReader {
         this.convexVolumePlanesList = convexVolumePlanesList;
     }
 
+    public List<WMOGroupFileReader> getWmoGroupReadersList() {
+        return wmoGroupReadersList;
+    }
+
+    public void setWmoGroupReadersList(List<WMOGroupFileReader> wmoGroupReadersList) {
+        this.wmoGroupReadersList = wmoGroupReadersList;
+    }   
+    
     private List<String> readStringChunk(int offset, String expectedHeader) throws WMOException {
         List<String> stringList = new ArrayList<>();
 

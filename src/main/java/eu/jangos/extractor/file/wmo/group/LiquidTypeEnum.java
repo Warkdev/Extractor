@@ -49,7 +49,7 @@ public enum LiquidTypeEnum {
         return code;
     }        
     
-    public LiquidTypeEnum convert(int value) {
+    public static LiquidTypeEnum convert(int value) {
         for(LiquidTypeEnum type : values())
         {
             if(type.code == value)
@@ -61,7 +61,7 @@ public enum LiquidTypeEnum {
         return LIQUID_UNKNOWN;
     }
             
-    public LiquidTypeEnum getLiquidToWMO(int groupLiquid, int headerFlags, int mogpFlags) {
+    public static LiquidTypeEnum getLiquidToWMO(int groupLiquid, int mogpFlags) {
         LiquidTypeEnum basic = convert(groupLiquid & LIQUID_BASIC_MASK);
         switch(basic) {
             case LIQUID_BASIC_TYPE_WATER:

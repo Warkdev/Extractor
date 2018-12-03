@@ -92,14 +92,6 @@ public class M22OBJConverter {
             this.indiceList = reader.getSkins().get(view).getIndices();
 
             for (int i = 0; i < reader.getSkins().get(view).getSubMeshes().size(); i++) {
-                /**
-                 * if (mdx.startsWith("character")) { if
-                 * (reader.getSkins().get(view).getSubMeshes().get(i).getId() !=
-                 * 0) { if
-                 * (reader.getSkins().get(view).getSubMeshes().get(i).getId() !=
-                 * 1) { continue; } } }
-                 */
-
                 batch.setFirstFace(reader.getSkins().get(view).getSubMeshes().get(i).getIndexStart());
                 batch.setNumFaces(reader.getSkins().get(view).getSubMeshes().get(i).getIndexCount());
                 batch.setGroupID(i);
@@ -167,6 +159,8 @@ public class M22OBJConverter {
         File objFile = new File(file);
         if (objFile.exists()) {
             objFile.delete();
+        } else {
+            objFile.getParentFile().mkdirs();
         }
 
         OutputStreamWriter writer = new FileWriter(objFile);

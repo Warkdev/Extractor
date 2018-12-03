@@ -20,18 +20,26 @@ import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.RenderBatch;
 import eu.jangos.extractor.file.Vertex;
 import eu.jangos.extractor.file.WMOFileReader;
+import eu.jangos.extractor.file.WMOGroupFileReader;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractor.file.exception.WMOException;
 import eu.jangos.extractor.file.m2.M2Vertex;
+import eu.jangos.extractor.file.wmo.group.MOBA;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.FilenameUtils;
+import systems.crigges.jmpq3.JMpqEditor;
+import systems.crigges.jmpq3.JMpqException;
+import systems.crigges.jmpq3.MpqFile;
 
 /**
  *
@@ -41,9 +49,11 @@ public class WMO2OBJConverter {
 
     private WMOFileReader reader;
 
+    NumberFormat formatter = new DecimalFormat("000");
+    
     List<RenderBatch> renderBatches;
     List<Vertex> verticeList;
-    List<Short> indiceList;
+    List<Integer> indiceList;
     Map<Integer, String> materials;
 
     public WMO2OBJConverter(WMOFileReader reader) {
@@ -59,7 +69,7 @@ public class WMO2OBJConverter {
      *
      * @throws ConverterException
      */
-    public void convert() throws ConverterException {
+    public void convert(JMpqEditor mpqEditor, String wmoPath) throws ConverterException, JMpqException, WMOException {
         if (this.reader == null) {
             throw new ConverterException("M2FileReader is null");
         }
@@ -69,7 +79,44 @@ public class WMO2OBJConverter {
         this.indiceList.clear();
         this.materials.clear();
 
-        RenderBatch batch = new RenderBatch();
+        int offsetVertices = 0;
+
+        for (int i = 0; i < this.reader.getnGroups(); i++) {
+            String wmoGroupPath = FilenameUtils.removeExtension(wmoPath) + "_" + formatter.format(i) + ".wmo";
+            if (mpqEditor.hasFile(wmoGroupPath)) {
+                this.reader.initGroup(mpqEditor.extractFileAsBytes(wmoGroupPath));
+                WMOGroupFileReader groupReader = this.reader.getWmoGroupReadersList().get(i);
+                if (!groupReader.getVertexList().isEmpty()) {
+                    // Wmo group file has vertices.
+
+                    for (short index : groupReader.getIndexList()) {
+                        indiceList.add(index + offsetVertices);
+                    }
+
+                    Vertex vertex;
+                    int idx = 0;
+                    for (Vec3f v : groupReader.getVertexList()) {
+                        vertex = new Vertex();
+                        vertex.setPosition(new Vec3f(v.x * -1, v.z, v.y));
+                        vertex.setNormal(new Vec3f(groupReader.getNormalList().get(idx).x, groupReader.getNormalList().get(idx).z, groupReader.getNormalList().get(idx).y));
+                        vertex.setTextCoord(new Vec2f(groupReader.getTextureVertexList().get(idx).x, groupReader.getTextureVertexList().get(idx).x));
+                        verticeList.add(vertex);
+                        idx++;
+                        offsetVertices++;
+                    }
+
+                    for (MOBA moba : groupReader.getBatchList()) {
+                        RenderBatch batch = new RenderBatch();
+                        batch.setFirstFace(moba.getStartIndex());
+                        batch.setNumFaces(moba.getCount());
+                        batch.setMaterialID(moba.getPadding());
+                        renderBatches.add(batch);
+                    }
+                }
+            } else {
+                System.out.println(wmoGroupPath + ": NOK");
+            }
+        }
     }
 
     /**
@@ -122,6 +169,8 @@ public class WMO2OBJConverter {
         File objFile = new File(file);
         if (objFile.exists()) {
             objFile.delete();
+        } else {
+            objFile.getParentFile().mkdirs();
         }
 
         OutputStreamWriter writer = new FileWriter(objFile);
@@ -153,11 +202,11 @@ public class WMO2OBJConverter {
         this.verticeList = verticeList;
     }
 
-    public List<Short> getIndiceList() {
+    public List<Integer> getIndiceList() {
         return indiceList;
     }
 
-    public void setIndiceList(List<Short> indiceList) {
+    public void setIndiceList(List<Integer> indiceList) {
         this.indiceList = indiceList;
     }
 

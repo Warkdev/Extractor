@@ -201,9 +201,9 @@ public class WMOGroupFileReader {
             
             LiquidTypeEnum liquidType = LiquidTypeEnum.LIQUID_UNKNOWN;
             if (this.group.getGroupLiquid() < LiquidTypeEnum.LIQUID_FIRST_NONBASIC_LIQUID_TYPE) {
-                liquidType = LiquidTypeEnum.LIQUID_UNKNOWN.getLiquidToWMO(this.group.getGroupLiquid(), headerFlags, this.group.getFlags());
+                liquidType = LiquidTypeEnum.getLiquidToWMO(this.group.getGroupLiquid(), this.group.getFlags());
             } else {
-                liquidType = LiquidTypeEnum.LIQUID_UNKNOWN.convert(this.group.getGroupLiquid());
+                liquidType = LiquidTypeEnum.convert(this.group.getGroupLiquid());
             }
                    
             liquid.read(data, liquidType);            
@@ -218,6 +218,126 @@ public class WMOGroupFileReader {
         }
     }
 
+    public ByteBuffer getData() {
+        return data;
+    }
+
+    public void setData(ByteBuffer data) {
+        this.data = data;
+    }
+
+    public MOGP getGroup() {
+        return group;
+    }
+
+    public void setGroup(MOGP group) {
+        this.group = group;
+    }
+
+    public List<MOPY> getMaterialsList() {
+        return materialsList;
+    }
+
+    public void setMaterialsList(List<MOPY> materialsList) {
+        this.materialsList = materialsList;
+    }
+
+    public List<Short> getIndexList() {
+        return indexList;
+    }
+
+    public void setIndexList(List<Short> indexList) {
+        this.indexList = indexList;
+    }
+
+    public List<Vec3f> getVertexList() {
+        return vertexList;
+    }
+
+    public void setVertexList(List<Vec3f> vertexList) {
+        this.vertexList = vertexList;
+    }
+
+    public List<Vec3f> getNormalList() {
+        return normalList;
+    }
+
+    public void setNormalList(List<Vec3f> normalList) {
+        this.normalList = normalList;
+    }
+
+    public List<Vec2f> getTextureVertexList() {
+        return textureVertexList;
+    }
+
+    public void setTextureVertexList(List<Vec2f> textureVertexList) {
+        this.textureVertexList = textureVertexList;
+    }
+
+    public List<MOBA> getBatchList() {
+        return batchList;
+    }
+
+    public void setBatchList(List<MOBA> batchList) {
+        this.batchList = batchList;
+    }
+
+    public List<Short> getLightRefList() {
+        return lightRefList;
+    }
+
+    public void setLightRefList(List<Short> lightRefList) {
+        this.lightRefList = lightRefList;
+    }
+
+    public List<Short> getDoodadRefList() {
+        return doodadRefList;
+    }
+
+    public void setDoodadRefList(List<Short> doodadRefList) {
+        this.doodadRefList = doodadRefList;
+    }
+
+    public List<CAaBspNode> getBspTreeList() {
+        return bspTreeList;
+    }
+
+    public void setBspTreeList(List<CAaBspNode> bspTreeList) {
+        this.bspTreeList = bspTreeList;
+    }
+
+    public List<Short> getNodeFaceIndices() {
+        return nodeFaceIndices;
+    }
+
+    public void setNodeFaceIndices(List<Short> nodeFaceIndices) {
+        this.nodeFaceIndices = nodeFaceIndices;
+    }
+
+    public List<CImVector> getColorVertexList() {
+        return colorVertexList;
+    }
+
+    public void setColorVertexList(List<CImVector> colorVertexList) {
+        this.colorVertexList = colorVertexList;
+    }
+
+    public MLIQ getLiquid() {
+        return liquid;
+    }
+
+    public void setLiquid(MLIQ liquid) {
+        this.liquid = liquid;
+    }
+
+    public List<Short> getTriangleStripIndices() {
+        return triangleStripIndices;
+    }
+
+    public void setTriangleStripIndices(List<Short> triangleStripIndices) {
+        this.triangleStripIndices = triangleStripIndices;
+    }
+        
     private void checkHeader(String expectedHeader) throws WMOException {
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
