@@ -58,6 +58,8 @@ public class ADTFileReader {
     // Indicates whether this file has been initialized or not.
     private boolean init = false;
     
+    private String filename;
+    
     private int version;
     private int mfboEnum;
     private int headerFlags;    
@@ -76,7 +78,9 @@ public class ADTFileReader {
     public ADTFileReader() {
     }
 
-    public void init(byte[] data) throws IOException, ADTException {
+    public void init(byte[] data, String filename) throws IOException, ADTException {
+        init = false;
+        this.filename = filename;
         this.data = ByteBuffer.wrap(data);        
         this.data.order(ByteOrder.LITTLE_ENDIAN);
         
@@ -588,6 +592,13 @@ public class ADTFileReader {
     public void setVersion(int version) {
         this.version = version;
     }
-    
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
     
 }

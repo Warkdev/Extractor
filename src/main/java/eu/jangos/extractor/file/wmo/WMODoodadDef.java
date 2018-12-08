@@ -16,33 +16,35 @@
 package eu.jangos.extractor.file.wmo;
 
 import com.sun.javafx.geom.Vec3f;
-import com.sun.javafx.geom.Vec4f;
 import eu.jangos.extractor.file.common.CImVector;
+import eu.jangos.extractor.file.common.Quaternion;
 import java.nio.ByteBuffer;
 
 /**
- *
+ * This object represents a WMO doodad definition. This object hold a M2 Model as part of the WMO
+ * with its position, orientation and scale in the WMO.
  * @author Warkdev
  */
 public class WMODoodadDef {
     private int nameIndex;
     private int flag;
-    private Vec3f positon = new Vec3f();
-    private Vec4f orientation = new Vec4f();
+    private Vec3f position = new Vec3f();
+    private Quaternion orientation = new Quaternion();
     private float scale;
     private CImVector color = new CImVector();
 
     public WMODoodadDef() {
     }
 
-    public void read(ByteBuffer data) {                
-        this.nameIndex = data.get() << 16 + data.get() << 8 + data.get();
+    public void read(ByteBuffer data) {               
+        // Big endian stupid stuff...
+        byte b1 = data.get();
+        byte b2 = data.get();
+        byte b3 = data.get();
+        this.nameIndex = (b3 & 0x0F) << 16 | (b2 & 0xFF) << 8 | (b1 & 0xFF);
         this.flag = data.get();
-        this.positon.set(data.getFloat(), data.getFloat(), data.getFloat());
-        this.orientation.x = data.getFloat();
-        this.orientation.y = data.getFloat();
-        this.orientation.z = data.getFloat();
-        this.orientation.w = data.getFloat();                     
+        this.position.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.orientation.set(data.getFloat(), data.getFloat(), data.getFloat(), data.getFloat());        
         this.scale = data.getFloat();
         this.color.setB(data.get());
         this.color.setG(data.get());
@@ -66,19 +68,19 @@ public class WMODoodadDef {
         this.flag = flag;
     }
 
-    public Vec3f getPositon() {
-        return positon;
+    public Vec3f getPosition() {
+        return position;
     }
 
-    public void setPositon(Vec3f positon) {
-        this.positon = positon;
+    public void setPosition(Vec3f position) {
+        this.position = position;
     }
 
-    public Vec4f getOrientation() {
+    public Quaternion getOrientation() {
         return orientation;
     }
 
-    public void setOrientation(Vec4f orientation) {
+    public void setOrientation(Quaternion orientation) {
         this.orientation = orientation;
     }
 

@@ -85,8 +85,10 @@ public class M2FileReader {
     private M2Array<Short> cameraLookupTable;
     private M2Array<M2Ribbon> ribbonEmitters;
     private M2Array<M2Particle> particleEmitters;
-    private M2Array<Short> textureCombinerCombos;
-
+    private M2Array<Short> textureCombinerCombos;    
+    private List<M2Vertex> listVertices;    
+    private List<M2SkinProfile> listSkinProfiles;
+    
     public M2FileReader() {
         this.name = new M2Array<>();
         this.globalLoops = new M2Array<>();
@@ -125,11 +127,17 @@ public class M2FileReader {
         this.ribbonEmitters = new M2Array<>();
         this.particleEmitters = new M2Array<>();
         this.textureCombinerCombos = new M2Array<>();    
+        
+        // Caching objects.
+        this.listVertices = new ArrayList<>();
+        this.listSkinProfiles = new ArrayList<>();
     }
 
     public void init(byte[] data) throws IOException, M2Exception {
+        init = false;
         this.data = ByteBuffer.wrap(data);
         this.data.order(ByteOrder.LITTLE_ENDIAN);
+        clear();
         readHeader();     
         init = true;
     }
@@ -198,17 +206,21 @@ public class M2FileReader {
             throw new M2Exception("M2 file has not been initialized, please use init(data) function to initialize your M2 file !");
         }
         
-        List<M2Vertex> verticesList = new ArrayList<>();
+        // Prefer to use cached objects as they will be re-used many times.
+        if(this.listVertices.size() > 0) {
+            return this.listVertices;
+        }
+                
         M2Vertex vertex;
         
         this.data.position(this.vertices.getOffset());
         for(int i = 0; i < this.vertices.getSize(); i++) {
             vertex = new M2Vertex();
             vertex.read(this.data);            
-            verticesList.add(vertex);
+            this.listVertices.add(vertex);
         }
         
-        return verticesList;
+        return this.listVertices;
     }
     
     public List<M2SkinProfile> getSkins() throws M2Exception {
@@ -216,17 +228,21 @@ public class M2FileReader {
             throw new M2Exception("M2 file has not been initialized, please use init(data) function to initialize your M2 file !");
         }
         
-        List<M2SkinProfile> skinsList = new ArrayList<>();
+        // Prefer to use cached objects as they will be re-used many times.
+        if(this.listSkinProfiles.size() > 0) {
+            return this.listSkinProfiles;
+        }
+                
         M2SkinProfile skin;
         
         this.data.position(this.skinProfiles.getOffset());            
         for(int i = 0; i < this.skinProfiles.getSize(); i++) {
             skin = new M2SkinProfile();
             skin.read(this.data);
-            skinsList.add(skin);
+            this.listSkinProfiles.add(skin);
         }
         
-        return skinsList;
+        return this.listSkinProfiles;
     }
     
     public List<Short> getTextureLookup() {
@@ -240,4 +256,8 @@ public class M2FileReader {
         return listTextureLookup;
     }
 
+    private void clear() {
+        this.listVertices.clear();
+        this.listSkinProfiles.clear();
+    }
 }

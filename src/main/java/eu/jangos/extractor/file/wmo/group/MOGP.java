@@ -28,6 +28,8 @@ public class MOGP {
     private int descriptiveGroupName;
     private int flags;
     private CAaBox boundingBox = new CAaBox();
+    private short portalStart;
+    private short portalCount;
     private short transBatchCount;
     private short intBatchCount;
     private short extBatchCount;
@@ -36,8 +38,7 @@ public class MOGP {
     private int groupLiquid;
     private int wmoAreaTableRecId;
     private int flagEnum;
-    private int flag2;
-    private int unknown;
+    private int flag2;    
     
     public void read(ByteBuffer data) {
         this.groupName = data.getInt();
@@ -45,6 +46,8 @@ public class MOGP {
         this.flags = data.getInt();
         this.boundingBox.setMin(new Vec3f(data.getFloat(), data.getFloat(), data.getFloat()));
         this.boundingBox.setMax(new Vec3f(data.getFloat(), data.getFloat(), data.getFloat()));
+        this.portalStart = data.getShort();
+        this.portalCount = data.getShort();
         this.transBatchCount = data.getShort();
         this.intBatchCount = data.getShort();
         this.extBatchCount = data.getShort();
@@ -53,8 +56,7 @@ public class MOGP {
         this.groupLiquid = data.getInt();
         this.wmoAreaTableRecId = data.getInt();
         this.flagEnum = data.getInt();
-        this.flag2 = data.getInt();
-        this.unknown = data.getInt();        
+        this.flag2 = data.getInt();          
     }
     
     public int getGroupName() {
@@ -85,6 +87,22 @@ public class MOGP {
         return boundingBox;
     }
 
+    public short getPortalStart() {
+        return portalStart;
+    }
+
+    public void setPortalStart(short portalStart) {
+        this.portalStart = portalStart;
+    }
+
+    public short getPortalCount() {
+        return portalCount;
+    }
+
+    public void setPortalCount(short portalCount) {
+        this.portalCount = portalCount;
+    }
+        
     public void setBoundingBox(CAaBox boundingBox) {
         this.boundingBox = boundingBox;
     }
@@ -159,13 +177,5 @@ public class MOGP {
 
     public void setFlag2(int flag2) {
         this.flag2 = flag2;
-    }
-
-    public int getUnknown() {
-        return unknown;
-    }
-
-    public void setUnknown(int unknown) {
-        this.unknown = unknown;
-    }        
+    }    
 }

@@ -57,7 +57,7 @@ public enum LiquidTypeEnum {
                 return type;
             }
         }
-        
+                
         return LIQUID_UNKNOWN;
     }
             
@@ -72,7 +72,7 @@ public enum LiquidTypeEnum {
                 return LIQUID_WMO_MAGMA;
             case LIQUID_BASIC_TYPE_SLIME:
                 return LIQUID_WMO_SLIME;
-            default:
+            default:                
                 return LIQUID_UNKNOWN;
         }
     }

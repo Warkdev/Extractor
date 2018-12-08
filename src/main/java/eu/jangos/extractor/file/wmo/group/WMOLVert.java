@@ -31,7 +31,7 @@ public class WMOLVert {
                 this.liquid = new WMOWVert();
                 break;
             case LIQUID_WMO_MAGMA:
-            case LIQUID_WMO_SLIME:
+            case LIQUID_WMO_SLIME:            
                 this.liquid = new WMOMVert();
                 break;
         }

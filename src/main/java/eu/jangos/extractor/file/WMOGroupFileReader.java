@@ -72,6 +72,7 @@ public class WMOGroupFileReader {
     private static final int SIZE_MORI = 2;
 
     private ByteBuffer data;
+    private String filename;
 
     private MOGP group = new MOGP();
     private List<MOPY> materialsList = new ArrayList<>();
@@ -88,10 +89,11 @@ public class WMOGroupFileReader {
     private MLIQ liquid = new MLIQ();
     private List<Short> triangleStripIndices = new ArrayList<>();
 
-    public void init(byte[] array, short headerFlags) throws WMOException {
+    public void init(byte[] array, String filename) throws WMOException {
         this.data = ByteBuffer.wrap(array);
         this.data.order(ByteOrder.LITTLE_ENDIAN);
-
+        this.filename = filename;
+        
         checkHeader(HEADER_MVER);
         // Let's skip size.
         this.data.getInt();
@@ -199,10 +201,10 @@ public class WMOGroupFileReader {
             checkHeader(HEADER_MLIQ);
             chunkSize = data.getInt();
             
-            LiquidTypeEnum liquidType = LiquidTypeEnum.LIQUID_UNKNOWN;
-            if (this.group.getGroupLiquid() < LiquidTypeEnum.LIQUID_FIRST_NONBASIC_LIQUID_TYPE) {
+            LiquidTypeEnum liquidType = LiquidTypeEnum.LIQUID_UNKNOWN;            
+            if (this.group.getGroupLiquid() < LiquidTypeEnum.LIQUID_FIRST_NONBASIC_LIQUID_TYPE) {                
                 liquidType = LiquidTypeEnum.getLiquidToWMO(this.group.getGroupLiquid(), this.group.getFlags());
-            } else {
+            } else {                
                 liquidType = LiquidTypeEnum.convert(this.group.getGroupLiquid());
             }
                    
@@ -346,7 +348,7 @@ public class WMOGroupFileReader {
 
         sb = sb.append(new String(header)).reverse();
         if (!sb.toString().equals(expectedHeader)) {
-            throw new WMOException("Expected header " + expectedHeader + ", received header: " + sb.toString());
+            throw new WMOException(this.filename + " - Expected header " + expectedHeader + ", received header: " + sb.toString());
         }
     }
 

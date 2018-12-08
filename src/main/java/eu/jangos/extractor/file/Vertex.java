@@ -7,6 +7,7 @@ package eu.jangos.extractor.file;
 
 import com.sun.javafx.geom.Vec2f;
 import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -16,8 +17,8 @@ public class Vertex {
     private Vec3f position;
     private Vec3f normal;
     private Vec2f textCoord;
-    private Vec3f color;
-
+    private Vec3f color;    
+    
     public Vec3f getPosition() {
         return position;
     }
@@ -26,6 +27,10 @@ public class Vertex {
         this.position = position;
     }
 
+    public void setPosition(Point3D point) {
+        this.position = new Vec3f((float) point.getX(),(float) point.getY(), (float) point.getZ());
+    }
+    
     public Vec3f getNormal() {
         return normal;
     }

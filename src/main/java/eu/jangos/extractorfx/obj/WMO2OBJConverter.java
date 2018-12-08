@@ -15,53 +15,45 @@
  */
 package eu.jangos.extractorfx.obj;
 
-import com.sun.javafx.geom.Vec2f;
 import com.sun.javafx.geom.Vec3f;
-import eu.jangos.extractor.file.RenderBatch;
-import eu.jangos.extractor.file.Vertex;
+import eu.jangos.extractor.file.M2FileReader;
 import eu.jangos.extractor.file.WMOFileReader;
 import eu.jangos.extractor.file.WMOGroupFileReader;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractor.file.exception.WMOException;
-import eu.jangos.extractor.file.m2.M2Vertex;
-import eu.jangos.extractor.file.wmo.group.MOBA;
+import eu.jangos.extractor.file.wmo.WMODoodadDef;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.geometry.Point3D;
+import javafx.scene.shape.MeshView;
+import javafx.scene.shape.TriangleMesh;
+import javafx.scene.shape.VertexFormat;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Transform;
+import javafx.scene.transform.Translate;
 import org.apache.commons.io.FilenameUtils;
 import systems.crigges.jmpq3.JMpqEditor;
 import systems.crigges.jmpq3.JMpqException;
-import systems.crigges.jmpq3.MpqFile;
 
 /**
  *
  * @author Warkdev
  */
-public class WMO2OBJConverter {
+public class WMO2OBJConverter extends ModelConverter {
 
     private WMOFileReader reader;
 
     NumberFormat formatter = new DecimalFormat("000");
-    
-    List<RenderBatch> renderBatches;
-    List<Vertex> verticeList;
-    List<Integer> indiceList;
-    Map<Integer, String> materials;
 
     public WMO2OBJConverter(WMOFileReader reader) {
+        super();
         this.reader = reader;
-        this.renderBatches = new ArrayList<>();
-        this.verticeList = new ArrayList<>();
-        this.indiceList = new ArrayList<>();
-        this.materials = new HashMap<>();
     }
 
     /**
@@ -69,113 +61,121 @@ public class WMO2OBJConverter {
      *
      * @throws ConverterException
      */
-    public void convert(JMpqEditor mpqEditor, String wmoPath) throws ConverterException, JMpqException, WMOException {
+    public void convert(JMpqEditor wmoEditor, JMpqEditor m2Editor, Map<String, ModelConverter> cache, String wmoPath, boolean addModels) throws ConverterException, JMpqException, WMOException {
         if (this.reader == null) {
-            throw new ConverterException("M2FileReader is null");
+            throw new ConverterException("WMOFileReader is null");
         }
 
-        this.renderBatches.clear();
-        this.verticeList.clear();
-        this.indiceList.clear();
-        this.materials.clear();
+        this.mesh.getPoints().clear();
+        this.mesh.getNormals().clear();
+        this.mesh.getTexCoords().clear();
+        this.mesh.getFaces().clear();
 
         int offsetVertices = 0;
 
         for (int i = 0; i < this.reader.getnGroups(); i++) {
             String wmoGroupPath = FilenameUtils.removeExtension(wmoPath) + "_" + formatter.format(i) + ".wmo";
-            if (mpqEditor.hasFile(wmoGroupPath)) {
-                this.reader.initGroup(mpqEditor.extractFileAsBytes(wmoGroupPath));
+            if (wmoEditor.hasFile(wmoGroupPath)) {
+                this.reader.initGroup(wmoEditor.extractFileAsBytes(wmoGroupPath), wmoGroupPath);
                 WMOGroupFileReader groupReader = this.reader.getWmoGroupReadersList().get(i);
                 if (!groupReader.getVertexList().isEmpty()) {
                     // Wmo group file has vertices.
 
-                    for (short index : groupReader.getIndexList()) {
-                        indiceList.add(index + offsetVertices);
+                    for (int face = 0; face < groupReader.getIndexList().size(); face += 3) {
+                        mesh.getFaces().addAll(
+                                (groupReader.getIndexList().get(face + 2)) + offsetVertices, (groupReader.getIndexList().get(face + 2)) + offsetVertices, (groupReader.getIndexList().get(face + 2)) + offsetVertices,
+                                (groupReader.getIndexList().get(face + 1)) + offsetVertices, (groupReader.getIndexList().get(face + 1)) + offsetVertices, (groupReader.getIndexList().get(face + 1)) + offsetVertices,
+                                (groupReader.getIndexList().get(face)) + offsetVertices, (groupReader.getIndexList().get(face)) + offsetVertices, (groupReader.getIndexList().get(face)) + offsetVertices);
                     }
 
-                    Vertex vertex;
                     int idx = 0;
                     for (Vec3f v : groupReader.getVertexList()) {
-                        vertex = new Vertex();
-                        vertex.setPosition(new Vec3f(v.x * -1, v.z, v.y));
-                        vertex.setNormal(new Vec3f(groupReader.getNormalList().get(idx).x, groupReader.getNormalList().get(idx).z, groupReader.getNormalList().get(idx).y));
-                        vertex.setTextCoord(new Vec2f(groupReader.getTextureVertexList().get(idx).x, groupReader.getTextureVertexList().get(idx).x));
-                        verticeList.add(vertex);
+                        mesh.getPoints().addAll(v.x, v.y, v.z);
+                        mesh.getNormals().addAll(groupReader.getNormalList().get(idx).x, groupReader.getNormalList().get(idx).y, groupReader.getNormalList().get(idx).z);
+                        mesh.getTexCoords().addAll(groupReader.getTextureVertexList().get(idx).x, groupReader.getTextureVertexList().get(idx).y);
                         idx++;
                         offsetVertices++;
                     }
 
-                    for (MOBA moba : groupReader.getBatchList()) {
-                        RenderBatch batch = new RenderBatch();
-                        batch.setFirstFace(moba.getStartIndex());
-                        batch.setNumFaces(moba.getCount());
-                        batch.setMaterialID(moba.getPadding());
-                        renderBatches.add(batch);
-                    }
                 }
             } else {
                 System.out.println(wmoGroupPath + ": NOK");
             }
         }
-    }
 
-    /**
-     * This methid returns the OBJ file as a String representation (including
-     * carriage return).
-     *
-     * @return A String object representing the corresponding OBJ file
-     * structure.
-     */
-    public String getOBJasAString() {
-        StringBuilder sb = new StringBuilder();
+        if (addModels) {
+            M2FileReader m2Reader;
+            ModelConverter m2Converter;
+            // Now we add models.
+            for (WMODoodadDef modelInstance : reader.getDoodadDefList()) {
 
-        for (Vertex v : verticeList) {
-            sb.append("v " + v.getPosition().x + " " + v.getPosition().y + " " + v.getPosition().z + "\n");
-            sb.append("vt " + v.getTextCoord().x + " " + (-1) * v.getTextCoord().y + "\n");
-            sb.append("vn " + v.getNormal().x + " " + v.getNormal().y + " " + v.getNormal().z + "\n");
-        }
+                if (reader.getDoodadNameMap().containsKey(modelInstance.getNameIndex())) {
+                    // MDX model files are stored as M2 in the MPQ. God knows why.
+                    String modelFile = FilenameUtils.removeExtension(reader.getDoodadNameMap().get(modelInstance.getNameIndex())) + ".M2";
+                    if (!m2Editor.hasFile(modelFile)) {
+                        System.out.println("Oooops, m2Editor doesn't have the file: " + modelFile);
+                        continue;
+                    }
 
-        for (RenderBatch batch : renderBatches) {
-            int i = batch.getFirstFace();
-            if (materials.containsKey(batch.getMaterialID())) {
-                sb.append("usemtl " + materials.get(batch.getMaterialID()) + "\n");
-                sb.append("s 1" + "\n");
+                    try {
+                        // First, check if the M2 is in cache. Must be much faster than parsing it again and again.
+                        if (cache.containsKey(modelFile)) {
+                            m2Converter = cache.get(modelFile);
+                        } else {
+                            m2Reader = new M2FileReader();
+                            m2Converter = new M22OBJConverter(m2Reader);
+                            m2Reader.init(m2Editor.extractFileAsBytes(modelFile));
+                            m2Converter.convert();
+                            cache.put(modelFile, m2Converter);
+                        }
+
+                        // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
+                        // First, we create a view to apply these transformations.
+                        MeshView view = new MeshView(m2Converter.getMesh());
+
+                        // We translate the object location.
+                        Translate translate = new Translate(modelInstance.getPosition().x, modelInstance.getPosition().y, modelInstance.getPosition().z);
+
+                        // We convert the quaternion to a Rotate object with angle (in degrees) & pivot point.
+                        Rotate rotate = getAngleAndPivot(modelInstance.getOrientation());
+
+                        // We scale.
+                        Scale scale = new Scale(modelInstance.getScale(), modelInstance.getScale(), modelInstance.getScale());
+
+                        // We add all transformations to the view and we get back the transformation matrix.
+                        view.getTransforms().addAll(translate, rotate, scale);
+                        Transform concat = view.getLocalToSceneTransform();
+
+                        // We apply the transformation matrix to all points of the mesh.
+                        TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
+                        for (int i = 0; i < m2Converter.getMesh().getPoints().size(); i += 3) {
+                            Point3D point = new Point3D(m2Converter.getMesh().getPoints().get(i), m2Converter.getMesh().getPoints().get(i + 1), m2Converter.getMesh().getPoints().get(i + 2));
+                            point = concat.transform(point);
+                            temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
+                        }
+
+                        int offset = this.mesh.getPoints().size() / 3;
+
+                        // Then, we add the converted model mesh to the WMO mesh.
+                        this.mesh.getPoints().addAll(temp.getPoints());
+                        this.mesh.getNormals().addAll(m2Converter.mesh.getNormals());
+                        this.mesh.getTexCoords().addAll(m2Converter.mesh.getTexCoords());
+
+                        // And we recalculate the faces of the model mesh.
+                        for (int i = 0; i < m2Converter.mesh.getFaces().size(); i++) {
+                            this.mesh.getFaces().addAll(m2Converter.getMesh().getFaces().get(i) + offset);
+                        }
+
+                    } catch (IOException ex) {
+                        Logger.getLogger(WMO2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (M2Exception ex) {
+                        Logger.getLogger(WMO2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    System.out.println(this.reader.getFileName() + " - Oooops, offset for MDX is not found! " + modelInstance.getNameIndex());
+                }
             }
-
-            while (i < batch.getFirstFace() + batch.getNumFaces()) {
-                sb.append("f " + (indiceList.get(i) + 1) + "/" + (indiceList.get(i) + 1) + "/" + (indiceList.get(i) + 1)
-                        + " " + (indiceList.get(i + 1) + 1) + "/" + (indiceList.get(i + 1) + 1) + "/" + (indiceList.get(i + 1) + 1)
-                        + " " + (indiceList.get(i + 2) + 1) + "/" + (indiceList.get(i + 2) + 1) + "/" + (indiceList.get(i + 2) + 1) + "\n");
-                i += 3;
-            }
         }
-
-        return sb.toString();
-    }
-
-    /**
-     * This method is saving the OBJ file structure to the file given in
-     * parameters.
-     *
-     * @param file The OBJ file (including path) where the structure needs to be
-     * saved.
-     * @throws ConverterException
-     */
-    public void saveToFile(String file) throws ConverterException, IOException {
-        if (file == null || file.isEmpty()) {
-            throw new ConverterException("Provided file is null or empty.");
-        }
-
-        File objFile = new File(file);
-        if (objFile.exists()) {
-            objFile.delete();
-        } else {
-            objFile.getParentFile().mkdirs();
-        }
-
-        OutputStreamWriter writer = new FileWriter(objFile);
-        writer.write(getOBJasAString());
-        writer.close();
     }
 
     public WMOFileReader getReader() {
@@ -186,36 +186,9 @@ public class WMO2OBJConverter {
         this.reader = reader;
     }
 
-    public List<RenderBatch> getRenderBatches() {
-        return renderBatches;
-    }
-
-    public void setRenderBatches(List<RenderBatch> renderBatches) {
-        this.renderBatches = renderBatches;
-    }
-
-    public List<Vertex> getVerticeList() {
-        return verticeList;
-    }
-
-    public void setVerticeList(List<Vertex> verticeList) {
-        this.verticeList = verticeList;
-    }
-
-    public List<Integer> getIndiceList() {
-        return indiceList;
-    }
-
-    public void setIndiceList(List<Integer> indiceList) {
-        this.indiceList = indiceList;
-    }
-
-    public Map<Integer, String> getMaterials() {
-        return materials;
-    }
-
-    public void setMaterials(Map<Integer, String> materials) {
-        this.materials = materials;
+    @Override
+    public void convert() throws ConverterException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

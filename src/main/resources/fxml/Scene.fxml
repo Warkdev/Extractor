@@ -3,8 +3,8 @@
 <?import javafx.scene.Group?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane id="AnchorPane" onDragDetected="#onMouseDragged" onDragDone="#onDragDone" onMouseDragEntered="#onDragEntered" onMouseDragExited="#onDragExited" onMouseDragOver="#onDragOver" onMouseDragReleased="#onDragDropped" prefHeight="200" prefWidth="320" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="eu.jangos.extractorfx.FXMLController">
+<AnchorPane id="AnchorPane" onKeyPressed="#onKeyPressed" prefHeight="200" prefWidth="320" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.jangos.extractorfx.FXMLController">
    <children>
-      <Group fx:id="meshGroup" layoutX="102.0" layoutY="77.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+      <Group fx:id="meshGroup" layoutX="102.0" layoutY="77.0" onKeyPressed="#onKeyPressed" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
    </children>
 </AnchorPane>

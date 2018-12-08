@@ -30,6 +30,11 @@ public class M2SkinProfile {
     private M2Array<Byte> bones;
     private M2Array<M2SkinSection> subMeshes;
     private M2Array<M2Batch> batches;
+    private List<Short> listVertices;
+    private List<Short> listIndices;
+    private List<Byte> listBones;
+    private List<M2SkinSection> listSubMeshes;
+    private List<M2Batch> listBatches;
     
     private ByteBuffer skinSection;
 
@@ -39,9 +44,17 @@ public class M2SkinProfile {
         this.bones = new M2Array<>();
         this.subMeshes = new M2Array<>();
         this.batches = new M2Array<>();
+        
+        // Caching objects
+        this.listVertices = new ArrayList<>();
+        this.listIndices = new ArrayList<>();
+        this.listBones = new ArrayList<>();
+        this.listSubMeshes = new ArrayList<>();
+        this.listBatches = new ArrayList<>();
     }
 
     public void read(ByteBuffer data) {        
+        clear();
         this.skinSection = data.asReadOnlyBuffer();           
         this.skinSection.order(ByteOrder.LITTLE_ENDIAN);
         this.vertices.read(this.skinSection);                
@@ -51,19 +64,31 @@ public class M2SkinProfile {
         this.batches.read(this.skinSection);  
     }
     
+    private void clear() {
+        this.listVertices.clear();
+        this.listIndices.clear();
+        this.listBones.clear();
+        this.listSubMeshes.clear();
+        this.listBatches.clear();
+    }
+    
     public List<Short> getVertices() {        
-        List<Short> listVertices = new ArrayList<>();
+        if(this.listVertices.size() > 0) {
+            return this.listVertices;
+        }
         
         this.skinSection.position(this.vertices.getOffset());
         for(int i = 0; i < this.vertices.getSize(); i++) {
-            listVertices.add(this.skinSection.getShort());
+            this.listVertices.add(this.skinSection.getShort());
         }
                 
-        return listVertices;
+        return this.listVertices;
     }   
     
     public List<Short> getIndices() {
-        List<Short> listIndices = new ArrayList<>();
+        if(this.listIndices.size() > 0) {
+            return this.listIndices;
+        }
         
         this.skinSection.position(this.indices.getOffset());        
         for(int i = 0; i < this.indices.getSize(); i++) {
@@ -74,7 +99,9 @@ public class M2SkinProfile {
     }
     
     public List<Byte> getBones() {
-        List<Byte> listBones = new ArrayList<>();
+        if(this.listBones.size() > 0) {
+            return this.listBones;
+        }
         
         this.skinSection.position(this.bones.getOffset());
         for(int i = 0; i < this.bones.getSize(); i++) {
@@ -85,30 +112,34 @@ public class M2SkinProfile {
     }
     
     public List<M2SkinSection> getSubMeshes() {
-        List<M2SkinSection> subMesh = new ArrayList<>();
+        if(this.listSubMeshes.size() > 0) {
+            return listSubMeshes;
+        }
         
         this.skinSection.position(this.subMeshes.getOffset());
         M2SkinSection section;
         for(int i = 0; i < this.subMeshes.getSize(); i++) {
             section = new M2SkinSection();
             section.read(this.skinSection);
-            subMesh.add(section);
+            listSubMeshes.add(section);
         }
         
-        return subMesh;
+        return listSubMeshes;
     }
     
     public List<M2Batch> getTextureUnit() {
-        List<M2Batch> listBatch = new ArrayList<>();
+        if(this.listBatches.size() > 0) {
+            return listBatches;
+        }
         
         this.skinSection.position(this.batches.getOffset());
         M2Batch batch;
         for(int i = 0; i < this.batches.getSize(); i++) {
             batch = new M2Batch();
             batch.read(this.skinSection);
-            listBatch.add(batch);
+            listBatches.add(batch);
         }
         
-        return listBatch;
+        return listBatches;
     }
 }
