@@ -15,9 +15,9 @@
  */
 package eu.jangos.extractorfx.obj;
 
-import eu.jangos.extractor.file.ADTFileReader;
-import eu.jangos.extractor.file.M2FileReader;
-import eu.jangos.extractor.file.WMOFileReader;
+import eu.jangos.extractor.file.ADT;
+import eu.jangos.extractor.file.M2;
+import eu.jangos.extractor.file.WMO;
 import eu.jangos.extractor.file.adt.chunk.MCNK;
 import eu.jangos.extractor.file.adt.chunk.MDDF;
 import eu.jangos.extractor.file.adt.chunk.MODF;
@@ -56,14 +56,14 @@ import systems.crigges.jmpq3.JMpqException;
 public class ADT2OBJConverter extends ModelConverter {
 
     // The reader will hold ADT information.
-    private ADTFileReader reader;
+    private ADT reader;
 
     /**
      * Creates an ADT2OBJConverter file.
      *
      * @param reader The ADTFileReader from which you're expecting conversion.
      */
-    public ADT2OBJConverter(ADTFileReader reader) {
+    public ADT2OBJConverter(ADT reader) {
         super();
         this.reader = reader;
     }
@@ -99,16 +99,16 @@ public class ADT2OBJConverter extends ModelConverter {
                     this.mesh.getNormals().addAll(chunk.getNormals().getPoints()[idx].getX() / 127.0f, chunk.getNormals().getPoints()[idx].getY() / 127.0f, chunk.getNormals().getPoints()[idx].getZ() / 127.0f);
                     float x, y, z;
                     // Calculating Positions.                    
-                    x = chunk.getPosX() - (i * ADTFileReader.UNIT_SIZE * 0.5f);
-                    y = chunk.getPosY() - (j * ADTFileReader.UNIT_SIZE);
+                    x = chunk.getPosX() - (i * ADT.UNIT_SIZE * 0.5f);
+                    y = chunk.getPosY() - (j * ADT.UNIT_SIZE);
                     z = chunk.getVertices().getPoints()[idx++] + chunk.getPosZ();
                     if ((i % 2) != 0) {
-                        y -= 0.5f * ADTFileReader.UNIT_SIZE;
+                        y -= 0.5f * ADT.UNIT_SIZE;
                     }
                     this.mesh.getPoints().addAll(x, y, z);
                     // Calculating TexCoord in high resolution.
-                    x = ((chunk.getPosX() - initialChunkX) * (-1)) / ADTFileReader.CHUNK_SIZE;
-                    y = (chunk.getPosY() - initialChunkY) * (-1) / ADTFileReader.CHUNK_SIZE;
+                    x = ((chunk.getPosX() - initialChunkX) * (-1)) / ADT.CHUNK_SIZE;
+                    y = (chunk.getPosY() - initialChunkY) * (-1) / ADT.CHUNK_SIZE;
                     this.mesh.getTexCoords().addAll(x, y);
                 }
             }
@@ -156,7 +156,7 @@ public class ADT2OBJConverter extends ModelConverter {
         }
 
         if (addModels) {
-            M2FileReader m2Reader;
+            M2 m2Reader;
             ModelConverter m2Converter;
             // Now we add models.        
             int idx = 0;
@@ -166,24 +166,17 @@ public class ADT2OBJConverter extends ModelConverter {
                 if (!m2Editor.hasFile(modelFile)) {
                     System.out.println("Oooops, m2Editor doesn't have the file: " + modelFile);
                     continue;
-                }
-
-                if (!modelFile.contains("waterfall")) {
-                    //continue;
-                } else if (idx < 1) {
-                    idx++;
-                    //continue;
-                }
-
+                }               
+                
                 try {
                     // First, check if the M2 is in cache. Must be much faster than parsing it again and again.
                     if (cache.containsKey(modelFile)) {
                         m2Converter = cache.get(modelFile);
                     } else {
-                        m2Reader = new M2FileReader();
+                        m2Reader = new M2();
                         m2Converter = new M22OBJConverter(m2Reader);
                         m2Reader.init(m2Editor.extractFileAsBytes(modelFile));
-                        m2Converter.convert();
+                        ((M22OBJConverter) m2Converter).convert(1, 15);
                         cache.put(modelFile, m2Converter);
                     }
 
@@ -192,14 +185,12 @@ public class ADT2OBJConverter extends ModelConverter {
                     MeshView view = new MeshView(m2Converter.getMesh());
 
                     // We translate the object location.                
-                    Translate translate = new Translate(17066 - modelPlacement.getZ(), 17066 - modelPlacement.getX(), modelPlacement.getY());
-                    //Translate translate = new Translate(0, 0, 0);
+                    Translate translate = new Translate(17066 - modelPlacement.getZ(), 17066 - modelPlacement.getX(), modelPlacement.getY());                    
 
                     // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                
                     Rotate rx = new Rotate(modelPlacement.getOrY(), Rotate.Z_AXIS);
                     Rotate ry = new Rotate(modelPlacement.getOrZ(), Rotate.X_AXIS);
-                    Rotate rz = new Rotate(modelPlacement.getOrX() - 180, Rotate.Z_AXIS);
-                    //Rotate rotate = getAngleAndPivot(modelPlacement.getOrY(), modelPlacement.getOrX()+180, modelPlacement.getOrZ()+180);
+                    Rotate rz = new Rotate(modelPlacement.getOrX() - 180, Rotate.Z_AXIS);                    
 
                     // We scale.
                     double scaleFactor = modelPlacement.getScale() / 1024d;
@@ -210,19 +201,13 @@ public class ADT2OBJConverter extends ModelConverter {
                     Transform concat = view.getLocalToSceneTransform();
 
                     // We apply the transformation matrix to all points of the mesh.
-                    TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
-                    //System.out.println("-- TERRAIN --");
-                    //printBounds(mesh);                
+                    TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);               
                     for (int i = 0; i < m2Converter.getMesh().getPoints().size(); i += 3) {
                         Point3D point = new Point3D(m2Converter.getMesh().getPoints().get(i), m2Converter.getMesh().getPoints().get(i + 1), m2Converter.getMesh().getPoints().get(i + 2));
                         point = concat.transform(point);
                         temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
                     }
 
-                    //System.out.println("-- ORIGIN --");
-                    //printBounds(m2Converter.getMesh());
-                    //System.out.println("-- TRANSFORMED --");
-                    //printBounds(temp);
                     int offset = this.mesh.getPoints().size() / 3;
 
                     // Then, we add the converted model mesh to the WMO mesh.
@@ -245,7 +230,7 @@ public class ADT2OBJConverter extends ModelConverter {
             }
         }
         if (addWMO) {
-            WMOFileReader wmoReader;
+            WMO wmoReader;
             ModelConverter wmoConverter;
             // Now we add wmo.        
 
@@ -257,43 +242,35 @@ public class ADT2OBJConverter extends ModelConverter {
                 }
 
                 try {
-                    wmoReader = new WMOFileReader();
+                    wmoReader = new WMO();
                     wmoConverter = new WMO2OBJConverter(wmoReader);
                     wmoReader.init(wmoEditor.extractFileAsBytes(wmoFile), wmoFile);
                     ((WMO2OBJConverter) (wmoConverter)).convert(wmoEditor, m2Editor, cache, wmoFile, addModelsInWMO);
 
-                    // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
+                    // Now, we have the vertices of this WMO, we need to rotate & position.                                                                                
                     // First, we create a view to apply these transformations.
                     MeshView view = new MeshView(wmoConverter.getMesh());
 
                     // We translate the object location.                
-                    Translate translate = new Translate(17066 - modelPlacement.getZ(), 17066 - modelPlacement.getX(), modelPlacement.getY());
-                    //Translate translate = new Translate(0, 0, 0);
+                    Translate translate = new Translate(17066 - modelPlacement.getZ(), 17066 - modelPlacement.getX(), modelPlacement.getY());                    
 
-                    // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                
+                    // We convert the euler angles to a Rotate object with euler angle and rotation ZXZ.                
                     Rotate rx = new Rotate(modelPlacement.getOrY(), Rotate.Z_AXIS);
                     Rotate ry = new Rotate(modelPlacement.getOrZ(), Rotate.X_AXIS);
-                    Rotate rz = new Rotate(modelPlacement.getOrX() - 180, Rotate.Z_AXIS);
-                    //Rotate rotate = getAngleAndPivot(modelPlacement.getOrY(), modelPlacement.getOrX()+180, modelPlacement.getOrZ()+180);
+                    Rotate rz = new Rotate(modelPlacement.getOrX() - 180, Rotate.Z_AXIS);                    
 
                     // We add all transformations to the view and we get back the transformation matrix.
                     view.getTransforms().addAll(translate, rx, ry, rz);
                     Transform concat = view.getLocalToSceneTransform();
 
                     // We apply the transformation matrix to all points of the mesh.
-                    TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
-                    //System.out.println("-- TERRAIN --");
-                    //printBounds(mesh);                
+                    TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);                    
                     for (int i = 0; i < wmoConverter.getMesh().getPoints().size(); i += 3) {
                         Point3D point = new Point3D(wmoConverter.getMesh().getPoints().get(i), wmoConverter.getMesh().getPoints().get(i + 1), wmoConverter.getMesh().getPoints().get(i + 2));
                         point = concat.transform(point);
                         temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
                     }
-
-                    //System.out.println("-- ORIGIN --");
-                    //printBounds(m2Converter.getMesh());
-                    //System.out.println("-- TRANSFORMED --");
-                    //printBounds(temp);
+                    
                     int offset = this.mesh.getPoints().size() / 3;
 
                     // Then, we add the converted model mesh to the WMO mesh.
@@ -306,11 +283,7 @@ public class ADT2OBJConverter extends ModelConverter {
                         this.mesh.getFaces().addAll(wmoConverter.getMesh().getFaces().get(i) + offset);
                     }
 
-                } catch (JMpqException ex) {
-                    Logger.getLogger(ADT2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (IOException ex) {
-                    Logger.getLogger(ADT2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (WMOException ex) {
+                } catch (JMpqException | WMOException ex) {
                     Logger.getLogger(ADT2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
@@ -329,10 +302,11 @@ public class ADT2OBJConverter extends ModelConverter {
                 point = concat.transform(point);
                 this.mesh.getPoints().set(i, (float) point.getX());
                 this.mesh.getPoints().set(i + 1, (float) point.getY());
-                this.mesh.getPoints().set(i + 2, (float) point.getZ());
+                this.mesh.getPoints().set(i + 2, (float) point.getZ());                
             }
         }
 
+        
     }
 
     private void printBounds(TriangleMesh mesh) {
@@ -351,11 +325,11 @@ public class ADT2OBJConverter extends ModelConverter {
         }
     }
 
-    public ADTFileReader getReader() {
+    public ADT getReader() {
         return reader;
     }
 
-    public void setReader(ADTFileReader reader) {
+    public void setReader(ADT reader) {
         this.reader = reader;
         clear();
     }
@@ -367,8 +341,4 @@ public class ADT2OBJConverter extends ModelConverter {
         this.mesh.getFaces().clear();
     }
 
-    @Override
-    public void convert() throws ConverterException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 }

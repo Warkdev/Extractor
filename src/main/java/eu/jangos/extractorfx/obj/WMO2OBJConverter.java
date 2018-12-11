@@ -16,9 +16,9 @@
 package eu.jangos.extractorfx.obj;
 
 import com.sun.javafx.geom.Vec3f;
-import eu.jangos.extractor.file.M2FileReader;
-import eu.jangos.extractor.file.WMOFileReader;
-import eu.jangos.extractor.file.WMOGroupFileReader;
+import eu.jangos.extractor.file.M2;
+import eu.jangos.extractor.file.WMO;
+import eu.jangos.extractor.file.WMOGroup;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractor.file.exception.WMOException;
 import eu.jangos.extractor.file.wmo.WMODoodadDef;
@@ -47,11 +47,11 @@ import systems.crigges.jmpq3.JMpqException;
  */
 public class WMO2OBJConverter extends ModelConverter {
 
-    private WMOFileReader reader;
+    private WMO reader;
 
     NumberFormat formatter = new DecimalFormat("000");
 
-    public WMO2OBJConverter(WMOFileReader reader) {
+    public WMO2OBJConverter(WMO reader) {
         super();
         this.reader = reader;
     }
@@ -77,7 +77,7 @@ public class WMO2OBJConverter extends ModelConverter {
             String wmoGroupPath = FilenameUtils.removeExtension(wmoPath) + "_" + formatter.format(i) + ".wmo";
             if (wmoEditor.hasFile(wmoGroupPath)) {
                 this.reader.initGroup(wmoEditor.extractFileAsBytes(wmoGroupPath), wmoGroupPath);
-                WMOGroupFileReader groupReader = this.reader.getWmoGroupReadersList().get(i);
+                WMOGroup groupReader = this.reader.getWmoGroupReadersList().get(i);
                 if (!groupReader.getVertexList().isEmpty()) {
                     // Wmo group file has vertices.
 
@@ -104,7 +104,7 @@ public class WMO2OBJConverter extends ModelConverter {
         }
 
         if (addModels) {
-            M2FileReader m2Reader;
+            M2 m2Reader;
             ModelConverter m2Converter;
             // Now we add models.
             for (WMODoodadDef modelInstance : reader.getDoodadDefList()) {
@@ -122,10 +122,10 @@ public class WMO2OBJConverter extends ModelConverter {
                         if (cache.containsKey(modelFile)) {
                             m2Converter = cache.get(modelFile);
                         } else {
-                            m2Reader = new M2FileReader();
+                            m2Reader = new M2();
                             m2Converter = new M22OBJConverter(m2Reader);
                             m2Reader.init(m2Editor.extractFileAsBytes(modelFile));
-                            m2Converter.convert();
+                            ((M22OBJConverter) m2Converter).convert(1, 100);
                             cache.put(modelFile, m2Converter);
                         }
 
@@ -137,7 +137,7 @@ public class WMO2OBJConverter extends ModelConverter {
                         Translate translate = new Translate(modelInstance.getPosition().x, modelInstance.getPosition().y, modelInstance.getPosition().z);
 
                         // We convert the quaternion to a Rotate object with angle (in degrees) & pivot point.
-                        Rotate rotate = getAngleAndPivot(modelInstance.getOrientation());
+                        Rotate rotate = getAngleAndAxis(modelInstance.getOrientation());
 
                         // We scale.
                         Scale scale = new Scale(modelInstance.getScale(), modelInstance.getScale(), modelInstance.getScale());
@@ -178,17 +178,12 @@ public class WMO2OBJConverter extends ModelConverter {
         }
     }
 
-    public WMOFileReader getReader() {
+    public WMO getReader() {
         return reader;
     }
 
-    public void setReader(WMOFileReader reader) {
+    public void setReader(WMO reader) {
         this.reader = reader;
-    }
-
-    @Override
-    public void convert() throws ConverterException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

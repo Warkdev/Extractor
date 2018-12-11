@@ -5,6 +5,7 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
+import eu.mangos.shared.flags.FlagUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +14,11 @@ import java.util.List;
  * @author Warkdev
  */
 public class MCNK {
+    public static final int FLAG_RIVER = 0x04;
+    public static final int FLAG_OCEAN = 0x08;
+    public static final int FLAG_MAGMA = 0x10;
+    public static final int FLAG_SLIME = 0x20;
+    
     private int flags;
     private int indexX;
     private int indexY;
@@ -43,9 +49,10 @@ public class MCNK {
     private int offsetMCLV;
     private MCVT vertices = new MCVT();
     private MCNR normals = new MCNR();     
+    private MCLQ liquids = null;
     private MCLY[] textureLayers = new MCLY[4];
-    private List<Integer> mcrfList = new ArrayList<>();
-
+    private List<Integer> mcrfList = new ArrayList<>();    
+    
     public MCNK() {
         for(int i = 0; i < this.textureLayers.length; i++) {
             textureLayers[i] = new MCLY();
@@ -307,4 +314,32 @@ public class MCNK {
     public void setMcrfList(List<Integer> mcrfList) {
         this.mcrfList = mcrfList;
     }            
+
+    public MCLQ getLiquids() {
+        return liquids;
+    }
+
+    public void setLiquids(MCLQ liquids) {
+        this.liquids = liquids;
+    }
+    
+    public boolean hasLiquid() {
+        return this.liquids != null;
+    }
+    
+    public boolean isRiver() {
+        return hasLiquid() && FlagUtils.hasFlag(flags, FLAG_RIVER);
+    }
+    
+    public boolean isOcean() {
+        return hasLiquid() && FlagUtils.hasFlag(flags, FLAG_OCEAN);
+    }
+    
+    public boolean isMagma() {
+        return hasLiquid() && FlagUtils.hasFlag(flags, FLAG_MAGMA);
+    }
+    
+    public boolean isSlime() {
+        return hasLiquid() && FlagUtils.hasFlag(flags, FLAG_SLIME);
+    }
 }

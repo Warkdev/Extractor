@@ -5,23 +5,32 @@
  */
 package eu.jangos.extractor.file;
 
+import java.awt.Color;
 import eu.jangos.extractor.file.adt.chunk.MCIN;
+import eu.jangos.extractor.file.adt.chunk.MCLQ;
+import static eu.jangos.extractor.file.adt.chunk.MCLQ.LIQUID_FLAG_LENGTH;
 import eu.jangos.extractor.file.adt.chunk.MCNK;
 import eu.jangos.extractor.file.adt.chunk.MDDF;
 import eu.jangos.extractor.file.adt.chunk.MODF;
 import eu.jangos.extractor.file.adt.chunk.Vector;
 import eu.jangos.extractor.file.exception.ADTException;
+import eu.jangos.extractor.file.exception.WMOException;
+import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import javax.imageio.ImageIO;
+import sun.awt.image.PixelConverter;
 
 /**
  *
  * @author Warkdev
  */
-public class ADTFileReader {
+public class ADT {
 
     private static final String HEADER_VERSION = "MVER";
     private static final String HEADER_MHDR = "MHDR";
@@ -42,53 +51,52 @@ public class ADTFileReader {
     private static final String HEADER_MCAL = "MCAL";
     private static final String HEADER_MCLQ = "MCLQ";
     private static final String HEADER_MCSE = "MCSE";
-    private static final String HEADER_MFBO = "MFBO";
-    private static final String HEADER_MH2O = "MH2O";
-    private static final String HEADER_MTFX = "MTFX";
-    
+
     // Size as from which the offset calculation is made.
     private static final int GLOBAL_OFFSET = 0x14;
-    
+
     public static final float TILE_SIZE = 533.33333f;
     public static final float CHUNK_SIZE = TILE_SIZE / 16.0f;
     public static final float UNIT_SIZE = CHUNK_SIZE / 8.0f;
     public static final float ZERO_POINT = 32.0f * TILE_SIZE;
 
+    private static final int SIZE_LIQUID_MAP = 128;
+    
     private ByteBuffer data;
     // Indicates whether this file has been initialized or not.
     private boolean init = false;
-    
-    private String filename;
-    
+
+    private String fileName;
+
     private int version;
     private int mfboEnum;
-    private int headerFlags;    
-    private int offsetMCIN;    
-    private int offsetMTEX;    
-    private int offsetMMDX;    
-    private int offsetMMID;    
-    private int offsetMWMO;    
-    private int offsetMWID;    
-    private int offsetMDDF;    
-    private int offsetMODF;        
+    private int headerFlags;
+    private int offsetMCIN;
+    private int offsetMTEX;
+    private int offsetMMDX;
+    private int offsetMMID;
+    private int offsetMWMO;
+    private int offsetMWID;
+    private int offsetMDDF;
+    private int offsetMODF;
     private int offsetMFBO;
     private int offsetMH2O;
     private int offsetMTFX;
 
-    public ADTFileReader() {
+    public ADT() {
     }
 
     public void init(byte[] data, String filename) throws IOException, ADTException {
         init = false;
-        this.filename = filename;
-        this.data = ByteBuffer.wrap(data);        
+        this.fileName = filename;
+        this.data = ByteBuffer.wrap(data);
         this.data.order(ByteOrder.LITTLE_ENDIAN);
-        
+
         // This is all what we need to read our file. Initialize the offset and check the version.
         readVersion(this.data);
-        readHeader(this.data);   
+        readHeader(this.data);
         init = true;
-    }    
+    }
 
     /**
      * Reading the ADT version. The ADT version is expected to be located at the
@@ -104,7 +112,7 @@ public class ADTFileReader {
     private void readVersion(ByteBuffer in) throws ADTException {
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
-        
+
         in.get(header);
 
         sb = sb.append(new String(header)).reverse();
@@ -128,8 +136,8 @@ public class ADTFileReader {
      */
     private void readHeader(ByteBuffer in) throws ADTException {
         StringBuilder sb = new StringBuilder();
-        byte[] header = new byte[4];               
-        
+        byte[] header = new byte[4];
+
         in.get(header);
 
         sb = sb.append(new String(header)).reverse();
@@ -138,7 +146,7 @@ public class ADTFileReader {
         }
 
         this.mfboEnum = in.getInt();
-        this.headerFlags = in.getInt();        
+        this.headerFlags = in.getInt();
         this.offsetMCIN = in.getInt();
         this.offsetMTEX = in.getInt();
         this.offsetMMDX = in.getInt();
@@ -149,19 +157,19 @@ public class ADTFileReader {
         this.offsetMODF = in.getInt();
         this.offsetMFBO = in.getInt();
         this.offsetMH2O = in.getInt();
-        this.offsetMTFX = in.getInt();        
+        this.offsetMTFX = in.getInt();
     }
 
     private MCIN[] readMCIN() throws ADTException {
-        if(!init) {
+        if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
-        
+
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
-        
-        this.data.position(GLOBAL_OFFSET + this.offsetMCIN);                
-        
+
+        this.data.position(GLOBAL_OFFSET + this.offsetMCIN);
+
         this.data.get(header);
 
         sb = sb.append(new String(header)).reverse();
@@ -169,9 +177,9 @@ public class ADTFileReader {
             throw new ADTException("Expected header " + HEADER_MCIN + ", received header: " + sb.toString());
         }
 
-        int size = this.data.getInt();        
+        int size = this.data.getInt();
         MCIN index;
-        MCIN[] chunkIndex = new MCIN[size/MCIN.getOBJECT_SIZE()];
+        MCIN[] chunkIndex = new MCIN[size / MCIN.getOBJECT_SIZE()];
         for (int i = 0; i < chunkIndex.length; i++) {
             index = new MCIN();
             index.setOffsetMCNK(this.data.getInt());
@@ -185,56 +193,56 @@ public class ADTFileReader {
     }
 
     public List<String> getTextures() throws ADTException {
-        if(!init) {
+        if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
-        
-        return readStringChunk(this.offsetMTEX, HEADER_MTEX);        
+
+        return readStringChunk(this.offsetMTEX, HEADER_MTEX);
     }
 
     public List<String> getModels() throws ADTException {
-        if(!init) {
+        if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
-        
+
         return readStringChunk(this.offsetMMDX, HEADER_MMDX);
     }
 
     private List<Integer> getModelOffsets() throws ADTException {
-        if(!init) {
+        if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
-        
+
         return readIntegerChunk(this.offsetMMID, HEADER_MMID);
     }
 
     public List<String> getWorldObjects() throws ADTException {
-        if(!init) {
+        if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
-        
-        return readStringChunk(this.offsetMWMO, HEADER_MWMO);        
+
+        return readStringChunk(this.offsetMWMO, HEADER_MWMO);
     }
 
     private List<Integer> getWorldObjectsOffsets() throws ADTException {
-        if(!init) {
+        if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
-        
+
         return readIntegerChunk(this.offsetMWID, HEADER_MWID);
     }
 
     public List<MDDF> getDoodadPlacement() throws ADTException {
-        if(!init) {
+        if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
-        
+
         List<MDDF> listPlacement = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
 
         this.data.position(this.offsetMDDF + GLOBAL_OFFSET);
-        
+
         this.data.get(header);
 
         sb = sb.append(new String(header)).reverse();
@@ -261,21 +269,21 @@ public class ADTFileReader {
 
             listPlacement.add(placement);
         }
-        
+
         return listPlacement;
     }
 
     public List<MODF> getWorldObjectsPlacement() throws ADTException {
-        if(!init) {
+        if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
-        
+
         List<MODF> listPlacement = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
 
         this.data.position(this.offsetMODF + GLOBAL_OFFSET);
-        
+
         this.data.get(header);
 
         sb = sb.append(new String(header)).reverse();
@@ -310,26 +318,26 @@ public class ADTFileReader {
 
             listPlacement.add(placement);
         }
-        
+
         return listPlacement;
     }
 
     public List<MCNK> getMapChunks() throws ADTException {
-        if(!init) {
+        if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
-        
+
         List<MCNK> listMapChunks = new ArrayList<>();
-        
+
         StringBuilder sb;
         byte[] header = new byte[4];
         MCIN[] chunks = readMCIN();
-                        
+
         int size;
-        int start;        
-        
+        int start;
+
         MCNK chunk;
-        for (int i = 0; i < chunks.length; i++) {            
+        for (int i = 0; i < chunks.length; i++) {
             this.data.position(chunks[i].getOffsetMCNK());
             sb = new StringBuilder();
             this.data.get(header);
@@ -369,9 +377,9 @@ public class ADTFileReader {
             chunk.setOffsetMCSE(this.data.getInt());
             chunk.setnSndEmitters(this.data.getInt());
             chunk.setOffsetMCLQ(this.data.getInt());
-            chunk.setSizeLiquid(this.data.getInt());            
+            chunk.setSizeLiquid(this.data.getInt());
             chunk.setPosX(this.data.getFloat());
-            chunk.setPosY(this.data.getFloat());            
+            chunk.setPosY(this.data.getFloat());
             chunk.setPosZ(this.data.getFloat());
             chunk.setOffsetMCCV(this.data.getInt());
             chunk.setOffsetMCLV(this.data.getInt());
@@ -498,9 +506,16 @@ public class ADTFileReader {
                 throw new ADTException("Expected header " + HEADER_MCLQ + ", received header: " + sb.toString());
             }
 
-            size = chunk.getSizeLiquid() - 4;
-            for (int j = 0; j < size; j++) {
-                this.data.get();
+            size = chunk.getSizeLiquid() - 8;
+            // Then we skip the "size field".
+            data.getInt();
+            // Documentation is spread over several codebase, none really figuring out what it is properly.
+            // Thanks for Mangos/CMangos codebase on which this is based.            
+            if (size > 0) {
+                //System.out.println("Chunk "+i+" has liquid!");
+                MCLQ liquid = new MCLQ();
+                liquid.read(data);
+                chunk.setLiquids(liquid);
             }
 
             // Must now parse MCSE.
@@ -513,24 +528,24 @@ public class ADTFileReader {
             if (!sb.toString().equals(HEADER_MCSE)) {
                 throw new ADTException("Expected header " + HEADER_MCSE + ", received header: " + sb.toString());
             }
-            
+
             // Flag value not well documented.
             this.data.getInt();
-            
+
             listMapChunks.add(chunk);
         }
-        
+
         return listMapChunks;
     }
 
     private List<String> readStringChunk(int offset, String expectedHeader) throws ADTException {
         List<String> stringList = new ArrayList<>();
-                        
+
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
 
         this.data.position(offset + GLOBAL_OFFSET);
-        
+
         this.data.get(header);
 
         sb = sb.append(new String(header)).reverse();
@@ -543,18 +558,18 @@ public class ADTFileReader {
         while (this.data.position() - start < size) {
             stringList.add(readString(this.data));
         }
-        
+
         return stringList;
     }
 
     private List<Integer> readIntegerChunk(int offset, String expectedHeader) throws ADTException {
         List<Integer> intList = new ArrayList<>();
-        
+
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
 
         this.data.position(offset + GLOBAL_OFFSET);
-        
+
         this.data.get(header);
 
         sb = sb.append(new String(header)).reverse();
@@ -567,10 +582,10 @@ public class ADTFileReader {
         while (this.data.position() - start < size) {
             intList.add(this.data.getInt());
         }
-        
+
         return intList;
     }
-    
+
     private String readString(ByteBuffer in) {
         StringBuilder sb = new StringBuilder();
 
@@ -585,6 +600,168 @@ public class ADTFileReader {
         return sb.toString();
     }
 
+    private void checkHeader(String expectedHeader) throws ADTException {
+        StringBuilder sb = new StringBuilder();
+        byte[] header = new byte[4];
+
+        data.get(header);
+
+        sb = sb.append(new String(header)).reverse();
+        if (!sb.toString().equals(expectedHeader)) {
+            throw new ADTException(this.fileName + " - Expected header " + expectedHeader + ", received header: " + sb.toString());
+        }
+    }
+
+    private String[][] getLiquidMap(boolean displayLiquidType) throws ADTException {
+        List<MCNK> mapChunks = getMapChunks();
+
+        String[][] liquids = new String[SIZE_LIQUID_MAP][SIZE_LIQUID_MAP];
+        int idx = 0;
+        int idy = 0;
+        for (MCNK chunk : mapChunks) {
+            MCLQ liquid = chunk.getLiquids();
+            if (liquid == null) {
+                for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
+                    for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
+                        liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = "N ";
+                    }
+                }
+            } else {
+                for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
+                    for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
+                        if (liquid.hasNoLiquid(i, j)) {
+                            liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = "N ";
+                        } else if (liquid.hasLiquid(i, j)) {
+                            if (liquid.isDark(i, j)) {
+                                if (displayLiquidType) {
+                                    String letter = "D";
+                                    if (chunk.isRiver()) {
+                                        letter += "R ";
+                                    } else if (chunk.isOcean()) {
+                                        letter += "O ";
+                                    } else if (chunk.isMagma()) {
+                                        letter += "M ";
+                                    } else if (chunk.isSlime()) {
+                                        letter += "S ";
+                                    }
+                                    liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = letter;
+                                } else {
+                                    liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = "D ";
+                                }
+                            } else {
+                                if (displayLiquidType) {
+                                    String letter = "L";
+                                    if (chunk.isRiver()) {
+                                        letter += "R ";
+                                    } else if (chunk.isOcean()) {
+                                        letter += "O ";
+                                    } else if (chunk.isMagma()) {
+                                        letter += "M ";
+                                    } else if (chunk.isSlime()) {
+                                        letter += "S ";
+                                    }
+                                    liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = letter;
+                                } else {
+                                    liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = "L ";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            idx++;
+            if (idx % 16 == 0) {
+                idx = 0;
+                idy++;
+            }
+        }
+
+        return liquids;
+    }
+
+    public void saveLiquidMap(String bmpPath, boolean displayLiquidType) throws ADTException, IOException {
+        BufferedImage img = new BufferedImage(SIZE_LIQUID_MAP, SIZE_LIQUID_MAP, BufferedImage.TYPE_INT_RGB);
+        int alpha = 100;
+        int idx = 0;
+        int idy = 0;
+        List<MCNK> mapChunks = getMapChunks();
+        for (MCNK chunk : mapChunks) {
+            MCLQ liquid = chunk.getLiquids();
+            if (liquid == null) {
+                for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
+                    for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
+                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, Color.BLACK.getRGB());
+                    }
+                }
+            } else {
+                for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
+                    for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
+                        if (liquid.hasNoLiquid(i, j)) {
+                            img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, Color.BLACK.getRGB());
+                        } else if (liquid.hasLiquid(i, j)) {
+                            if (liquid.isDark(i, j)) {
+                                if (displayLiquidType) {                                    
+                                    if (chunk.isRiver()) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(0, 112, 192, alpha).getRGB());
+                                    } else if (chunk.isOcean()) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(0, 32, 96, alpha).getRGB());                                        
+                                    } else if (chunk.isMagma()) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(255, 192, 0, alpha).getRGB());
+                                    } else if (chunk.isSlime()) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(55, 86, 35, alpha).getRGB());
+                                    }                                    
+                                } else {
+                                    img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(0, 112, 192, alpha).getRGB());
+                                }
+                            } else {
+                                if (displayLiquidType) {                                    
+                                    if (chunk.isRiver()) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(0, 176, 240, alpha).getRGB());
+                                    } else if (chunk.isOcean()) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(112, 48, 160, alpha).getRGB());
+                                    } else if (chunk.isMagma()) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(244, 176, 132, alpha).getRGB());
+                                    } else if (chunk.isSlime()) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(169, 208, 142, alpha).getRGB());
+                                    }                                    
+                                } else {
+                                    img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(0, 176, 240, alpha).getRGB());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            idx++;
+            if (idx % 16 == 0) {
+                idx = 0;
+                idy++;
+            }
+        }
+        
+        File imgFile = new File(bmpPath);
+        if (imgFile.exists()) {
+            imgFile.delete();
+        } else {
+            imgFile.getParentFile().mkdirs();
+        }
+                
+        ImageIO.write(img, "PNG", imgFile);
+    }
+    
+    public void printLiquidMap(boolean displayLiquidType) throws ADTException {
+        String[][] liquids = getLiquidMap(displayLiquidType);
+
+        for (int i = 0; i < liquids.length; i++) {
+            for (int j = 0; j < liquids[i].length; j++) {
+                System.out.print(liquids[j][i]);
+            }
+            System.out.println();
+        }
+    }
+
     public int getVersion() {
         return version;
     }
@@ -594,11 +771,11 @@ public class ADTFileReader {
     }
 
     public String getFilename() {
-        return filename;
+        return fileName;
     }
 
     public void setFilename(String filename) {
-        this.filename = filename;
+        this.fileName = filename;
     }
-    
+
 }

@@ -35,7 +35,7 @@ import java.util.List;
  *
  * @author Warkdev
  */
-public class M2FileReader {
+public class M2 {
 
     private static final String HEADER_MD20 = "MD20";
     private static final int SUPPORTED_VERSION = 256;
@@ -89,7 +89,7 @@ public class M2FileReader {
     private List<M2Vertex> listVertices;    
     private List<M2SkinProfile> listSkinProfiles;
     
-    public M2FileReader() {
+    public M2() {
         this.name = new M2Array<>();
         this.globalLoops = new M2Array<>();
         this.sequences = new M2Array<>();

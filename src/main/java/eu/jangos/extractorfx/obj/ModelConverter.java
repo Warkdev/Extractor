@@ -36,9 +36,7 @@ public abstract class ModelConverter {
 
     public ModelConverter() {
         this.mesh = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
-    }
-
-    public abstract void convert() throws ConverterException;
+    }    
 
     /**
      * This methid returns the OBJ file as a String representation (including
@@ -47,25 +45,29 @@ public abstract class ModelConverter {
      * @return A String object representing the corresponding OBJ file
      * structure.
      */
-    public String getOBJasAString() {
+    public String getOBJasAString(boolean addNormals, boolean addTextures) {
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < this.mesh.getPoints().size(); i += 3) {
             sb.append("v " + this.mesh.getPoints().get(i) + " " + this.mesh.getPoints().get(i + 1) + " " + this.mesh.getPoints().get(i + 2) + "\n");
         }
 
-        for (int i = 0; i < this.mesh.getNormals().size(); i += 3) {
-            sb.append("vn " + this.mesh.getNormals().get(i) + " " + this.mesh.getNormals().get(i + 1) + " " + this.mesh.getNormals().get(i + 2) + "\n");
-        }
+        if(addNormals) {
+            for (int i = 0; i < this.mesh.getNormals().size(); i += 3) {
+                sb.append("vn " + this.mesh.getNormals().get(i) + " " + this.mesh.getNormals().get(i + 1) + " " + this.mesh.getNormals().get(i + 2) + "\n");
+            }
+    }
 
-        for (int i = 0; i < this.mesh.getTexCoords().size(); i += 2) {
-            sb.append("vt " + this.mesh.getTexCoords().get(i) + " " + this.mesh.getTexCoords().get(i + 1) + "\n");
+        if(addTextures) {
+            for (int i = 0; i < this.mesh.getTexCoords().size(); i += 2) {
+                sb.append("vt " + this.mesh.getTexCoords().get(i) + " " + this.mesh.getTexCoords().get(i + 1) + "\n");
+            }
         }
 
         for (int i = 0; i < this.mesh.getFaces().size(); i += 9) {
-            sb.append("f " + (this.mesh.getFaces().get(i) + 1) + "/" + (this.mesh.getFaces().get(i + 1) + 1) + "/" + (this.mesh.getFaces().get(i + 2) + 1)
-                    + " " + (this.mesh.getFaces().get(i + 3) + 1) + "/" + (this.mesh.getFaces().get(i + 4) + 1) + "/" + (this.mesh.getFaces().get(i + 5) + 1)
-                    + " " + (this.mesh.getFaces().get(i + 6) + 1) + "/" + (this.mesh.getFaces().get(i + 7) + 1) + "/" + (this.mesh.getFaces().get(i + 8) + 1) + "\n");
+            sb.append("f " + (this.mesh.getFaces().get(i) + 1) + "/" + (addNormals ? (this.mesh.getFaces().get(i + 1) + 1) : "") + "/" + (addTextures ? (this.mesh.getFaces().get(i + 2) + 1) : "")
+                    + " " + (this.mesh.getFaces().get(i + 3) + 1) + "/" + (addNormals ? (this.mesh.getFaces().get(i + 4) + 1) : "") + "/" + (addTextures ? (this.mesh.getFaces().get(i + 5) + 1) : "")
+                    + " " + (this.mesh.getFaces().get(i + 6) + 1) + "/" + (addNormals ? (this.mesh.getFaces().get(i + 7) + 1) : "") + "/" + (addTextures ? (this.mesh.getFaces().get(i + 8) + 1) : "") + "\n");            
         }
 
         return sb.toString();
@@ -79,7 +81,7 @@ public abstract class ModelConverter {
      * saved.
      * @throws ConverterException
      */
-    public void saveToFile(String file) throws ConverterException, IOException {
+    public void saveToFile(String file, boolean addNormals, boolean addTextures) throws ConverterException, IOException {
         if (file == null || file.isEmpty()) {
             throw new ConverterException("Provided file is null or empty.");
         }
@@ -97,11 +99,11 @@ public abstract class ModelConverter {
         }
 
         OutputStreamWriter writer = new FileWriter(objFile);
-        writer.write(getOBJasAString());
+        writer.write(getOBJasAString(addNormals, addTextures));
         writer.close();
     }
 
-    protected Rotate getAngleAndPivot(Quaternion q) {
+    protected Rotate getAngleAndAxis(Quaternion q) {
         Rotate rotate = new Rotate();
 
         if (q.getW() > 1) {

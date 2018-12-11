@@ -1,7 +1,7 @@
 package eu.jangos.extractorfx;
 
-import eu.jangos.extractor.file.ADTFileReader;
-import eu.jangos.extractor.file.WMOFileReader;
+import eu.jangos.extractor.file.ADT;
+import eu.jangos.extractor.file.WMO;
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractorfx.obj.ADT2OBJConverter;
 import eu.jangos.extractorfx.obj.ModelConverter;
@@ -60,9 +60,9 @@ public class FXMLController implements Initializable {
         String MODEL = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\model.MPQ";
         String WMO = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\wmo.MPQ";
         String wmoExample = "world\\wmo\\azeroth\\buildings\\duskwood_humantwostory\\duskwood_humantwostory.wmo";
-        ADTFileReader adtReader = new ADTFileReader();
+        ADT adtReader = new ADT();
         ADT2OBJConverter adtConverter = new ADT2OBJConverter(adtReader);
-        WMOFileReader wmoReader = new WMOFileReader();
+        WMO wmoReader = new WMO();
         ModelConverter wmoConverter = new WMO2OBJConverter(wmoReader);
         Map<String, ModelConverter> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         File adtFile = new File(PATH);
@@ -78,7 +78,7 @@ public class FXMLController implements Initializable {
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(map) + ".obj";
             adtReader.init(adtEditor.extractFileAsBytes(map), map);
             //adtConverter.convert(wmoEditor, modelEditor, cache, map);
-            adtConverter.saveToFile(outputFile);
+            adtConverter.saveToFile(outputFile, false, false);
         } catch (IOException ex) {
             Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ConverterException ex) {

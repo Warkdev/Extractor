@@ -36,7 +36,7 @@ import java.util.List;
  *
  * @author Warkdev
  */
-public class WMOGroupFileReader {
+public class WMOGroup {
 
     // Section for WMO Group File.
     private static final int SUPPORTED_GROUP_VERSION = 17;

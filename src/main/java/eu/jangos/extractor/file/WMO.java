@@ -40,7 +40,7 @@ import java.util.Map;
  *
  * @author Warkdev
  */
-public class WMOFileReader {
+public class WMO {
 
     // Section for WMO ROOT File.
     private static final String HEADER_MVER = "MVER";
@@ -115,7 +115,7 @@ public class WMOFileReader {
     private List<WMOFog> fogList = new ArrayList<>();
     private List<C4Plane> convexVolumePlanesList = new ArrayList<>();
 
-    private List<WMOGroupFileReader> wmoGroupReadersList = new ArrayList<>();
+    private List<WMOGroup> wmoGroupReadersList = new ArrayList<>();
 
     public boolean isRootFile(byte[] array) throws WMOException {
         this.data = ByteBuffer.wrap(array);
@@ -322,7 +322,7 @@ public class WMOFileReader {
     }
 
     public void initGroup(byte[] array, String filename) throws WMOException {
-        WMOGroupFileReader reader = new WMOGroupFileReader();
+        WMOGroup reader = new WMOGroup();
         reader.init(array, filename);
         this.wmoGroupReadersList.add(reader);
     }
@@ -618,11 +618,11 @@ public class WMOFileReader {
         this.convexVolumePlanesList = convexVolumePlanesList;
     }
 
-    public List<WMOGroupFileReader> getWmoGroupReadersList() {
+    public List<WMOGroup> getWmoGroupReadersList() {
         return wmoGroupReadersList;
     }
 
-    public void setWmoGroupReadersList(List<WMOGroupFileReader> wmoGroupReadersList) {
+    public void setWmoGroupReadersList(List<WMOGroup> wmoGroupReadersList) {
         this.wmoGroupReadersList = wmoGroupReadersList;
     }
 
