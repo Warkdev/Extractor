@@ -13,26 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.jangos.extractor.file.wmo.group;
+package eu.jangos.extractor.file.wdt;
 
+import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
 
 /**
  *
  * @author Warkdev
  */
-public class WMOLTile {
-    private byte flags;
-
-    public void read(ByteBuffer data) {
-        flags = data.get();        
+public class AreaInfo {
+    
+    private static final int FLAG_HAS_ADT = 0x1;
+    
+    private int flags;
+    private int asyncId;
+       
+    public void read(ByteBuffer in) {
+        this.flags = in.getInt();
+        this.asyncId = in.getInt();
     }
 
-    public byte getFlags() {
+    public boolean hasADT() {
+        return FlagUtils.hasFlag(this.flags, FLAG_HAS_ADT);
+    }
+    
+    public int getFlags() {
         return flags;
     }
 
-    public void setFlags(byte flags) {
+    public void setFlags(int flags) {
         this.flags = flags;
-    }            
+    }
+
+    public int getAsyncId() {
+        return asyncId;
+    }
+
+    public void setAsyncId(int asyncId) {
+        this.asyncId = asyncId;
+    }             
 }

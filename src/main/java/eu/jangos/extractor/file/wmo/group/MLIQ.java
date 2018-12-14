@@ -16,6 +16,7 @@
 package eu.jangos.extractor.file.wmo.group;
 
 import com.sun.javafx.geom.Vec3f;
+import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,42 +26,44 @@ import java.util.List;
  * @author Warkdev
  */
 public class MLIQ {
+
+    private static final int HAS_LIQUID = 0x02;
+    private static final int NO_LIQUID = 0x0F;
+    private static final int IS_MAGMA = 0x40;
+
     private int xVerts;
     private int yVerts;
     private int xTiles;
     private int yTiles;
     private Vec3f baseCoordinates = new Vec3f();
     private short materialId;
-    
+
     private List<WMOLVert> liquidVertexList = new ArrayList<>();
-    private List<WMOLTile> liquidTileList = new ArrayList<>();
+    private List<Short> flags = new ArrayList<>();
 
     public void read(ByteBuffer data, LiquidTypeEnum liquidType) {
         this.liquidVertexList.clear();
-        this.liquidTileList.clear();
-        
+        this.flags.clear();
+
         this.xVerts = data.getInt();
         this.yVerts = data.getInt();
         this.xTiles = data.getInt();
         this.yTiles = data.getInt();
         this.baseCoordinates.set(data.getFloat(), data.getFloat(), data.getFloat());
         this.materialId = data.getShort();
-        
-        WMOLVert liquidVertex;        
-        for(int i = 0; i < this.xVerts * this.yVerts; i++) {            
+
+        WMOLVert liquidVertex;
+        for (int i = 0; i < this.xVerts * this.yVerts; i++) {
             liquidVertex = new WMOLVert();
             liquidVertex.read(data, liquidType);
             liquidVertexList.add(liquidVertex);
         }
-        
-        WMOLTile liquidTile;
-        for(int i = 0; i < this.xTiles * this.yTiles; i++) {
-            liquidTile = new WMOLTile();
-            liquidTile.read(data);
-            liquidTileList.add(liquidTile);
+
+        for (int i = 0; i < this.xTiles * this.yTiles; i++) {
+            flags.add((short) Byte.toUnsignedInt(data.get()));
         }
     }
-    
+
     public int getxVerts() {
         return xVerts;
     }
@@ -117,11 +120,31 @@ public class MLIQ {
         this.liquidVertexList = liquidVertexList;
     }
 
-    public List<WMOLTile> getLiquidTileList() {
-        return liquidTileList;
+    public List<Short> getFlags() {
+        return flags;
     }
 
-    public void setLiquidTileList(List<WMOLTile> liquidTileList) {
-        this.liquidTileList = liquidTileList;
-    }        
+    public void setFlags(List<Short> flags) {
+        this.flags = flags;
+    }
+
+    public boolean hasNoLiquid(int row, int col) {
+        return hasFlag(row, col, NO_LIQUID);
+    }
+
+    public boolean hasLiquid(int row, int col) {
+        return hasFlag(row, col, HAS_LIQUID);
+    }
+
+    public boolean isMagma(int row, int col) {
+        return hasFlag(row, col, IS_MAGMA);
+    }
+    
+    private boolean hasFlag(int row, int col, int flag) {
+        return FlagUtils.hasFlag(this.flags.get(getFlagPosition(row, col)), flag);
+    }
+
+    private int getFlagPosition(int row, int col) {
+        return col * xTiles + row;
+    }
 }

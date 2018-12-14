@@ -9,7 +9,7 @@ package eu.jangos.extractor.file.exception;
  *
  * @author Warkdev
  */
-public class ADTException extends Exception {
+public class ADTException extends FileReaderException {
 
     public ADTException(String string) {
         super(string);

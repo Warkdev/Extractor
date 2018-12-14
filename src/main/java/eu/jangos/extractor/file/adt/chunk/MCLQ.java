@@ -132,42 +132,7 @@ public class MCLQ {
     
     private int getFlagPosition(int row, int col) {
         return row * LIQUID_FLAG_LENGTH + col;
-    }
-    
-    private void printLiquidChunk() {
-        for(int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
-            for(int j = 0; j < LIQUID_FLAG_LENGTH; j++) {                
-                printFlagType(i, j);
-            }
-            System.out.println();
-        }
-    }
-    
-    private void printFlagType(int row, int col) {
-        int flag = this.flags.get(getFlagPosition(row, col));
-        if(hasNoLiquid(row, col)) {            
-            flag -= NO_LIQUID;
-            //System.out.println(row + " - "+ col + " : No Liquid");
-            System.out.print("N ");
-        } 
-        if (hasLiquid(row, col) && flag != 0) {
-            flag -= HAS_LIQUID;
-            //System.out.print(row + " - "+ col + " : Has Liquid");
-            if (isDark(row, col)) {
-                flag -= DARK;
-                //System.out.println(row + " - "+ col + " : Is Dark");
-                System.out.print("D ");
-            } else {
-                System.out.print("L ");
-            }
-        } 
-        
-        if(flag != 0) {
-            //System.out.println(row + " - "+ col + " : Remaining flag value - "+flag);
-            //System.out.println(row + " - "+ col + " - "+flag);
-            System.out.print("("+flag+")");
-        }
-    }
+    }               
     
     private void clear() {
         this.light.clear();

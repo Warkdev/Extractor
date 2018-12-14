@@ -7,6 +7,7 @@ package eu.jangos.extractor.file;
 
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.CAaBox;
+import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractor.file.m2.M2Array;
 import eu.jangos.extractor.file.m2.M2Attachment;
@@ -35,16 +36,12 @@ import java.util.List;
  *
  * @author Warkdev
  */
-public class M2 {
+public class M2 extends FileReader {
 
     private static final String HEADER_MD20 = "MD20";
     private static final int SUPPORTED_VERSION = 256;
-
-    // Control variable.
-    private boolean init = false;
     
     // Magic & version.
-    private ByteBuffer data;
     private int version;
     
     // Header info.
@@ -133,72 +130,65 @@ public class M2 {
         this.listSkinProfiles = new ArrayList<>();
     }
 
-    public void init(byte[] data) throws IOException, M2Exception {
-        init = false;
-        this.data = ByteBuffer.wrap(data);
-        this.data.order(ByteOrder.LITTLE_ENDIAN);
+    @Override
+    public void init(byte[] data, String filename) throws IOException, FileReaderException {
+        super.init = false;
+        super.filename = filename;
+        super.data = ByteBuffer.wrap(data);
+        super.data.order(ByteOrder.LITTLE_ENDIAN);
         clear();
         readHeader();     
-        init = true;
+        super.init = true;
     }
 
-    private void readHeader() throws M2Exception {                
-        StringBuilder sb = new StringBuilder();
-        byte[] header = new byte[4];        
-
-        this.data.get(header);
-
-        sb = sb.append(new String(header));
-
-        if (!sb.toString().equals(HEADER_MD20)) {
-            throw new M2Exception("Expected header " + HEADER_MD20 + ", received header: " + sb.toString());
-        }
+    private void readHeader() throws FileReaderException {  
+        checkHeader(HEADER_MD20);        
 
         // Version.
-        int version = this.data.getInt();
+        int version = super.data.getInt();
         if (SUPPORTED_VERSION != version) {
             throw new M2Exception("Expected version " + SUPPORTED_VERSION + ", version found: " + version);
         }
 
         // Reading now all offsets & size of chunks data in the M2.
-        this.name.read(this.data);
-        this.globalFlags = this.data.getInt();
-        this.globalLoops.read(this.data);
-        this.sequences.read(this.data);
-        this.sequenceLookups.read(this.data);
-        this.playableAnimationLookup.read(this.data);
-        this.bones.read(this.data);
-        this.keyBoneLookup.read(this.data);
-        this.vertices.read(this.data);
-        this.skinProfiles.read(this.data);
-        this.colors.read(this.data);
-        this.textures.read(this.data);
-        this.textureWeights.read(this.data);
-        this.unknown.read(this.data);
-        this.textureTransforms.read(this.data);
-        this.replacableTextureLookup.read(this.data);
-        this.materials.read(this.data);
-        this.boneLookupTable.read(this.data);
-        this.textureLookupTable.read(this.data);
-        this.texUnitLookupTable.read(this.data);
-        this.transparencyLookupTable.read(this.data);
-        this.textureTransformsLookupTable.read(this.data);        
-        this.boundingBox.read(this.data);
-        this.boundingSphereRadius = this.data.getFloat();
-        this.collisionBox.read(this.data);
-        this.collisionSphereRadius = this.data.getFloat();
-        this.collisionTriangles.read(this.data);
-        this.collisionVertices.read(this.data);
-        this.collisionNormals.read(this.data);
-        this.attachments.read(this.data);
-        this.attachmentLookupTable.read(this.data);
-        this.events.read(this.data);
-        this.lights.read(this.data);
-        this.cameras.read(this.data);
-        this.cameraLookupTable.read(this.data);
-        this.ribbonEmitters.read(this.data);
-        this.particleEmitters.read(this.data);
-        this.textureCombinerCombos.read(this.data);        
+        this.name.read(super.data);
+        this.globalFlags = super.data.getInt();
+        this.globalLoops.read(super.data);
+        this.sequences.read(super.data);
+        this.sequenceLookups.read(super.data);
+        this.playableAnimationLookup.read(super.data);
+        this.bones.read(super.data);
+        this.keyBoneLookup.read(super.data);
+        this.vertices.read(super.data);
+        this.skinProfiles.read(super.data);
+        this.colors.read(super.data);
+        this.textures.read(super.data);
+        this.textureWeights.read(super.data);
+        this.unknown.read(super.data);
+        this.textureTransforms.read(super.data);
+        this.replacableTextureLookup.read(super.data);
+        this.materials.read(super.data);
+        this.boneLookupTable.read(super.data);
+        this.textureLookupTable.read(super.data);
+        this.texUnitLookupTable.read(super.data);
+        this.transparencyLookupTable.read(super.data);
+        this.textureTransformsLookupTable.read(super.data);        
+        this.boundingBox.read(super.data);
+        this.boundingSphereRadius = super.data.getFloat();
+        this.collisionBox.read(super.data);
+        this.collisionSphereRadius = super.data.getFloat();
+        this.collisionTriangles.read(super.data);
+        this.collisionVertices.read(super.data);
+        this.collisionNormals.read(super.data);
+        this.attachments.read(super.data);
+        this.attachmentLookupTable.read(super.data);
+        this.events.read(super.data);
+        this.lights.read(super.data);
+        this.cameras.read(super.data);
+        this.cameraLookupTable.read(super.data);
+        this.ribbonEmitters.read(super.data);
+        this.particleEmitters.read(super.data);
+        this.textureCombinerCombos.read(super.data);        
     }
 
     public List<M2Vertex> getVertices() throws M2Exception {
@@ -213,10 +203,10 @@ public class M2 {
                 
         M2Vertex vertex;
         
-        this.data.position(this.vertices.getOffset());
+        super.data.position(this.vertices.getOffset());
         for(int i = 0; i < this.vertices.getSize(); i++) {
             vertex = new M2Vertex();
-            vertex.read(this.data);            
+            vertex.read(super.data);            
             this.listVertices.add(vertex);
         }
         
@@ -235,10 +225,10 @@ public class M2 {
                 
         M2SkinProfile skin;
         
-        this.data.position(this.skinProfiles.getOffset());            
+        super.data.position(this.skinProfiles.getOffset());            
         for(int i = 0; i < this.skinProfiles.getSize(); i++) {
             skin = new M2SkinProfile();
-            skin.read(this.data);
+            skin.read(super.data);
             this.listSkinProfiles.add(skin);
         }
         
@@ -248,9 +238,9 @@ public class M2 {
     public List<Short> getTextureLookup() {
         List<Short> listTextureLookup = new ArrayList<>();
         
-        this.data.position(this.textureLookupTable.getOffset());
+        super.data.position(this.textureLookupTable.getOffset());
         for(int i = 0; i < this.textureLookupTable.getSize(); i++) {
-            listTextureLookup.add(this.data.getShort());
+            listTextureLookup.add(super.data.getShort());
         }
         
         return listTextureLookup;

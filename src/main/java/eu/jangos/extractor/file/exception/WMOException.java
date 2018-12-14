@@ -9,7 +9,7 @@ package eu.jangos.extractor.file.exception;
  *
  * @author Warkdev
  */
-public class WMOException extends Exception {
+public class WMOException extends FileReaderException {
 
     public WMOException(String string) {
         super(string);

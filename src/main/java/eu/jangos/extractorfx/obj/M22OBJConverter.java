@@ -21,7 +21,6 @@ import eu.jangos.extractor.file.m2.M2SkinProfile;
 import eu.jangos.extractor.file.m2.M2SkinSection;
 import eu.jangos.extractor.file.m2.M2Vertex;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

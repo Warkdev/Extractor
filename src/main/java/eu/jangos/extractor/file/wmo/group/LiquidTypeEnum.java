@@ -15,6 +15,7 @@
  */
 package eu.jangos.extractor.file.wmo.group;
 
+import eu.jangos.extractor.file.WMOGroup;
 import eu.mangos.shared.flags.FlagUtils;
 
 /**
@@ -65,7 +66,7 @@ public enum LiquidTypeEnum {
         LiquidTypeEnum basic = convert(groupLiquid & LIQUID_BASIC_MASK);
         switch(basic) {
             case LIQUID_BASIC_TYPE_WATER:
-                return FlagUtils.hasFlag(mogpFlags, MOGPFlagEnum.IS_OCEAN.getValue()) ? LIQUID_WMO_OCEAN : LIQUID_WMO_WATER;
+                return FlagUtils.hasFlag(mogpFlags, WMOGroup.FLAG_IS_OCEAN) ? LIQUID_WMO_OCEAN : LIQUID_WMO_WATER;
             case LIQUID_BASIC_TYPE_OCEAN:
                 return LIQUID_WMO_OCEAN;
             case LIQUID_BASIC_TYPE_MAGMA:

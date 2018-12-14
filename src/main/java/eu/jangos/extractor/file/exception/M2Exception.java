@@ -9,7 +9,7 @@ package eu.jangos.extractor.file.exception;
  *
  * @author Warkdev
  */
-public class M2Exception extends Exception {
+public class M2Exception extends FileReaderException {
 
     public M2Exception(String string) {
         super(string);

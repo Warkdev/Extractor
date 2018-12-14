@@ -22,6 +22,7 @@ import eu.jangos.extractor.file.adt.chunk.MCNK;
 import eu.jangos.extractor.file.adt.chunk.MDDF;
 import eu.jangos.extractor.file.adt.chunk.MODF;
 import eu.jangos.extractor.file.exception.ADTException;
+import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractor.file.exception.WMOException;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
@@ -75,7 +76,7 @@ public class ADT2OBJConverter extends ModelConverter {
      * @throws ConverterException If there's any validation error while
      * converting the ADT to OBJ.
      */
-    public void convert(JMpqEditor wmoEditor, JMpqEditor m2Editor, Map<String, ModelConverter> cache, String adtPath, boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO) throws ConverterException, ADTException {
+    public void convert(JMpqEditor wmoEditor, JMpqEditor m2Editor, Map<String, ModelConverter> cache, String adtPath, boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO) throws ConverterException, FileReaderException {
         if (this.reader == null) {
             throw new ConverterException("ADTFileReader is null");
         }
@@ -175,7 +176,7 @@ public class ADT2OBJConverter extends ModelConverter {
                     } else {
                         m2Reader = new M2();
                         m2Converter = new M22OBJConverter(m2Reader);
-                        m2Reader.init(m2Editor.extractFileAsBytes(modelFile));
+                        m2Reader.init(m2Editor.extractFileAsBytes(modelFile), modelFile);
                         ((M22OBJConverter) m2Converter).convert(1, 15);
                         cache.put(modelFile, m2Converter);
                     }
@@ -224,7 +225,7 @@ public class ADT2OBJConverter extends ModelConverter {
                     Logger.getLogger(ADT2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (IOException ex) {
                     Logger.getLogger(ADT2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (M2Exception ex) {
+                } catch (FileReaderException ex) {
                     Logger.getLogger(ADT2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
@@ -283,7 +284,7 @@ public class ADT2OBJConverter extends ModelConverter {
                         this.mesh.getFaces().addAll(wmoConverter.getMesh().getFaces().get(i) + offset);
                     }
 
-                } catch (JMpqException | WMOException ex) {
+                } catch (JMpqException | FileReaderException ex) {
                     Logger.getLogger(ADT2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }

@@ -3,12 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.jangos.extractor.file.adt.chunk;
+package eu.jangos.extractor.file.exception;
 
 /**
  *
  * @author Warkdev
  */
-public class MWMO {
+public class WDTException extends FileReaderException {
+
+    public WDTException(String string) {
+        super(string);
+    }
     
 }

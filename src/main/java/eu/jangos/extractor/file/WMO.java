@@ -19,6 +19,7 @@ import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.C4Plane;
 import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.common.CArgb;
+import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.WMOException;
 import eu.jangos.extractor.file.wmo.WMOBlock;
 import eu.jangos.extractor.file.wmo.WMODoodadDef;
@@ -29,6 +30,7 @@ import eu.jangos.extractor.file.wmo.WMOLight;
 import eu.jangos.extractor.file.wmo.WMOMaterials;
 import eu.jangos.extractor.file.wmo.WMOPortal;
 import eu.jangos.extractor.file.wmo.WMOPortalRef;
+import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -40,7 +42,7 @@ import java.util.Map;
  *
  * @author Warkdev
  */
-public class WMO {
+public class WMO extends FileReader {
 
     // Section for WMO ROOT File.
     private static final String HEADER_MVER = "MVER";
@@ -74,11 +76,9 @@ public class WMO {
     private static final String HEADER_MCVP = "MCVP";
     private static final int SIZE_MCVP = 16;
 
+    public static final int FLAG_USE_LIQUID_FROM_DBC = 0x04;
+    
     private static final int SUPPORTED_VERSION = 17;
-
-    private ByteBuffer data;
-    private boolean init = false;
-    private String fileName;
 
     private int nMaterials;
     private int nGroups;
@@ -117,14 +117,14 @@ public class WMO {
 
     private List<WMOGroup> wmoGroupReadersList = new ArrayList<>();
 
-    public boolean isRootFile(byte[] array) throws WMOException {
-        this.data = ByteBuffer.wrap(array);
-        this.data.order(ByteOrder.LITTLE_ENDIAN);
+    public boolean isRootFile(byte[] array) throws FileReaderException {
+        super.data = ByteBuffer.wrap(array);
+        super.data.order(ByteOrder.LITTLE_ENDIAN);
 
         checkHeader(HEADER_MVER);
         // Skip the size.
-        this.data.getInt();
-        int version = this.data.getInt();
+        super.data.getInt();
+        int version = super.data.getInt();
         if (version != SUPPORTED_VERSION) {
             throw new WMOException("WMO Version is not supported by this reader.");
         }
@@ -143,45 +143,46 @@ public class WMO {
         return true;
     }
 
-    public void init(byte[] array, String filename) throws WMOException {
-        this.data = ByteBuffer.wrap(array);
-        this.data.order(ByteOrder.LITTLE_ENDIAN);
-        this.fileName = filename;
+    @Override
+    public void init(byte[] array, String filename) throws FileReaderException {
+        super.data = ByteBuffer.wrap(array);
+        super.data.order(ByteOrder.LITTLE_ENDIAN);
+        super.filename = filename;
         clear();
 
         checkHeader(HEADER_MVER);
         // Skip the size.
-        this.data.getInt();
-        int version = this.data.getInt();
+        super.data.getInt();
+        int version = super.data.getInt();
         if (version != SUPPORTED_VERSION) {
             throw new WMOException("WMO Version is not supported by this reader.");
         }
 
-        int chunkSize = 0;
-
+        int chunkSize = 0;        
+        
         // We're now reading the header of the file.
         checkHeader(HEADER_MOHD);
         // Skip the size.
-        this.data.getInt();
+        super.data.getInt();
 
-        this.nMaterials = this.data.getInt();
-        this.nGroups = this.data.getInt();
-        this.nPortals = this.data.getInt();
-        this.nLights = this.data.getInt();
-        this.nModels = this.data.getInt();
-        this.nDoodads = this.data.getInt(); // Suppossingly amount of MODD
-        this.nDoodaSets = this.data.getInt(); // Supposingly amount of MODS
-        this.ambColor.setR(this.data.get());
-        this.ambColor.setG(this.data.get());
-        this.ambColor.setB(this.data.get());
-        this.ambColor.setA(this.data.get());
-        this.wmoAreaTableID = this.data.getInt();
-        this.boundingBox.setMin(new Vec3f(this.data.getFloat(), this.data.getFloat(), this.data.getFloat()));
-        this.boundingBox.setMax(new Vec3f(this.data.getFloat(), this.data.getFloat(), this.data.getFloat()));
-        this.flags = this.data.getShort();
-        this.numLod = this.data.getShort();
+        this.nMaterials = super.data.getInt();
+        this.nGroups = super.data.getInt();
+        this.nPortals = super.data.getInt();
+        this.nLights = super.data.getInt();
+        this.nModels = super.data.getInt();
+        this.nDoodads = super.data.getInt(); // Suppossingly amount of MODD
+        this.nDoodaSets = super.data.getInt(); // Supposingly amount of MODS
+        this.ambColor.setR(super.data.get());
+        this.ambColor.setG(super.data.get());
+        this.ambColor.setB(super.data.get());
+        this.ambColor.setA(super.data.get());
+        this.wmoAreaTableID = super.data.getInt();
+        this.boundingBox.setMin(new Vec3f(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
+        this.boundingBox.setMax(new Vec3f(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
+        this.flags = super.data.getShort();
+        this.numLod = super.data.getShort();
 
-        this.textureNameList = readStringChunk(this.data.position(), HEADER_MOTX);
+        this.textureNameList = readStringChunk(super.data.position(), HEADER_MOTX);
 
         checkHeader(HEADER_MOMT);
         chunkSize = data.getInt() / SIZE_MOMT;
@@ -189,11 +190,11 @@ public class WMO {
         WMOMaterials material;
         for (int i = 0; i < nMaterials; i++) {
             material = new WMOMaterials();
-            material.read(this.data);
+            material.read(super.data);
             this.materials.add(material);
         }
 
-        this.groupNameList = readStringChunk(this.data.position(), HEADER_MOGN);
+        this.groupNameList = readStringChunk(super.data.position(), HEADER_MOGN);
 
         checkHeader(HEADER_MOGI);
         chunkSize = data.getInt() / SIZE_MOGI;
@@ -201,119 +202,119 @@ public class WMO {
         WMOGroupInfo groupInfo;
         for (int i = 0; i < nGroups; i++) {
             groupInfo = new WMOGroupInfo();
-            groupInfo.read(this.data);
+            groupInfo.read(super.data);
             groupInfoList.add(groupInfo);
         }
 
         checkHeader(HEADER_MOSB);
-        chunkSize = this.data.getInt();
-        this.skyBoxName = readString(this.data);
+        chunkSize = super.data.getInt();
+        this.skyBoxName = readString(super.data);
         // There are 0 padding at the end of the String.
         if (this.skyBoxName.length() < chunkSize) {
-            this.data.position(this.data.position() + (chunkSize - this.skyBoxName.length()) - 1);
+            super.data.position(super.data.position() + (chunkSize - this.skyBoxName.length()) - 1);
         }
 
         checkHeader(HEADER_MOPV);
-        chunkSize = this.data.getInt() / SIZE_MOPV;
+        chunkSize = super.data.getInt() / SIZE_MOPV;
 
         Vec3f portalVertex;
         for (int i = 0; i < chunkSize; i++) {
-            portalVertex = new Vec3f(this.data.getFloat(), this.data.getFloat(), this.data.getFloat());
+            portalVertex = new Vec3f(super.data.getFloat(), super.data.getFloat(), super.data.getFloat());
             this.portalVertexList.add(portalVertex);
         }
 
         checkHeader(HEADER_MOPT);
-        chunkSize = this.data.getInt() / SIZE_MOPT;
+        chunkSize = super.data.getInt() / SIZE_MOPT;
 
         WMOPortal portal;
         for (int i = 0; i < nPortals; i++) {
             portal = new WMOPortal();
-            portal.read(this.data);
+            portal.read(super.data);
             this.portalList.add(portal);
         }
 
         checkHeader(HEADER_MOPR);
-        chunkSize = this.data.getInt() / SIZE_MOPR;
+        chunkSize = super.data.getInt() / SIZE_MOPR;
 
         WMOPortalRef portalRef;
         for (int i = 0; i < chunkSize; i++) {
             portalRef = new WMOPortalRef();
-            portalRef.read(this.data);
+            portalRef.read(super.data);
             this.portalRefList.add(portalRef);
         }
 
         checkHeader(HEADER_MOVV);
-        chunkSize = this.data.getInt() / SIZE_MOVV;
+        chunkSize = super.data.getInt() / SIZE_MOVV;
 
         Vec3f visibleBlockVertices;
         for (int i = 0; i < chunkSize; i++) {
             visibleBlockVertices = new Vec3f();
-            visibleBlockVertices.set(this.data.getFloat(), this.data.getFloat(), this.data.getFloat());
+            visibleBlockVertices.set(super.data.getFloat(), super.data.getFloat(), super.data.getFloat());
             this.visibleBlockVerticesList.add(visibleBlockVertices);
         }
 
         checkHeader(HEADER_MOVB);
-        chunkSize = this.data.getInt() / SIZE_MOVB;
+        chunkSize = super.data.getInt() / SIZE_MOVB;
 
         WMOBlock visibleBlock;
         for (int i = 0; i < chunkSize; i++) {
             visibleBlock = new WMOBlock();
-            visibleBlock.read(this.data);
+            visibleBlock.read(super.data);
             this.visibleBlockList.add(visibleBlock);
         }
 
         checkHeader(HEADER_MOLT);
-        chunkSize = this.data.getInt() / SIZE_MOLT;
+        chunkSize = super.data.getInt() / SIZE_MOLT;
 
         WMOLight light;
         for (int i = 0; i < chunkSize; i++) {
             light = new WMOLight();
-            light.read(this.data);
+            light.read(super.data);
             this.lightList.add(light);
         }
 
         checkHeader(HEADER_MODS);
-        chunkSize = this.data.getInt() / SIZE_MODS;
+        chunkSize = super.data.getInt() / SIZE_MODS;
 
         WMODoodadSet doodadSet;
         for (int i = 0; i < chunkSize; i++) {
             doodadSet = new WMODoodadSet();
-            doodadSet.read(this.data);
+            doodadSet.read(super.data);
             this.doodadSetList.add(doodadSet);
         }
 
-        this.doodadNameMap = readStringChunkAsMap(this.data.position(), HEADER_MODN);
+        this.doodadNameMap = readStringChunkAsMap(super.data.position(), HEADER_MODN);
 
         checkHeader(HEADER_MODD);
-        chunkSize = this.data.getInt() / SIZE_MODD;
+        chunkSize = super.data.getInt() / SIZE_MODD;
 
         WMODoodadDef doodadDef;
         for (int i = 0; i < chunkSize; i++) {
             doodadDef = new WMODoodadDef();
-            doodadDef.read(this.data);
+            doodadDef.read(super.data);
             this.doodadDefList.add(doodadDef);
         }
 
         checkHeader(HEADER_MFOG);
-        chunkSize = this.data.getInt() / SIZE_MFOG;
+        chunkSize = super.data.getInt() / SIZE_MFOG;
 
         WMOFog fog;
         for (int i = 0; i < chunkSize; i++) {
             fog = new WMOFog();
-            fog.read(this.data);
+            fog.read(super.data);
             this.fogList.add(fog);
         }
 
         // MCVP is an optional header.
         if (data.hasRemaining()) {
             checkHeader(HEADER_MCVP);
-            chunkSize = this.data.getInt() / SIZE_MCVP;
+            chunkSize = super.data.getInt() / SIZE_MCVP;
 
             C4Plane convexVolume;
             for (int i = 0; i < chunkSize; i++) {
                 convexVolume = new C4Plane();
-                convexVolume.getNormal().set(this.data.getFloat(), this.data.getFloat(), this.data.getFloat());
-                convexVolume.setDistance(this.data.getFloat());
+                convexVolume.getNormal().set(super.data.getFloat(), super.data.getFloat(), super.data.getFloat());
+                convexVolume.setDistance(super.data.getFloat());
                 this.convexVolumePlanesList.add(convexVolume);
             }
         }
@@ -346,12 +347,57 @@ public class WMO {
         this.wmoGroupReadersList.clear();
     }
 
+    public String[][] getLiquidMap(boolean displayLiquidType) {
+        String[][] liquidMap = new String[SIZE_MOMT][SIZE_MOMT];
+        
+        int x = 0;
+        int y = 0;
+                
+        for(WMOGroup group : wmoGroupReadersList) {
+            //System.out.println(super.filename+";"+group.getFilename()+";"+this.flags+";"+this.useDBCLiquidID()+";"+group.hasLiquid()+";"+group.getGroup().getGroupLiquid());
+        }
+        
+        for(WMOGroup group : wmoGroupReadersList) {
+            if(group.hasLiquid()) {
+                x = group.getLiquid().getxTiles();
+                y = group.getLiquid().getyTiles();
+                System.out.println(group.getFilename()+";true;"+x + ";"+y+";"+group.getGroup().getBoundingBox().getMin().x
+                        +";"+group.getGroup().getBoundingBox().getMin().y
+                        +";"+group.getGroup().getBoundingBox().getMin().z
+                        +";"+group.getGroup().getBoundingBox().getMax().x
+                +";"+group.getGroup().getBoundingBox().getMax().x
+                +";"+group.getGroup().getBoundingBox().getMax().z
+                +";"+group.getLiquid().getBaseCoordinates().x
+                +";"+group.getLiquid().getBaseCoordinates().y
+                +";"+group.getLiquid().getBaseCoordinates().z);                
+            } else {
+                System.out.println(group.getFilename()+";false;0;0;"+group.getGroup().getBoundingBox().getMin().x
+                        +";"+group.getGroup().getBoundingBox().getMin().y
+                        +";"+group.getGroup().getBoundingBox().getMin().z
+                        +";"+group.getGroup().getBoundingBox().getMax().x
+                +";"+group.getGroup().getBoundingBox().getMax().x
+                +";"+group.getGroup().getBoundingBox().getMax().z
+                +";0;0;0");                
+            }
+        }          
+        
+        return liquidMap;
+    }
+    
+    public boolean useDBCLiquidID() {
+        return hasFlag(FLAG_USE_LIQUID_FROM_DBC);
+    }
+    
+    private boolean hasFlag(int flag) {
+        return FlagUtils.hasFlag(this.flags, flag);
+    }
+    
     public ByteBuffer getData() {
         return data;
     }
 
     public void setData(ByteBuffer data) {
-        this.data = data;
+        super.data = data;
     }
 
     public boolean isInit() {
@@ -554,14 +600,6 @@ public class WMO {
         this.doodadSetList = doodadSetList;
     }
 
-    public String getFileName() {
-        return fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
     public int getnModels() {
         return nModels;
     }
@@ -626,40 +664,20 @@ public class WMO {
         this.wmoGroupReadersList = wmoGroupReadersList;
     }
 
-    private List<String> readStringChunk(int offset, String expectedHeader) throws WMOException {
-        List<String> stringList = new ArrayList<>();
-
-        this.data.position(offset);
-
-        checkHeader(expectedHeader);
-
-        int size = this.data.getInt();
-        int start = this.data.position();
-        String temp;
-        while (this.data.position() - start < size) {
-            temp = readString(this.data);
-            if (!temp.isEmpty()) {
-                stringList.add(temp);
-            }
-        }
-
-        return stringList;
-    }
-
-    private Map<Integer, String> readStringChunkAsMap(int offset, String expectedHeader) throws WMOException {
+    private Map<Integer, String> readStringChunkAsMap(int offset, String expectedHeader) throws FileReaderException {
         Map<Integer, String> stringMap = new HashMap<>();
 
-        this.data.position(offset);
+        super.data.position(offset);
 
         checkHeader(expectedHeader);
 
-        int size = this.data.getInt();
-        int start = this.data.position();
+        int size = super.data.getInt();
+        int start = super.data.position();
         int recordOffset;
         String temp;
-        while (this.data.position() - start < size) {
-            recordOffset = this.data.position() - offset - 8;
-            temp = readPaddedString(this.data, 4);
+        while (super.data.position() - start < size) {
+            recordOffset = super.data.position() - offset - 8;
+            temp = readPaddedString(super.data, 4);
             if (!temp.isEmpty()) {
                 stringMap.put(recordOffset, temp);
             }
@@ -683,15 +701,15 @@ public class WMO {
         return sb.toString();
     }
 
-    private String readPaddedString(ByteBuffer in, int modulo) {
+    private String readPaddedString(ByteBuffer in, int padding) {
         StringBuilder sb = new StringBuilder();
 
         while (in.remaining() > 0) {
             char c = (char) in.get();
             if (c == '\0') {
                 // There's 0 padding at the end of string and we want to skip them except if there's only one 0.                
-                int skip = modulo - ((sb.length() + 1) % modulo);
-                in.position(in.position() + (skip == modulo ? 0 : skip));
+                int skip = padding - ((sb.length() + 1) % padding);
+                in.position(in.position() + (skip == padding ? 0 : skip));
                 break;
             }
             sb.append(c);
@@ -700,15 +718,4 @@ public class WMO {
         return sb.toString();
     }
 
-    private void checkHeader(String expectedHeader) throws WMOException {
-        StringBuilder sb = new StringBuilder();
-        byte[] header = new byte[4];
-
-        data.get(header);
-
-        sb = sb.append(new String(header)).reverse();
-        if (!sb.toString().equals(expectedHeader)) {
-            throw new WMOException(this.fileName + " - Expected header " + expectedHeader + ", received header: " + sb.toString());
-        }
-    }
 }

@@ -16,7 +16,6 @@
 package eu.jangos.extractor.file.wmo;
 
 import com.sun.javafx.geom.Vec3f;
-import eu.jangos.extractor.file.common.CImVector;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;

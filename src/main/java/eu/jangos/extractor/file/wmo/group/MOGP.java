@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
  *
  * @author Warkdev
  */
-public class MOGP {
+public class MOGP {        
     private int groupName;
     private int descriptiveGroupName;
     private int flags;

@@ -19,6 +19,7 @@ import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.M2;
 import eu.jangos.extractor.file.WMO;
 import eu.jangos.extractor.file.WMOGroup;
+import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractor.file.exception.WMOException;
 import eu.jangos.extractor.file.wmo.WMODoodadDef;
@@ -77,6 +78,7 @@ public class WMO2OBJConverter extends ModelConverter {
             String wmoGroupPath = FilenameUtils.removeExtension(wmoPath) + "_" + formatter.format(i) + ".wmo";
             if (wmoEditor.hasFile(wmoGroupPath)) {
                 this.reader.initGroup(wmoEditor.extractFileAsBytes(wmoGroupPath), wmoGroupPath);
+                
                 WMOGroup groupReader = this.reader.getWmoGroupReadersList().get(i);
                 if (!groupReader.getVertexList().isEmpty()) {
                     // Wmo group file has vertices.
@@ -124,7 +126,7 @@ public class WMO2OBJConverter extends ModelConverter {
                         } else {
                             m2Reader = new M2();
                             m2Converter = new M22OBJConverter(m2Reader);
-                            m2Reader.init(m2Editor.extractFileAsBytes(modelFile));
+                            m2Reader.init(m2Editor.extractFileAsBytes(modelFile), modelFile);
                             ((M22OBJConverter) m2Converter).convert(1, 100);
                             cache.put(modelFile, m2Converter);
                         }
@@ -168,11 +170,11 @@ public class WMO2OBJConverter extends ModelConverter {
 
                     } catch (IOException ex) {
                         Logger.getLogger(WMO2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (M2Exception ex) {
+                    } catch (FileReaderException ex) {
                         Logger.getLogger(WMO2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 } else {
-                    System.out.println(this.reader.getFileName() + " - Oooops, offset for MDX is not found! " + modelInstance.getNameIndex());
+                    System.out.println(this.reader.getFilename()+ " - Oooops, offset for MDX is not found! " + modelInstance.getNameIndex());
                 }
             }
         }

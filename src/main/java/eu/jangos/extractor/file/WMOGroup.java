@@ -17,14 +17,13 @@ package eu.jangos.extractor.file;
 
 import com.sun.javafx.geom.Vec2f;
 import com.sun.javafx.geom.Vec3f;
+import eu.jangos.extractor.file.common.CAaBspNode;
 import eu.jangos.extractor.file.common.CImVector;
 import eu.jangos.extractor.file.exception.WMOException;
-import eu.jangos.extractor.file.common.CAaBspNode;
 import eu.jangos.extractor.file.wmo.group.LiquidTypeEnum;
 import eu.jangos.extractor.file.wmo.group.MLIQ;
 import eu.jangos.extractor.file.wmo.group.MOBA;
 import eu.jangos.extractor.file.wmo.group.MOGP;
-import eu.jangos.extractor.file.wmo.group.MOGPFlagEnum;
 import eu.jangos.extractor.file.wmo.group.MOPY;
 import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
@@ -70,7 +69,54 @@ public class WMOGroup {
     private static final int SIZE_MOBR = 2;
     private static final int SIZE_MOCV = 4;
     private static final int SIZE_MORI = 2;
-
+    
+    // Flag values
+    public static final long FLAG_HAS_BSP_TREE = 0x1;
+    public static final long FLAG_HAS_LIGHT_MAP = 0x2;
+    public static final long FLAG_HAS_VERTEX_COLORS  = 0x4;
+    public static final long FLAG_IS_EXTERIOR  = 0x8;
+    public static final long FLAG_UNUSED_1  = 0x10;
+    public static final long FLAG_UNUSED_2  = 0x20;
+    public static final long FLAG_EXTERIOR_LIT  = 0x40;
+    public static final long FLAG_UNREACHABLE  = 0x80;
+    public static final long FLAG_UNUSED_3  = 0x100;
+    public static final long FLAG_HAS_LIGHT  = 0x200;
+    public static final long FLAG_UNUSED_4  = 0x400;
+    public static final long FLAG_HAS_DOODADS  = 0x800;
+    public static final long FLAG_HAS_LIQUID  = 0x1000;
+    public static final long FLAG_IS_INTERIOR  = 0x2000;
+    public static final long FLAG_UNUSED_5  = 0x4000;
+    public static final long FLAG_UNUSED_6  = 0x8000;
+    public static final long FLAG_ALWAYS_DRAW  = 0x10000;
+    public static final long FLAG_HAS_TRIANGLESTRIP  = 0x20000;
+    public static final long FLAG_SHOW_SKYBOX  = 0x40000;
+    public static final long FLAG_IS_OCEAN  = 0x80000;
+    public static final long FLAG_UNUSED_8  = 0x100000;
+    public static final long FLAG_IS_MOUNT_ALLOWED  = 0x200000;
+    public static final long FLAG_UNUSED_9  = 0x400000;
+    public static final long FLAG_UNUSED_10  = 0x800000;
+    public static final long FLAG_HAS_2_MOCV  = 0x1000000;
+    public static final long FLAG_HAS_2_MOTV  = 0x2000000;
+    public static final long FLAG_ANTIPORTAL  = 0x4000000;
+    public static final long FLAG_UNUSED_11  = 0x8000000;
+    public static final long FLAG_UNUSED_12  = 0x10000000;
+    public static final long FLAG_EXTERIOR_CULL  = 0x20000000;
+    public static final long FLAG_HAS_3_MOTV  = 0x40000000;
+    public static final long FLAG_UNUSED_13  = 0x80000000;        
+    
+    public static final int LIQUID_BASIC_TYPES_WATER = 0;
+    public static final int LIQUID_BASIC_TYPES_OCEAN = 1;
+    public static final int LIQUID_BASIC_TYPES_MAGMA = 2;
+    public static final int LIQUID_BASIC_TYPES_SLIME = 3;
+    public static final int LIQUID_BASIC_TYPES_MASK = 3;    
+    public static final int LIQUID_WMO_WATER = 13;
+    public static final int LIQUID_WMO_OCEAN = 14;
+    public static final int LIQUID_GREEN_LAVA = 15;
+    public static final int LIQUID_WMO_MAGMA = 19;
+    public static final int LIQUID_WMO_SLIME = 20;
+    public static final int LIQUID_FIRST_NON_BASIC_LIQUID_TYPE = 21;
+    public static final int LIQUID_NAXX_SLIME = 21;  
+    
     private ByteBuffer data;
     private String filename;
 
@@ -153,7 +199,7 @@ public class WMOGroup {
             batchList.add(batch);
         }
 
-        if (FlagUtils.hasFlag(group.getFlags(), MOGPFlagEnum.HAS_LIGHT.getValue())) {
+        if (hasLight()) {
             checkHeader(HEADER_MOLR);
             chunkSize = data.getInt() / SIZE_MOLR;
             for (int i = 0; i < chunkSize; i++) {
@@ -161,7 +207,7 @@ public class WMOGroup {
             }
         }
 
-        if (FlagUtils.hasFlag(group.getFlags(), MOGPFlagEnum.HAS_DOODADS.getValue())) {
+        if (hasDoodad()) {
             checkHeader(HEADER_MODR);
             chunkSize = data.getInt() / SIZE_MODR;
             for (int i = 0; i < chunkSize; i++) {
@@ -169,7 +215,7 @@ public class WMOGroup {
             }
         }
 
-        if (FlagUtils.hasFlag(group.getFlags(), MOGPFlagEnum.HAS_BSP_TREE.getValue())) {
+        if (hasBSPTree()) {
             checkHeader(HEADER_MOBN);
             chunkSize = data.getInt() / SIZE_MOBN;
             CAaBspNode node;
@@ -186,7 +232,7 @@ public class WMOGroup {
             }
         }
 
-        if (FlagUtils.hasFlag(group.getFlags(), MOGPFlagEnum.HAS_VERTEX_COLORS.getValue())) {
+        if (hasVertexColors()) {
             checkHeader(HEADER_MOCV);
             chunkSize = data.getInt() / SIZE_MOCV;
             CImVector vector;
@@ -197,7 +243,7 @@ public class WMOGroup {
             }
         }
 
-        if (FlagUtils.hasFlag(group.getFlags(), MOGPFlagEnum.HAS_WATER.getValue())) {
+        if (hasLiquid()) {                    
             checkHeader(HEADER_MLIQ);
             chunkSize = data.getInt();
             
@@ -211,15 +257,52 @@ public class WMOGroup {
             liquid.read(data, liquidType);            
         }
 
-        if (FlagUtils.hasFlag(group.getFlags(), MOGPFlagEnum.HAS_TRIANGLESTRIP.getValue())) {
+        if (hasTriangleStrip()) {
             checkHeader(HEADER_MORI);
             chunkSize = data.getInt() / SIZE_MORI;
             for (int i = 0; i < chunkSize; i++) {
                 triangleStripIndices.add(data.getShort());
             }
         }
+    }    
+    
+    private boolean hasFlag(long flag) {
+        return FlagUtils.hasFlag(this.group.getFlags(), flag);
     }
-
+    
+    public boolean hasLight() {
+        return hasFlag(FLAG_HAS_LIGHT);
+    }
+    
+    public boolean hasLiquid() {
+        return hasFlag(FLAG_HAS_LIQUID);
+    }
+    
+    public boolean hasDoodad() {
+        return hasFlag(FLAG_HAS_DOODADS);
+    }
+    
+    public boolean hasBSPTree() {
+        return hasFlag(FLAG_HAS_BSP_TREE);
+    }
+    
+    public boolean hasVertexColors() {
+        return hasFlag(FLAG_HAS_VERTEX_COLORS);
+    }
+    
+    public boolean hasTriangleStrip() {
+        return hasFlag(FLAG_HAS_TRIANGLESTRIP);
+    }
+    
+    public boolean isOcean() {
+        return hasFlag(FLAG_IS_OCEAN);
+    }
+    
+    public boolean isMagma() {
+        return false;
+    }
+    
+    
     public ByteBuffer getData() {
         return data;
     }
@@ -234,8 +317,8 @@ public class WMOGroup {
 
     public void setGroup(MOGP group) {
         this.group = group;
-    }
-
+    }    
+    
     public List<MOPY> getMaterialsList() {
         return materialsList;
     }
@@ -339,7 +422,15 @@ public class WMOGroup {
     public void setTriangleStripIndices(List<Short> triangleStripIndices) {
         this.triangleStripIndices = triangleStripIndices;
     }
-        
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }                    
+    
     private void checkHeader(String expectedHeader) throws WMOException {
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
