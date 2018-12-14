@@ -23,8 +23,6 @@ import eu.jangos.extractor.file.adt.chunk.MDDF;
 import eu.jangos.extractor.file.adt.chunk.MODF;
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.FileReaderException;
-import eu.jangos.extractor.file.exception.M2Exception;
-import eu.jangos.extractor.file.exception.WMOException;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
 import eu.mangos.shared.flags.FlagUtils;
 import java.io.IOException;
@@ -253,12 +251,12 @@ public class ADT2OBJConverter extends ModelConverter {
                     MeshView view = new MeshView(wmoConverter.getMesh());
 
                     // We translate the object location.                
-                    Translate translate = new Translate(17066 - modelPlacement.getZ(), 17066 - modelPlacement.getX(), modelPlacement.getY());                    
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().z, 17066 - modelPlacement.getPosition().x, modelPlacement.getPosition().y);                    
 
                     // We convert the euler angles to a Rotate object with euler angle and rotation ZXZ.                
-                    Rotate rx = new Rotate(modelPlacement.getOrY(), Rotate.Z_AXIS);
-                    Rotate ry = new Rotate(modelPlacement.getOrZ(), Rotate.X_AXIS);
-                    Rotate rz = new Rotate(modelPlacement.getOrX() - 180, Rotate.Z_AXIS);                    
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().y, Rotate.Z_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().z, Rotate.X_AXIS);
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().x - 180, Rotate.Z_AXIS);                    
 
                     // We add all transformations to the view and we get back the transformation matrix.
                     view.getTransforms().addAll(translate, rx, ry, rz);

@@ -20,7 +20,9 @@ import eu.jangos.extractor.file.exception.FileReaderException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -98,7 +100,7 @@ public abstract class FileReader {
         return stringList;
     }
     
-    private String readString(ByteBuffer in) {
+    protected String readString(ByteBuffer in) {
         StringBuilder sb = new StringBuilder();
 
         while (in.remaining() > 0) {
@@ -110,5 +112,44 @@ public abstract class FileReader {
         }
 
         return sb.toString();
+    }
+    
+    protected String readPaddedString(ByteBuffer in, int padding) {
+        StringBuilder sb = new StringBuilder();
+
+        while (in.remaining() > 0) {
+            char c = (char) in.get();
+            if (c == '\0') {
+                // There's 0 padding at the end of string and we want to skip them except if there's only one 0.                
+                int skip = padding - ((sb.length() + 1) % padding);
+                in.position(in.position() + (skip == padding ? 0 : skip));
+                break;
+            }
+            sb.append(c);
+        }
+
+        return sb.toString();
+    }
+    
+    protected Map<Integer, String> readStringChunkAsMap(int offset, String expectedHeader) throws FileReaderException {
+        Map<Integer, String> stringMap = new HashMap<>();
+
+        this.data.position(offset);
+
+        checkHeader(expectedHeader);
+
+        int size = this.data.getInt();
+        int start = this.data.position();
+        int recordOffset;
+        String temp;
+        while (this.data.position() - start < size) {
+            recordOffset = this.data.position() - offset - 8;
+            temp = readPaddedString(this.data, 4);
+            if (!temp.isEmpty()) {
+                stringMap.put(recordOffset, temp);
+            }
+        }
+
+        return stringMap;
     }
 }

@@ -662,60 +662,6 @@ public class WMO extends FileReader {
 
     public void setWmoGroupReadersList(List<WMOGroup> wmoGroupReadersList) {
         this.wmoGroupReadersList = wmoGroupReadersList;
-    }
-
-    private Map<Integer, String> readStringChunkAsMap(int offset, String expectedHeader) throws FileReaderException {
-        Map<Integer, String> stringMap = new HashMap<>();
-
-        super.data.position(offset);
-
-        checkHeader(expectedHeader);
-
-        int size = super.data.getInt();
-        int start = super.data.position();
-        int recordOffset;
-        String temp;
-        while (super.data.position() - start < size) {
-            recordOffset = super.data.position() - offset - 8;
-            temp = readPaddedString(super.data, 4);
-            if (!temp.isEmpty()) {
-                stringMap.put(recordOffset, temp);
-            }
-        }
-
-        return stringMap;
-    }
-
-    private String readString(ByteBuffer in) {
-        StringBuilder sb = new StringBuilder();
-
-        while (in.remaining() > 0) {
-            char c = (char) in.get();
-            if (c == '\0') {
-                break;
-            } else {
-                sb.append(c);
-            }
-        }
-
-        return sb.toString();
-    }
-
-    private String readPaddedString(ByteBuffer in, int padding) {
-        StringBuilder sb = new StringBuilder();
-
-        while (in.remaining() > 0) {
-            char c = (char) in.get();
-            if (c == '\0') {
-                // There's 0 padding at the end of string and we want to skip them except if there's only one 0.                
-                int skip = padding - ((sb.length() + 1) % padding);
-                in.position(in.position() + (skip == padding ? 0 : skip));
-                break;
-            }
-            sb.append(c);
-        }
-
-        return sb.toString();
-    }
+    }       
 
 }

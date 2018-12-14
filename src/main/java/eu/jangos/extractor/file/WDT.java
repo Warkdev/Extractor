@@ -15,6 +15,7 @@
  */
 package eu.jangos.extractor.file;
 
+import eu.jangos.extractor.file.adt.chunk.MODF;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.WDTException;
 import eu.jangos.extractor.file.wdt.AreaInfo;
@@ -53,6 +54,8 @@ public class WDT extends FileReader {
     private int flags;
 
     private List<AreaInfo> listAreas = new ArrayList<>();
+    private String wmo;
+    private MODF wmoPlacement = new MODF();
 
     @Override
     public void init(byte[] in, String filename) throws FileReaderException {
@@ -86,14 +89,27 @@ public class WDT extends FileReader {
         }
 
         AreaInfo info;
+        boolean hasTerrain = false;
         for (int i = 0; i < MAP_TILE_SIZE * MAP_TILE_SIZE; i++) {
             info = new AreaInfo();
             info.read(super.data);
+            hasTerrain |= info.hasADT();
             listAreas.add(info);
         }
 
         checkHeader(HEADER_MWMO);
-
+        size = super.data.getInt();
+        
+        if(!hasTerrain) {
+            // There should be one WMO definition with its placement information.
+            wmo = readString(super.data);
+            
+            checkHeader(HEADER_MODF);
+            size = super.data.getInt();
+            this.wmoPlacement = new MODF();
+            this.wmoPlacement.read(super.data);
+        }                
+        
         super.init = true;
     }
 

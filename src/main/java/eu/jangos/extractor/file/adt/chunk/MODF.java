@@ -5,6 +5,10 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
+import com.sun.javafx.geom.Vec3f;
+import eu.jangos.extractor.file.common.CAaBox;
+import java.nio.ByteBuffer;
+
 /**
  *
  * @author Warkdev
@@ -13,23 +17,30 @@ public class MODF {
     
     private int mwidEntry;
     private int uniqueId;
-    private float x;
-    private float y;
-    private float z;
-    private float orX;
-    private float orY;
-    private float orZ;
-    private float lowerBoundX;
-    private float lowerBoundY;
-    private float lowerBoundZ;
-    private float upperBoundX;
-    private float upperBoundY;
-    private float upperBoundZ;
+    private Vec3f position = new Vec3f();
+    private Vec3f orientation = new Vec3f();
+    private CAaBox boundingBox = new CAaBox();        
     private short flags;
     private short doodadSet;
     private short nameSet;
     private short padding;
 
+    public void read(ByteBuffer in) {
+        this.mwidEntry = in.getInt();
+        this.uniqueId = in.getInt();
+        this.position.x = in.getFloat();
+        this.position.y = in.getFloat();
+        this.position.z = in.getFloat();
+        this.orientation.x = in.getFloat();
+        this.orientation.y = in.getFloat();
+        this.orientation.z = in.getFloat();
+        this.boundingBox.read(in);
+        this.flags = in.getShort();
+        this.doodadSet = in.getShort();
+        this.nameSet = in.getShort();
+        this.padding = in.getShort();
+    }
+    
     public int getMwidEntry() {
         return mwidEntry;
     }
@@ -46,102 +57,30 @@ public class MODF {
         this.uniqueId = uniqueId;
     }
 
-    public float getX() {
-        return x;
+    public Vec3f getPosition() {
+        return position;
     }
 
-    public void setX(float x) {
-        this.x = x;
+    public void setPosition(Vec3f position) {
+        this.position = position;
     }
 
-    public float getY() {
-        return y;
+    public Vec3f getOrientation() {
+        return orientation;
     }
 
-    public void setY(float y) {
-        this.y = y;
+    public void setOrientation(Vec3f orientation) {
+        this.orientation = orientation;
     }
 
-    public float getZ() {
-        return z;
+    public CAaBox getBoundingBox() {
+        return boundingBox;
     }
 
-    public void setZ(float z) {
-        this.z = z;
+    public void setBoundingBox(CAaBox boundingBox) {
+        this.boundingBox = boundingBox;
     }
-
-    public float getOrX() {
-        return orX;
-    }
-
-    public void setOrX(float orX) {
-        this.orX = orX;
-    }
-
-    public float getOrY() {
-        return orY;
-    }
-
-    public void setOrY(float orY) {
-        this.orY = orY;
-    }
-
-    public float getOrZ() {
-        return orZ;
-    }
-
-    public void setOrZ(float orZ) {
-        this.orZ = orZ;
-    }
-
-    public float getLowerBoundX() {
-        return lowerBoundX;
-    }
-
-    public void setLowerBoundX(float lowerBoundX) {
-        this.lowerBoundX = lowerBoundX;
-    }
-
-    public float getLowerBoundY() {
-        return lowerBoundY;
-    }
-
-    public void setLowerBoundY(float lowerBoundY) {
-        this.lowerBoundY = lowerBoundY;
-    }
-
-    public float getLowerBoundZ() {
-        return lowerBoundZ;
-    }
-
-    public void setLowerBoundZ(float lowerBoundZ) {
-        this.lowerBoundZ = lowerBoundZ;
-    }
-
-    public float getUpperBoundX() {
-        return upperBoundX;
-    }
-
-    public void setUpperBoundX(float upperBoundX) {
-        this.upperBoundX = upperBoundX;
-    }
-
-    public float getUpperBoundY() {
-        return upperBoundY;
-    }
-
-    public void setUpperBoundY(float upperBoundY) {
-        this.upperBoundY = upperBoundY;
-    }
-
-    public float getUpperBoundZ() {
-        return upperBoundZ;
-    }
-
-    public void setUpperBoundZ(float upperBoundZ) {
-        this.upperBoundZ = upperBoundZ;
-    }
-
+    
     public short getFlags() {
         return flags;
     }

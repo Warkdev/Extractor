@@ -253,26 +253,7 @@ public class ADT extends FileReader {
         MODF placement;
         while (this.data.position() - start < size) {
             placement = new MODF();
-
-            placement.setMwidEntry(this.data.getInt());
-            placement.setUniqueId(this.data.getInt());
-            placement.setX(this.data.getFloat());
-            placement.setY(this.data.getFloat());
-            placement.setZ(this.data.getFloat());
-            placement.setOrX(this.data.getFloat());
-            placement.setOrY(this.data.getFloat());
-            placement.setOrZ(this.data.getFloat());
-            placement.setLowerBoundX(this.data.getFloat());
-            placement.setLowerBoundY(this.data.getFloat());
-            placement.setLowerBoundZ(this.data.getFloat());
-            placement.setUpperBoundX(this.data.getFloat());
-            placement.setUpperBoundX(this.data.getFloat());
-            placement.setUpperBoundX(this.data.getFloat());
-            placement.setFlags(this.data.getShort());
-            placement.setDoodadSet(this.data.getShort());
-            placement.setNameSet(this.data.getShort());
-            placement.setPadding(this.data.getShort());
-
+            placement.read(this.data);            
             listPlacement.add(placement);
         }
 
