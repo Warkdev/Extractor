@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
+ * FileReader is a parent class of WoW file formats. It provides convenience method to read and parse the files.
  * @author Warkdev
  */
 public abstract class FileReader {
@@ -34,8 +34,16 @@ public abstract class FileReader {
     protected ByteBuffer data;
     protected boolean init = false;
 
+    /**
+     * Init will initialize the corresponding file (ADT, WDT, WMO, M2, ...) to its file structure based on the data byte array provided in parameter.
+     * @param data The byte array representing the content of the file.
+     * @param filename The filename that is being represented by the byte data.
+     * @throws IOException If there's any issue while reading the file.
+     * @throws FileReaderException If there's any functional issue while reading the file (File version, expected header, chunk size, ..)
+     */
     public abstract void init(byte[] data, String filename) throws IOException, FileReaderException;
     
+    // Getter & Setter.
     public String getFilename() {
         return filename;
     }
