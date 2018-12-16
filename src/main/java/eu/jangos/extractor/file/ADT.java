@@ -12,7 +12,6 @@ import static eu.jangos.extractor.file.adt.chunk.MCLQ.LIQUID_FLAG_LENGTH;
 import eu.jangos.extractor.file.adt.chunk.MCNK;
 import eu.jangos.extractor.file.adt.chunk.MDDF;
 import eu.jangos.extractor.file.adt.chunk.MODF;
-import eu.jangos.extractor.file.adt.chunk.Vector;
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import java.awt.image.BufferedImage;
@@ -242,7 +241,7 @@ public class ADT extends FileReader {
         MCIN[] chunks = readMCIN();
 
         MCNK chunk;
-        for (int i = 0; i < chunks.length; i++) {
+        for (int i = 0; i < chunks.length; i++) {            
             super.data.position(chunks[i].getOffsetMCNK());
             
             checkHeader(HEADER_MCNK);

@@ -42,6 +42,7 @@ import systems.crigges.jmpq3.MPQOpenOption;
 public class MainApp extends Application {
 
     private static final String ROOT = "D:\\Downloads\\Test\\";
+    private static final String DATA = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data";
     private static final String ADT = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\terrain.MPQ";
     //private static final String ADT = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\terrain.MPQ";
     private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
@@ -54,13 +55,13 @@ public class MainApp extends Application {
     //private static final String wmoExample = "World\\wmo\\KhazModan\\Cities\\Ironforge\\ironforge.wmo";
     //private static final String wmoExample = "World\\wmo\\Azeroth\\Buildings\\Stranglethorn_BootyBay\\BootyBay.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\MD_Crypt\\MD_Crypt_D.wmo";
-    //private static final String wmoExample = "world\\wmo\\azeroth\\buildings\\stormwind\\stormwind.wmo";
+    private static final String wmoExample = "world\\wmo\\azeroth\\buildings\\stormwind\\stormwind.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme.wmo";
     //private static final String wmoExample = "World\\wmo\\Azeroth\\Buildings\\Prison_Camp\\PrisonOublietteLarge.wmo";
     //private static final String wmoExample = "World\\wmo\\Azeroth\\Collidable Doodads\\Elwynn\\AbbeyGate\\abbeygate01.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\KL_Blackfathom\\Blackfathom_instance.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme_B.wmo";
-    private static final String wmoExample = "World\\wmo\\Kalimdor\\Darnassis\\Darnassis.wmo";
+    //private static final String wmoExample = "World\\wmo\\Kalimdor\\Darnassis\\Darnassis.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\AZ_Blackrock\\Blackrock.wmo";
     //private static final String wmoExample = "World\\wmo\\Lorderon\\Buildings\\EasternPlaguelands\\UndeadZiggurat\\UndeadZiggurat.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\AZ_Blackrock\\Blackrock_lower_guild.wmo";
@@ -270,23 +271,16 @@ public class MainApp extends Application {
                                 if (f == 1) {
                                     fCount++;
                                 }
-                                switch (e) {
-                                    case 0:
-                                        tile.setFill(Color.BLUE);
-                                        break;
-                                    case 1:
-                                        tile.setFill(Color.RED);
-                                        break;
-                                    case 2:
-                                        tile.setFill(Color.ORANGE);
-                                        break;
-                                    case 3:
-                                        tile.setFill(Color.GREEN);
-                                        break;
-
-                                }
-                                if (liquidFlag == 15) {
-                                    //tile.setFill(Color.BLACK);
+                                if (group.getLiquid().hasNoLiquid(x, y)) {
+                                    tile.setFill(Color.BLACK);
+                                } else if(group.getLiquid().isWater(x, y)) {
+                                    tile.setFill(Color.BLUE);
+                                } else if (group.getLiquid().isMagma(x, y)) {
+                                    tile.setFill(Color.ORANGE);
+                                } else if (group.getLiquid().isSlime(x, y)) {
+                                    tile.setFill(Color.GREEN);
+                                } else {
+                                    tile.setFill(Color.RED);
                                 }
                                 /**
                                  * switch (flag) { case 0:

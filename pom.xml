@@ -19,6 +19,11 @@
     </repositories>
     <dependencies>
         <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.inwc3</groupId>
             <artifactId>JMPQ3</artifactId>
             <version>1.4.3</version>

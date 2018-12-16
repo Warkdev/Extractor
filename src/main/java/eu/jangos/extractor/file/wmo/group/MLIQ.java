@@ -28,13 +28,18 @@ import java.util.List;
 public class MLIQ {
     
     // Used to decode flag value. It's guessed that the flag (one byte), is ordered as made as several meaning:
-    // AA BB CC DD. Where DD is the liquid type except if CC = 11.
-    // Flag values for AA and BB are mainly unknown. It has been noticed that AA is at 0 very often.
-    private static final int FLAG_NO_LIQUID = 0x0F;
-    private static final int FLAG_IS_WATER = 0x00;
+    // AA BB CC DD. Where DD is the liquid type except if CC = 11.    
+    private static final int MASK_LIQUID = 0x03;
+    private static final int FLAG_IS_WATER = 0x00;    
     private static final int FLAG_IS_MAGMA = 0x02;
     private static final int FLAG_IS_SLIME = 0x03;
     private static final int FLAG_IS_ANIMATED = 0x04;
+    private static final int FLAG_NO_LIQUID = 0x08;
+    private static final int FLAG_E = 0x10;
+    private static final int FLAG_F = 0x20;
+    private static final int FLAG_FISHABLE = 0x40;
+    private static final int FLAG_OVERLAP = 0x80;
+    
     // Other flag values are unknown.
 
     private int xVerts;
@@ -138,18 +143,38 @@ public class MLIQ {
 
     public boolean hasNoLiquid(int row, int col) {
         return hasFlag(row, col, FLAG_NO_LIQUID);
+    }    
+    
+    public boolean isWater(int row, int col) {
+        return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_WATER;
     }
-
-    /**public boolean hasLiquid(int row, int col) {
-        return hasFlag(row, col, FLAG_HAS_LIQUID);
-    }*/
-
+    
     public boolean isMagma(int row, int col) {
-        return hasFlag(row, col, FLAG_IS_MAGMA);
+        return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_MAGMA;
     }
     
     public boolean isSlime(int row, int col) {
-        return hasFlag(row, col, FLAG_IS_SLIME);
+        return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_SLIME;
+    }
+    
+    public boolean isAnimated(int row, int col) {
+        return !hasNoLiquid(row, col) && hasFlag(row, col, FLAG_IS_ANIMATED);
+    }
+    
+    public boolean isFlagESet(int row, int col) {
+        return hasFlag(row, col, FLAG_E);
+    }
+    
+    public boolean isFlagFSet(int row, int col) {
+        return hasFlag(row, col, FLAG_F);
+    }
+    
+    public boolean isFishable(int row, int col) {
+        return !hasNoLiquid(row, col) && hasFlag(row, col, FLAG_FISHABLE);
+    }
+    
+    public boolean isOverlap(int row, int col) {
+        return hasFlag(row, col, FLAG_OVERLAP);
     }
     
     private boolean hasFlag(int row, int col, int flag) {

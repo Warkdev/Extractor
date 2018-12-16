@@ -83,97 +83,97 @@ public class MCNK extends FileReader {
     }
 
     public void read(ByteBuffer in) throws FileReaderException {
+        super.data = in;
+        
         int size;
-        int start;
-        // We ignore size.
-        in.getInt();
+        int start;                
 
-        this.flags = in.getInt();
-        this.indexX = in.getInt();
-        this.indexY = in.getInt();
-        this.nbLayers = in.getInt();
-        this.nDoodadRefs = in.getInt();
-        this.offsetMCVT = in.getInt();
-        this.offsetMCNR = in.getInt();
-        this.offsetMCLY = in.getInt();
-        this.offsetMCRF = in.getInt();
-        this.offsetMCAL = in.getInt();
-        this.sizeAlpha = in.getInt();
-        this.offsetMCSH = in.getInt();
-        this.sizeShadow = in.getInt();
-        this.areadId = in.getInt();
-        this.nMapObjRefs = in.getInt();
-        this.holes = in.getInt();
+        this.flags = super.data.getInt();
+        this.indexX = super.data.getInt();
+        this.indexY = super.data.getInt();
+        this.nbLayers = super.data.getInt();
+        this.nDoodadRefs = super.data.getInt();
+        this.offsetMCVT = super.data.getInt();
+        this.offsetMCNR = super.data.getInt();
+        this.offsetMCLY = super.data.getInt();
+        this.offsetMCRF = super.data.getInt();
+        this.offsetMCAL = super.data.getInt();
+        this.sizeAlpha = super.data.getInt();
+        this.offsetMCSH = super.data.getInt();
+        this.sizeShadow = super.data.getInt();
+        this.areadId = super.data.getInt();
+        this.nMapObjRefs = super.data.getInt();
+        this.holes = super.data.getInt();
 
         for (int j = 0; j < 16; j++) {
             // Skipping low quality text map for now. (64 bytes)
-            in.get();
+            super.data.get();
         }
 
-        this.predTex = in.getInt();
-        this.noEffectDoodad = in.getInt();
-        this.offsetMCSE = in.getInt();
-        this.nSndEmitters = in.getInt();
-        this.offsetMCLQ = in.getInt();
-        this.sizeLiquid = in.getInt();
-        this.position.x = in.getFloat();
-        this.position.y = in.getFloat();
-        this.position.z = in.getFloat();
-        this.offsetMCCV = in.getInt();
-        this.offsetMCLV = in.getInt();
+        this.predTex = super.data.getInt();
+        this.noEffectDoodad = super.data.getInt();
+        this.offsetMCSE = super.data.getInt();
+        this.nSndEmitters = super.data.getInt();
+        this.offsetMCLQ = super.data.getInt();
+        this.sizeLiquid = super.data.getInt();
+        this.position.x = super.data.getFloat();
+        this.position.y = super.data.getFloat();
+        this.position.z = super.data.getFloat();
+        this.offsetMCCV = super.data.getInt();
+        this.offsetMCLV = super.data.getInt();                
         
         // Unused
-        in.getInt();
-
+        super.data.getInt();
+                
         // Must now parse MCVT            
         checkHeader(HEADER_MCVT);
         // We ignore size.
-        in.getInt();
-        this.vertices.read(in);
+        super.data.getInt();
+        this.vertices.read(super.data);
 
         // Must now parse MCNR
         checkHeader(HEADER_MCNR);
         // We ignore size.
-        in.getInt();
-        this.normals.read(in);
+        super.data.getInt();
+        this.normals.read(super.data);
 
         // 13 unknown bytes at the end of normals:
         for (int j = 0; j < 13; j++) {
-            in.get();
+            super.data.get();
         }
 
         // Must now parse MCLY.
         checkHeader(HEADER_MCLY);
 
         // We ignore size.
-        in.getInt();
+        super.data.getInt();
         for (int j = 0; j < this.nbLayers; j++) {
-            this.textureLayers[j].read(in);            
+            this.textureLayers[j].read(super.data);            
         }
-
+        
         // Must now parse MCRF.
         checkHeader(HEADER_MCRF);
 
-        size = in.getInt();
-        start = in.position();        
-        while (in.position() - start < size) {
-            this.mcrfList.add(in.getInt());
+        size = super.data.getInt();
+        start = super.data.position();        
+        while (super.data.position() - start < size) {
+            this.mcrfList.add(super.data.getInt());
         }
 
         // Must now parse MCSH.
         checkHeader(HEADER_MCSH);
 
-        size = in.getInt();
+        size = super.data.getInt();
         for (int j = 0; j < size; j++) {
-            in.get();
+            super.data.get();
         }
 
         // Must now parse MCAL.
         checkHeader(HEADER_MCAL);
 
-        size = in.getInt();
+        size = super.data.getInt();
         for (int j = 0; j < size; j++) {
-            in.get();
+            super.data.get();
         }
 
         // Must now parse MCLQ.
@@ -181,7 +181,7 @@ public class MCNK extends FileReader {
 
         size = this.sizeLiquid - 8;
         // Then we skip the "size field" as it's always 0.
-        data.getInt();
+        super.data.getInt();
         // Documentation is spread over several codebase, none really figuring out what it is properly.
         // Thanks for Mangos/CMangos codebase on which this is based.            
         if (hasLiquid()) {            
@@ -189,22 +189,22 @@ public class MCNK extends FileReader {
             // MCLQ can be made of several layers. It's assumed (guessed) that MCLQ are ordered by liquid type in the ADT.
             if (isRiver()) {
                 liquid = new MCLQ();
-                liquid.read(data);
+                liquid.read(super.data);
                 this.listLiquids.add(liquid);
             }
             if (isOcean()) {
                 liquid = new MCLQ();
-                liquid.read(data);
+                liquid.read(super.data);
                 this.listLiquids.add(liquid);
             }
             if (isMagma()) {
                 liquid = new MCLQ();
-                liquid.read(data);
+                liquid.read(super.data);
                 this.listLiquids.add(liquid);
             }
             if (isSlime()) {
                 liquid = new MCLQ();
-                liquid.read(data);
+                liquid.read(super.data);
                 this.listLiquids.add(liquid);
             }            
         }
@@ -213,7 +213,7 @@ public class MCNK extends FileReader {
         checkHeader(HEADER_MCSE);
 
         // Flag value not well documented.
-        in.getInt();
+        super.data.getInt();
     }
 
     public int getFlags() {
