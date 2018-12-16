@@ -17,6 +17,9 @@ import eu.jangos.extractorfx.obj.WMO2OBJConverter;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -34,10 +37,15 @@ public class Extractor {
     private static final String ROOT = "D:\\Downloads\\Test\\";
     private static final String ADT = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\terrain.MPQ";
     //private static final String ADT = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\terrain.MPQ";
-    private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
+    private static final String adtwowfile = "D:\\Downloads\\Azeroth_33_33.adt";
+    private static final String map = "World\\Maps\\Azeroth\\Azeroth_33_33.adt";
     private static final String WMO = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\wmo.MPQ";
-    private static final String wmoExample = "world\\wmo\\dungeon\\kl_orgrimmarlavadungeon\\lavadungeon.wmo";
+    //private static final String WMO = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\patch.MPQ";
+    //private static final String wmoExample = "world\\wmo\\dungeon\\kl_orgrimmarlavadungeon\\lavadungeon.wmo";
     //private static final String wmoExample = "world\\wmo\\azeroth\\buildings\\stormwind\\stormwind.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\KL_Diremaul\\KL_Diremaul_Instance.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_ScarletMonestary\\Monestary_Cathedral.wmo";
+    private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme_raid.wmo";
     private static final String m2Example = "world\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy04.M2";
     private static final String MODEL = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\model.MPQ";
     private static final WDT wdtReader = new WDT();
@@ -46,31 +54,67 @@ public class Extractor {
     private static final WMO wmoReader = new WMO();
     private static final ModelConverter wmoConverter = new WMO2OBJConverter(wmoReader);
     private static final M2 m2Reader = new M2();
-    private static final ModelConverter m2Converter = new M22OBJConverter(m2Reader);    
+    private static final ModelConverter m2Converter = new M22OBJConverter(m2Reader);
     private static final Map<String, ModelConverter> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private static final File adtFile = new File(ADT);
     private static final File modelFile = new File(MODEL);
     private static final File wmoFile = new File(WMO);
+    private static final JMpqEditor modelEditor;
 
-    public static void main(String[] args) {
+    static {
+        JMpqEditor editor = null;
+        try {
+            editor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
+        } catch (IOException exception) {
+
+        }
+        modelEditor = editor;
+    }
+    private static final JMpqEditor wmoEditor;
+
+    static {
+        JMpqEditor editor = null;
+        try {
+            editor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
+        } catch (IOException exception) {
+
+        }
+        wmoEditor = editor;
+    }
+    private static final JMpqEditor adtEditor;
+
+    static {
+        JMpqEditor editor = null;
+        try {
+            editor = new JMpqEditor(adtFile, MPQOpenOption.READ_ONLY);
+        } catch (IOException exception) {
+
+        }
+        adtEditor = editor;
+    }
+
+    public static void main(String[] args) throws IOException {
 
         //extractM2(m2Example);
         //extractAllM2(true);
-        //extractWmo(wmoExample, false, true);
+        extractWmo(wmoExample, true, true);
         //extractAllWMO(false, false);
-        //extractMap(map, true, false, false, false);
+        //extractMap(map, true, false, false, false, false);
         //extractAllMaps(false, false, false, false, false);
-        extractAllWdt();
+        //extractAllWdt();
+        //extractAllTerrains();
+        //extractMap();
+        adtEditor.close();
+        modelEditor.close();
+        wmoEditor.close();
     }
 
     private static void extractAllWMO(boolean addModels, boolean saveToFile) {
-        try {
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor wmoEditor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
+        for (String path : wmoEditor.getFileNames()) {
+            try {
+                int total = wmoEditor.getTotalFileCount();
+                int done = 0;
 
-            int total = wmoEditor.getTotalFileCount();
-            int done = 0;
-            for (String path : wmoEditor.getFileNames()) {
                 done++;
                 if (!path.endsWith(".wmo")) {
                     continue;
@@ -89,21 +133,20 @@ public class Extractor {
                 }
 
                 //System.out.println("Done: " + done + " / Total: " + total);
+            } catch (IOException ex) {
+                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ConverterException ex) {
+                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (FileReaderException ex) {
+                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (Exception e) {
+                
             }
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private static void extractWmo(String path, boolean addModels, boolean saveToFile) {
         try {
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor wmoEditor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
-
             String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
             wmoReader.init(wmoEditor.extractFileAsBytes(path), path);
             ((WMO2OBJConverter) (wmoConverter)).convert(wmoEditor, modelEditor, cache, path, addModels);
@@ -122,8 +165,6 @@ public class Extractor {
 
     private static void extractAllM2(boolean saveToFile) {
         try {
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-
             int total = modelEditor.getTotalFileCount();
             int done = 0;
             for (String file : modelEditor.getFileNames()) {
@@ -150,8 +191,6 @@ public class Extractor {
 
     private static void extractM2(String path) {
         try {
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-
             String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";
             m2Reader.init(modelEditor.extractFileAsBytes(path), path);
             ((M22OBJConverter) m2Converter).convert(1, 17);
@@ -165,12 +204,51 @@ public class Extractor {
         }
     }
 
+    private static void extractAllTerrains() {
+        try {
+            for (String wdt : adtEditor.getFileNames()) {
+                if (wdt.endsWith(".wdt")) {
+                    try {
+                        String base = FilenameUtils.getPath(wdt) + FilenameUtils.getBaseName(wdt);
+                        String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdt) + ".png";
+                        wdtReader.init(adtEditor.extractFileAsBytes(wdt), wdt);
+                        for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
+                            for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
+                                if (wdtReader.hasTerrain(x, y)) {
+                                    extractMap(base + "_" + y + "_" + x + ".adt", false, false, false, false, false);
+                                }
+                            }
+                        }
+                    } catch (FileReaderException ex) {
+                        Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private static void extractMap() {
+        Path path = Paths.get(adtwowfile);
+        try {
+            adtReader.init(Files.readAllBytes(path), adtwowfile);
+            adtConverter.convert(wmoEditor, modelEditor, cache, adtwowfile, false, false, false, false);
+        } catch (ConverterException ex) {
+            Logger.getLogger(Extractor.class
+                    .getName()).log(Level.SEVERE, null, ex);
+
+        } catch (FileReaderException ex) {
+            Logger.getLogger(Extractor.class
+                    .getName()).log(Level.SEVERE, null, ex);
+
+        } catch (IOException ex) {
+            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     private static void extractAllMaps(boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO, boolean saveToFile) {
         try {
-            JMpqEditor adtEditor = new JMpqEditor(adtFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor wmoEditor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
-
             for (String path : adtEditor.getFileNames()) {
                 if (path.endsWith(".adt")) {
                     try {
@@ -182,25 +260,27 @@ public class Extractor {
                         adtConverter.convert(wmoEditor, modelEditor, cache, path, yUp, addWMO, addModels, addModelsInWMO);
                         if (saveToFile) {
                             adtConverter.saveToFile(outputFile, false, false);
+
                         }
                     } catch (ConverterException ex) {
-                        Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(Extractor.class
+                                .getName()).log(Level.SEVERE, null, ex);
+
                     } catch (FileReaderException ex) {
-                        Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(Extractor.class
+                                .getName()).log(Level.SEVERE, null, ex);
+
                     }
                 }
             }
         } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Extractor.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO) {
+    private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO, boolean saveToFile) {
         try {
-            JMpqEditor adtEditor = new JMpqEditor(adtFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor wmoEditor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
-
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
             String outputLiquidMap = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + "_liquid_map.png";
             String outputDetailedLiquidMap = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + "_liquid_map_details.png";
@@ -208,39 +288,44 @@ public class Extractor {
             //adtReader.saveLiquidMap(outputLiquidMap, false);
             //adtReader.saveLiquidMap(outputDetailedLiquidMap, true);
             adtConverter.convert(wmoEditor, modelEditor, cache, path, yUp, addWMO, addModels, addModelsInWMO);
-            adtConverter.saveToFile(outputFile, false, false);
+            if (saveToFile) {
+                adtConverter.saveToFile(outputFile, false, false);
+
+            }
+
         } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Extractor.class
+                    .getName()).log(Level.SEVERE, null, ex);
+
         } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Extractor.class
+                    .getName()).log(Level.SEVERE, null, ex);
+
         } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Extractor.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private static void extractAllWdt() {
         try {
-            JMpqEditor adtEditor = new JMpqEditor(adtFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor wmoEditor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
-
             for (String path : adtEditor.getFileNames()) {
                 if (path.endsWith(".wdt")) {
                     try {
                         String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".png";
                         wdtReader.init(adtEditor.extractFileAsBytes(path), path);
-                        /**for (String wmo : adtReader.getWorldObjects()) {
-                            System.out.println(adtReader.getFilename() + ";" + wmo);
-                        }  */
-                        wdtReader.saveTileMap(outputFile);
+                        //wdtReader.saveTileMap(outputFile);
+                        System.out.println(wdtReader.getFilename() + ";" + wdtReader.getWmo());
                     } catch (FileReaderException ex) {
-                        Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(Extractor.class
+                                .getName()).log(Level.SEVERE, null, ex);
+
                     }
                 }
             }
         } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Extractor.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
 }

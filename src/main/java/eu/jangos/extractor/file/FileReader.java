@@ -53,12 +53,20 @@ public abstract class FileReader {
     }        
     
     protected void checkHeader(String expectedHeader) throws FileReaderException {
+        checkHeader(expectedHeader, true);
+    }
+    
+    protected void checkHeader(String expectedHeader, boolean reverse) throws FileReaderException {
         StringBuilder sb = new StringBuilder();
         byte[] header = new byte[4];
 
         data.get(header);
 
-        sb = sb.append(new String(header)).reverse();
+        if(reverse) {
+            sb = sb.append(new String(header)).reverse();
+        } else {
+            sb = sb.append(new String(header));
+        }
         if (!sb.toString().equals(expectedHeader)) {
             throw new FileReaderException(this.filename + " - Expected header " + expectedHeader + ", received header: " + sb.toString());
         }

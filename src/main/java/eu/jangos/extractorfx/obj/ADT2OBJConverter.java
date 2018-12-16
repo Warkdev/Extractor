@@ -79,6 +79,8 @@ public class ADT2OBJConverter extends ModelConverter {
             throw new ConverterException("ADTFileReader is null");
         }
 
+        clearMesh();
+        
         List<MCNK> mapChunks;
         try {
             mapChunks = reader.getMapChunks();
@@ -86,8 +88,8 @@ public class ADT2OBJConverter extends ModelConverter {
             throw new ConverterException(exception.getMessage());
         }
 
-        float initialChunkX = mapChunks.get(0).getPosX();
-        float initialChunkY = mapChunks.get(0).getPosY();
+        float initialChunkX = mapChunks.get(0).getPosition().x;
+        float initialChunkY = mapChunks.get(0).getPosition().y;
 
         for (MCNK chunk : mapChunks) {
             int offset = this.mesh.getPoints().size() / 3;
@@ -98,16 +100,16 @@ public class ADT2OBJConverter extends ModelConverter {
                     this.mesh.getNormals().addAll(chunk.getNormals().getPoints()[idx].getX() / 127.0f, chunk.getNormals().getPoints()[idx].getY() / 127.0f, chunk.getNormals().getPoints()[idx].getZ() / 127.0f);
                     float x, y, z;
                     // Calculating Positions.                    
-                    x = chunk.getPosX() - (i * ADT.UNIT_SIZE * 0.5f);
-                    y = chunk.getPosY() - (j * ADT.UNIT_SIZE);
-                    z = chunk.getVertices().getPoints()[idx++] + chunk.getPosZ();
+                    x = chunk.getPosition().x - (i * ADT.UNIT_SIZE * 0.5f);
+                    y = chunk.getPosition().y - (j * ADT.UNIT_SIZE);
+                    z = chunk.getVertices().getPoints()[idx++] + chunk.getPosition().z;
                     if ((i % 2) != 0) {
                         y -= 0.5f * ADT.UNIT_SIZE;
                     }
                     this.mesh.getPoints().addAll(x, y, z);
                     // Calculating TexCoord in high resolution.
-                    x = ((chunk.getPosX() - initialChunkX) * (-1)) / ADT.CHUNK_SIZE;
-                    y = (chunk.getPosY() - initialChunkY) * (-1) / ADT.CHUNK_SIZE;
+                    x = ((chunk.getPosition().x - initialChunkX) * (-1)) / ADT.CHUNK_SIZE;
+                    y = (chunk.getPosition().y - initialChunkY) * (-1) / ADT.CHUNK_SIZE;
                     this.mesh.getTexCoords().addAll(x, y);
                 }
             }
@@ -184,12 +186,12 @@ public class ADT2OBJConverter extends ModelConverter {
                     MeshView view = new MeshView(m2Converter.getMesh());
 
                     // We translate the object location.                
-                    Translate translate = new Translate(17066 - modelPlacement.getZ(), 17066 - modelPlacement.getX(), modelPlacement.getY());                    
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().z, 17066 - modelPlacement.getPosition().x, modelPlacement.getPosition().y);                    
 
                     // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                
-                    Rotate rx = new Rotate(modelPlacement.getOrY(), Rotate.Z_AXIS);
-                    Rotate ry = new Rotate(modelPlacement.getOrZ(), Rotate.X_AXIS);
-                    Rotate rz = new Rotate(modelPlacement.getOrX() - 180, Rotate.Z_AXIS);                    
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().y, Rotate.Z_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().z, Rotate.X_AXIS);
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().x - 180, Rotate.Z_AXIS);                    
 
                     // We scale.
                     double scaleFactor = modelPlacement.getScale() / 1024d;
@@ -329,15 +331,7 @@ public class ADT2OBJConverter extends ModelConverter {
     }
 
     public void setReader(ADT reader) {
-        this.reader = reader;
-        clear();
-    }
-
-    private void clear() {
-        this.mesh.getPoints().clear();
-        this.mesh.getNormals().clear();
-        this.mesh.getTexCoords().clear();
-        this.mesh.getFaces().clear();
+        this.reader = reader;        
     }
 
 }

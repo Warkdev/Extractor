@@ -27,6 +27,7 @@ import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.ParallelCamera;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -41,16 +42,28 @@ import systems.crigges.jmpq3.MPQOpenOption;
 public class MainApp extends Application {
 
     private static final String ROOT = "D:\\Downloads\\Test\\";
-    private static final String ADT = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\patch.MPQ";
+    private static final String ADT = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\terrain.MPQ";
     //private static final String ADT = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\terrain.MPQ";
     private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
     private static final String WMO = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\wmo.MPQ";
-    String wmoExample = "World\\wmo\\Kalimdor\\CollidableDoodads\\Durotar\\StoneGate\\DurotarGate.wmo";
+    //private static final String WMO = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\patch.MPQ";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme_raid.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_ScarletMonestary\\Monestary_Cathedral.wmo";
+    //private static final String wmoExample = "World\\wmo\\Lorderon\\Undercity\\Undercity.wmo";
     //private static final String wmoExample = "world\\wmo\\dungeon\\kl_orgrimmarlavadungeon\\lavadungeon.wmo";
+    //private static final String wmoExample = "World\\wmo\\KhazModan\\Cities\\Ironforge\\ironforge.wmo";
+    //private static final String wmoExample = "World\\wmo\\Azeroth\\Buildings\\Stranglethorn_BootyBay\\BootyBay.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\MD_Crypt\\MD_Crypt_D.wmo";
     //private static final String wmoExample = "world\\wmo\\azeroth\\buildings\\stormwind\\stormwind.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme.wmo";
     //private static final String wmoExample = "World\\wmo\\Azeroth\\Buildings\\Prison_Camp\\PrisonOublietteLarge.wmo";
     //private static final String wmoExample = "World\\wmo\\Azeroth\\Collidable Doodads\\Elwynn\\AbbeyGate\\abbeygate01.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\KL_Blackfathom\\Blackfathom_instance.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme_B.wmo";
+    private static final String wmoExample = "World\\wmo\\Kalimdor\\Darnassis\\Darnassis.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\AZ_Blackrock\\Blackrock.wmo";
+    //private static final String wmoExample = "World\\wmo\\Lorderon\\Buildings\\EasternPlaguelands\\UndeadZiggurat\\UndeadZiggurat.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\AZ_Blackrock\\Blackrock_lower_guild.wmo";
     private static final String m2Example = "world\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy04.M2";
     private static final String MODEL = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\model.MPQ";
     private static final ADT adtReader = new ADT();
@@ -67,6 +80,10 @@ public class MainApp extends Application {
     private static final int VIEWPORT_W = 1920;
     private static final int VIEWPORT_H = 1080;
     private static final double SCALE = 1;
+    private static final double SCALE_STEP = 0.1;
+    private static final double MIN_SCALE = 0.1;
+    private static final double MAX_SCALE = 3;
+    private static final double TRANSLATE_STEP = 5;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -88,6 +105,42 @@ public class MainApp extends Application {
         scene.setCamera(camera);
         scene.getStylesheets().add("/styles/Styles.css");
         scene.getRoot().requestFocus();
+
+        root.addEventHandler(KeyEvent.KEY_PRESSED, (event) -> {
+            double scale = camera.getScaleX();
+            double translateX = camera.getTranslateX();
+            double translateY = camera.getTranslateY();
+            switch (event.getCode()) {
+                case SUBTRACT:
+                    scale += SCALE_STEP;
+                    if (scale > MAX_SCALE) {
+                        scale = MAX_SCALE;
+                    }
+                    break;
+                case ADD:
+                    scale -= SCALE_STEP;
+                    if (scale < MIN_SCALE) {
+                        scale = MIN_SCALE;
+                    }
+                    break;
+                case LEFT:
+                    translateX -= TRANSLATE_STEP;
+                    break;
+                case RIGHT:
+                    translateX += TRANSLATE_STEP;
+                    break;
+                case UP:
+                    translateY -= TRANSLATE_STEP;
+                    break;
+                case DOWN:
+                    translateY += TRANSLATE_STEP;
+                    break;
+            }
+            camera.setScaleX(scale);
+            camera.setScaleY(scale);
+            camera.setTranslateX(translateX);
+            camera.setTranslateY(translateY);
+        });
 
         // Maximizing.
         stage.setMaximized(true);
@@ -152,7 +205,6 @@ public class MainApp extends Application {
             String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
             wmo.init(wmoEditor.extractFileAsBytes(path), path);
             Group liquid = new Group();
-            Point3D rotation = new Point3D(VIEWPORT_W / 2, VIEWPORT_H / 2, 0);
             ((WMO2OBJConverter) (wmoConverter)).convert(wmoEditor, modelEditor, cache, path, addModels);
             Rectangle rect = new Rectangle();
             double heightRoot = wmo.getBoundingBox().getMax().y - wmo.getBoundingBox().getMin().y;
@@ -164,6 +216,7 @@ public class MainApp extends Application {
             rect.setFill(Color.TRANSPARENT);
             rect.setStroke(Color.RED);
             liquid.getChildren().add(rect);
+
             for (WMOGroup group : wmo.getWmoGroupReadersList()) {
                 StackPane pane = new StackPane();
                 Rectangle r = new Rectangle();
@@ -176,35 +229,97 @@ public class MainApp extends Application {
                 r.setWidth(width);
                 r.setHeight(height);
                 r.setFill(Color.TRANSPARENT);
-
+                
                 if (group.hasLiquid()) {
+                    int eCount = 0;
+                    int fCount = 0;
                     coord = "[" + group.getLiquid().getxTiles() + "," + group.getLiquid().getyTiles() + "]";
-                    //double tileWidth = width / group.getLiquid().getxTiles();
-                    //double tileHeight = height / group.getLiquid().getyTiles();
                     double tileWidth = 4.1666666666666666666666666;
                     double tileHeight = 4.166666666666666666666666;
                     for (int x = 0; x < group.getLiquid().getxTiles(); x++) {
                         for (int y = 0; y < group.getLiquid().getyTiles(); y++) {
                             Rectangle tile = new Rectangle(x * tileWidth + group.getLiquid().getBaseCoordinates().x, -(y * tileHeight + group.getLiquid().getBaseCoordinates().y), tileWidth, tileHeight);
-                            tile.setFill(Color.TRANSPARENT);
-                            //System.out.println(group.getLiquid().getxTiles() + " " + group.getLiquid().getyTiles() + " " +x+" "+y);
-                            
-                            if (group.getLiquid().hasNoLiquid(x, y)) {
-                                tile.setStroke(Color.BLACK);
+                            tile.setFill(Color.RED);
+
+                            //if (group.getLiquid().hasNoLiquid(x, y)) {
+                            if (false) {
+                                tile.setFill(Color.BLACK);
                             } else {
-                                if (group.getLiquid().isMagma(x, y)) {
-                                    tile.setStroke(Color.ORANGE);
-                                } else {
-                                    tile.setStroke(Color.BLUE);
+
+                                //System.out.println(group.getLiquid().isSlime(x, y));
+                                //System.out.println(group.getLiquid().isMagma(x, y));
+                                //System.out.println(wmo.getFlags() + ";" + group.isMagma() + ";" + group.getGroup().getFlags() + ";" + group.getGroup().getGroupLiquid());
+                                int liquidFlag = group.getLiquid().getFlags().get(group.getLiquid().getFlagPosition(x, y)) & 0x0F;
+                                int liquidType = liquidFlag & 0x3;
+                                int flag = (group.getLiquid().getFlags().get(group.getLiquid().getFlagPosition(x, y)) & 0xF0) >> 4;
+                                int xy = (liquidFlag & 0xC) >> 2;
+                                int xx = (xy & 0x2) >> 1;
+                                int yy = xy & 0x1;
+                                int aa = (flag & 0xC) >> 2;
+                                int w = (aa & 0x2) >> 1;
+                                int z = aa & 0x1;
+                                int bb = flag & 0x03;
+                                int e = (bb & 0x2) >> 1;
+                                int f = bb & 0x1;
+                                if (aa != 3) {
+                                    //continue;
                                 }
+                                if (e == 1) {
+                                    eCount++;
+                                }
+                                if (f == 1) {
+                                    fCount++;
+                                }
+                                switch (e) {
+                                    case 0:
+                                        tile.setFill(Color.BLUE);
+                                        break;
+                                    case 1:
+                                        tile.setFill(Color.RED);
+                                        break;
+                                    case 2:
+                                        tile.setFill(Color.ORANGE);
+                                        break;
+                                    case 3:
+                                        tile.setFill(Color.GREEN);
+                                        break;
+
+                                }
+                                if (liquidFlag == 15) {
+                                    //tile.setFill(Color.BLACK);
+                                }
+                                /**
+                                 * switch (flag) { case 0:
+                                 * tile.setFill(Color.BLUE); break; case 1:
+                                 * tile.setFill(Color.BLUEVIOLET); break; case
+                                 * 2: tile.setFill(Color.BROWN); break; case 3:
+                                 * tile.setFill(Color.CHARTREUSE); break; case
+                                 * 4: tile.setFill(Color.CHOCOLATE); break; case
+                                 * 5: tile.setFill(Color.CORAL); break; case 6:
+                                 * tile.setFill(Color.CORNFLOWERBLUE); break;
+                                 * case 7: tile.setFill(Color.CRIMSON); break;
+                                 * case 8: tile.setFill(Color.CYAN); break; case
+                                 * 9: tile.setFill(Color.DARKBLUE); break; case
+                                 * 10: tile.setFill(Color.DARKVIOLET); break;
+                                 * case 11: tile.setFill(Color.FORESTGREEN);
+                                 * break; case 12: tile.setFill(Color.FUCHSIA);
+                                 * break; case 13: tile.setFill(Color.KHAKI);
+                                 * break; case 14: tile.setFill(Color.MAROON);
+                                 * break; case 15: tile.setFill(Color.BLACK);
+                                 * break;
+                                }
+                                 */
                             }
                             liquid.getChildren().add(tile);
                         }
                     }
+                    System.out.println(group.getFilename() + ";" + eCount+";"+fCount);
                 } else {
                     coord = "[0,0]";
-                }
-                Text label = new Text(FilenameUtils.getName(group.getFilename()).split("_")[1].split("\\.")[0]);
+                }                
+                String[] temp = FilenameUtils.getName(group.getFilename()).split("\\.")[0].split("_");
+                Text label = new Text(temp[temp.length - 1]);
+                //Text label = new Text();
                 Text coordinates = new Text(coord);
 
                 if (group.hasLiquid()) {

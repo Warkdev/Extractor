@@ -142,7 +142,7 @@ public class M2 extends FileReader {
     }
 
     private void readHeader() throws FileReaderException {  
-        checkHeader(HEADER_MD20);        
+        checkHeader(HEADER_MD20, false);        
 
         // Version.
         int version = super.data.getInt();

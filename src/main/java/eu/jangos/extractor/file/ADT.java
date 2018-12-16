@@ -40,15 +40,7 @@ public class ADT extends FileReader {
     private static final String HEADER_MWID = "MWID";
     private static final String HEADER_MDDF = "MDDF";
     private static final String HEADER_MODF = "MODF";
-    private static final String HEADER_MCNK = "MCNK";
-    private static final String HEADER_MCVT = "MCVT";
-    private static final String HEADER_MCNR = "MCNR";
-    private static final String HEADER_MCLY = "MCLY";
-    private static final String HEADER_MCRF = "MCRF";
-    private static final String HEADER_MCSH = "MCSH";
-    private static final String HEADER_MCAL = "MCAL";
-    private static final String HEADER_MCLQ = "MCLQ";
-    private static final String HEADER_MCSE = "MCSE";
+    private static final String HEADER_MCNK = "MCNK";    
 
     // Size as from which the offset calculation is made.
     private static final int GLOBAL_OFFSET = 0x14;
@@ -58,13 +50,7 @@ public class ADT extends FileReader {
     public static final float UNIT_SIZE = CHUNK_SIZE / 8.0f;
     public static final float ZERO_POINT = 32.0f * TILE_SIZE;
 
-    private static final int SIZE_LIQUID_MAP = 128;
-    
-    private ByteBuffer data;
-    // Indicates whether this file has been initialized or not.
-    private boolean init = false;
-
-    private String fileName;
+    private static final int SIZE_LIQUID_MAP = 128;        
 
     private int version;
     private int mfboEnum;
@@ -83,14 +69,14 @@ public class ADT extends FileReader {
 
     @Override
     public void init(byte[] data, String filename) throws IOException, FileReaderException {
-        init = false;
-        this.fileName = filename;
-        this.data = ByteBuffer.wrap(data);
-        this.data.order(ByteOrder.LITTLE_ENDIAN);    
+        init = false;        
+        super.data = ByteBuffer.wrap(data);
+        super.data.order(ByteOrder.LITTLE_ENDIAN);    
+        super.filename = filename;
         
         // This is all what we need to read our file. Initialize the offset and check the version.
-        readVersion(this.data);
-        readHeader(this.data);
+        readVersion(super.data);
+        readHeader(super.data);
         init = true;
     }
 
@@ -145,19 +131,16 @@ public class ADT extends FileReader {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }        
 
-        this.data.position(GLOBAL_OFFSET + this.offsetMCIN);
+        super.data.position(GLOBAL_OFFSET + this.offsetMCIN);
 
         checkHeader(HEADER_MCIN);
 
-        int size = this.data.getInt();
+        int size = super.data.getInt();
         MCIN index;
         MCIN[] chunkIndex = new MCIN[size / MCIN.getOBJECT_SIZE()];
         for (int i = 0; i < chunkIndex.length; i++) {
             index = new MCIN();
-            index.setOffsetMCNK(this.data.getInt());
-            index.setSize(this.data.getInt());
-            index.setFlags(this.data.getInt());
-            index.setAsyncId(this.data.getInt());
+            index.read(super.data);
             chunkIndex[i] = index;
         }
 
@@ -180,7 +163,7 @@ public class ADT extends FileReader {
         return readStringChunk(this.offsetMMDX + GLOBAL_OFFSET, HEADER_MMDX);
     }
 
-    private List<Integer> getModelOffsets() throws FileReaderException {
+    public List<Integer> getModelOffsets() throws FileReaderException {
         if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
@@ -196,7 +179,7 @@ public class ADT extends FileReader {
         return readStringChunk(this.offsetMWMO + GLOBAL_OFFSET, HEADER_MWMO);
     }
 
-    private List<Integer> getWorldObjectsOffsets() throws FileReaderException {
+    public List<Integer> getWorldObjectsOffsets() throws FileReaderException {
         if (!init) {
             throw new ADTException("ADT file has not been initialized, please use init(data) function to initialize your ADT file !");
         }
@@ -211,27 +194,16 @@ public class ADT extends FileReader {
 
         List<MDDF> listPlacement = new ArrayList<>();
 
-        this.data.position(this.offsetMDDF + GLOBAL_OFFSET);
+        super.data.position(this.offsetMDDF + GLOBAL_OFFSET);
 
         checkHeader(HEADER_MDDF);
 
-        int size = this.data.getInt();
-        int start = this.data.position();
+        int size = super.data.getInt();
+        int start = super.data.position();
         MDDF placement;
-        while (this.data.position() - start < size) {
+        while (super.data.position() - start < size) {
             placement = new MDDF();
-
-            placement.setMmidEntry(this.data.getInt());
-            placement.setUniqueId(this.data.getInt());
-            placement.setX(this.data.getFloat());
-            placement.setY(this.data.getFloat());
-            placement.setZ(this.data.getFloat());
-            placement.setOrX(this.data.getFloat());
-            placement.setOrY(this.data.getFloat());
-            placement.setOrZ(this.data.getFloat());
-            placement.setScale(this.data.getShort());
-            placement.setFlags(this.data.getShort());
-
+            placement.read(super.data);
             listPlacement.add(placement);
         }
 
@@ -244,16 +216,16 @@ public class ADT extends FileReader {
         }
 
         List<MODF> listPlacement = new ArrayList<>();        
-        this.data.position(this.offsetMODF + GLOBAL_OFFSET);
+        super.data.position(this.offsetMODF + GLOBAL_OFFSET);
 
         checkHeader(HEADER_MODF);
 
-        int size = this.data.getInt();
-        int start = this.data.position();
+        int size = super.data.getInt();
+        int start = super.data.position();
         MODF placement;
-        while (this.data.position() - start < size) {
+        while (super.data.position() - start < size) {
             placement = new MODF();
-            placement.read(this.data);            
+            placement.read(super.data);            
             listPlacement.add(placement);
         }
 
@@ -269,149 +241,30 @@ public class ADT extends FileReader {
         
         MCIN[] chunks = readMCIN();
 
-        int size;
-        int start;
-
         MCNK chunk;
         for (int i = 0; i < chunks.length; i++) {
-            this.data.position(chunks[i].getOffsetMCNK());
+            super.data.position(chunks[i].getOffsetMCNK());
             
             checkHeader(HEADER_MCNK);
 
             // We ignore size.
-            this.data.getInt();
-
+            super.data.getInt();
             chunk = new MCNK();
-
-            chunk.setFlags(this.data.getInt());
-            chunk.setIndexX(this.data.getInt());
-            chunk.setIndexY(this.data.getInt());
-            chunk.setNbLayers(this.data.getInt());
-            chunk.setnDoodadRefs(this.data.getInt());
-            chunk.setOffsetMCVT(this.data.getInt());
-            chunk.setOffsetMCNR(this.data.getInt());
-            chunk.setOffsetMCLY(this.data.getInt());
-            chunk.setOffsetMCRF(this.data.getInt());
-            chunk.setOffsetMCAL(this.data.getInt());
-            chunk.setSizeAlpha(this.data.getInt());
-            chunk.setOffsetMCSH(this.data.getInt());
-            chunk.setSizeShadow(this.data.getInt());
-            chunk.setAreadId(this.data.getInt());
-            chunk.setnMapObjRefs(this.data.getInt());
-            chunk.setHoles(this.data.getInt());
-            for (int j = 0; j < 16; j++) {
-                // Skipping low quality text map for now. (64 bytes)
-                this.data.get();
-            }
-            chunk.setPredTex(this.data.getInt());
-            chunk.setNoEffectDoodad(this.data.getInt());
-            chunk.setOffsetMCSE(this.data.getInt());
-            chunk.setnSndEmitters(this.data.getInt());
-            chunk.setOffsetMCLQ(this.data.getInt());
-            chunk.setSizeLiquid(this.data.getInt());
-            chunk.setPosX(this.data.getFloat());
-            chunk.setPosY(this.data.getFloat());
-            chunk.setPosZ(this.data.getFloat());
-            chunk.setOffsetMCCV(this.data.getInt());
-            chunk.setOffsetMCLV(this.data.getInt());
-            // Unused
-            this.data.getInt();
-
-            // Must now parse MCVT            
-            checkHeader(HEADER_MCVT);
-
-            // We ignore size.
-            this.data.getInt();
-
-            for (int j = 0; j < 145; j++) {
-                chunk.getVertices().getPoints()[j] = this.data.getFloat();
-            }
-
-            // Must now parse MCNR
-            checkHeader(HEADER_MCNR);
-
-            // We ignore size.
-            this.data.getInt();
-            for (int j = 0; j < 145; j++) {
-                chunk.getNormals().getPoints()[j] = new Vector((int) this.data.get(), (int) this.data.get(), (int) this.data.get());
-            }
-
-            // 13 unknown bytes at the end of normals:
-            for (int j = 0; j < 13; j++) {
-                this.data.get();
-            }
-
-            // Must now parse MCLY.
-            checkHeader(HEADER_MCLY);
-
-            // We ignore size.
-            this.data.getInt();
-            for (int j = 0; j < chunk.getNbLayers(); j++) {
-                chunk.getTextureLayers()[j].setTextureId(this.data.getInt());
-                chunk.getTextureLayers()[j].setFlags(this.data.getInt());
-                chunk.getTextureLayers()[j].setOffsetinMCAL(this.data.getInt());
-                chunk.getTextureLayers()[j].setEffectId(this.data.getInt());
-            }
-
-            // Must now parse MCRF.
-            checkHeader(HEADER_MCRF);
-
-            size = this.data.getInt();
-            start = this.data.position();
-            while (this.data.position() - start < size) {
-                chunk.getMcrfList().add(this.data.getInt());
-            }
-
-            // Must now parse MCSH.
-            checkHeader(HEADER_MCSH);
-
-            size = this.data.getInt();
-            for (int j = 0; j < size; j++) {
-                this.data.get();
-            }
-
-            // Must now parse MCAL.
-            checkHeader(HEADER_MCAL);
-
-            size = this.data.getInt();
-            for (int j = 0; j < size; j++) {
-                this.data.get();
-            }
-
-            // Must now parse MCLQ.
-            checkHeader(HEADER_MCLQ);
-
-            size = chunk.getSizeLiquid() - 8;
-            // Then we skip the "size field" as it's always 0.
-            data.getInt();
-            // Documentation is spread over several codebase, none really figuring out what it is properly.
-            // Thanks for Mangos/CMangos codebase on which this is based.            
-            if (size > 0) {                
-                MCLQ liquid = new MCLQ();
-                liquid.read(data);
-                chunk.setLiquids(liquid);
-            }
-
-            // Must now parse MCSE.
-            checkHeader(HEADER_MCSE);
-
-            // Flag value not well documented.
-            this.data.getInt();
-
+            chunk.read(super.data);                        
             listMapChunks.add(chunk);
         }
 
         return listMapChunks;
     }    
 
-    private String[][] getLiquidMap(boolean displayLiquidType) throws FileReaderException {
+    private String[][] getLiquidMap(boolean displayLiquidType, int layer) throws FileReaderException {
         List<MCNK> mapChunks = getMapChunks();
 
         String[][] liquids = new String[SIZE_LIQUID_MAP][SIZE_LIQUID_MAP];
         int idx = 0;
         int idy = 0;
         for (MCNK chunk : mapChunks) {
-            MCLQ liquid = chunk.getLiquids();
+            MCLQ liquid = chunk.getListLiquids().get(layer);
             if (liquid == null) {
                 for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
                     for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
@@ -472,14 +325,14 @@ public class ADT extends FileReader {
         return liquids;
     }
 
-    public void saveLiquidMap(String pngPath, boolean displayLiquidType) throws FileReaderException, IOException {
+    public void saveLiquidMap(String pngPath, int layer, boolean displayLiquidType) throws FileReaderException, IOException {
         BufferedImage img = new BufferedImage(SIZE_LIQUID_MAP, SIZE_LIQUID_MAP, BufferedImage.TYPE_INT_RGB);
         int alpha = 100;
         int idx = 0;
         int idy = 0;
         List<MCNK> mapChunks = getMapChunks();
         for (MCNK chunk : mapChunks) {
-            MCLQ liquid = chunk.getLiquids();
+            MCLQ liquid = chunk.getListLiquids().get(layer);
             if (liquid == null) {
                 for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
                     for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
@@ -543,8 +396,8 @@ public class ADT extends FileReader {
         ImageIO.write(img, "PNG", imgFile);
     }
     
-    public void printLiquidMap(boolean displayLiquidType) throws FileReaderException {
-        String[][] liquids = getLiquidMap(displayLiquidType);
+    public void printLiquidMap(boolean displayLiquidType, int layer) throws FileReaderException {
+        String[][] liquids = getLiquidMap(displayLiquidType, layer);
 
         for (int i = 0; i < liquids.length; i++) {
             for (int j = 0; j < liquids[i].length; j++) {
@@ -560,14 +413,6 @@ public class ADT extends FileReader {
 
     public void setVersion(int version) {
         this.version = version;
-    }
-
-    public String getFilename() {
-        return fileName;
-    }
-
-    public void setFilename(String filename) {
-        this.fileName = filename;
     }
 
 }

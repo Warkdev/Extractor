@@ -351,11 +351,7 @@ public class WMO extends FileReader {
         String[][] liquidMap = new String[SIZE_MOMT][SIZE_MOMT];
         
         int x = 0;
-        int y = 0;
-                
-        for(WMOGroup group : wmoGroupReadersList) {
-            //System.out.println(super.filename+";"+group.getFilename()+";"+this.flags+";"+this.useDBCLiquidID()+";"+group.hasLiquid()+";"+group.getGroup().getGroupLiquid());
-        }
+        int y = 0;               
         
         for(WMOGroup group : wmoGroupReadersList) {
             if(group.hasLiquid()) {

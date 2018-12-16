@@ -5,6 +5,8 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
+import java.nio.ByteBuffer;
+
 /**
  *
  * @author Warkdev
@@ -15,6 +17,13 @@ public class MCLY {
     private int offsetinMCAL;
     private int effectId;
 
+    public void read(ByteBuffer in) {
+        this.textureId = in.getInt();
+        this.flags = in.getInt();
+        this.offsetinMCAL = in.getInt();
+        this.effectId = in.getInt();        
+    }
+    
     public int getTextureId() {
         return textureId;
     }

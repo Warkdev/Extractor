@@ -5,6 +5,8 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
+import java.nio.ByteBuffer;
+
 /**
  *
  * @author Warkdev
@@ -12,6 +14,12 @@ package eu.jangos.extractor.file.adt.chunk;
 public class MCVT {
     private float[] points = new float[145];
 
+    public void read(ByteBuffer in) {
+        for (int j = 0; j < points.length; j++) {
+            this.points[j] = in.getFloat();
+        }
+    }
+    
     public float[] getPoints() {
         return points;
     }

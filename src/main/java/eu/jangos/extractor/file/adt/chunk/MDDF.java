@@ -5,6 +5,9 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
+import com.sun.javafx.geom.Vec3f;
+import java.nio.ByteBuffer;
+
 /**
  *
  * @author Warkdev
@@ -13,15 +16,24 @@ public class MDDF {
     
     private int mmidEntry;
     private int uniqueId;
-    private float x;
-    private float y;
-    private float z;
-    private float orX;
-    private float orY;
-    private float orZ;
+    private Vec3f position = new Vec3f();
+    private Vec3f orientation = new Vec3f();
     private short scale;
     private short flags;
 
+    public void read(ByteBuffer in) {        
+        this.mmidEntry = in.getInt();
+        this.uniqueId = in.getInt();
+        this.position.x = in.getFloat();
+        this.position.y = in.getFloat();
+        this.position.z = in.getFloat();
+        this.orientation.x = in.getFloat();
+        this.orientation.y = in.getFloat();
+        this.orientation.z = in.getFloat();
+        this.scale = in.getShort();
+        this.flags = in.getShort();                    
+    }
+    
     public int getMmidEntry() {
         return mmidEntry;
     }
@@ -38,53 +50,21 @@ public class MDDF {
         this.uniqueId = uniqueId;
     }
 
-    public float getX() {
-        return x;
+    public Vec3f getPosition() {
+        return position;
     }
 
-    public void setX(float x) {
-        this.x = x;
+    public void setPosition(Vec3f position) {
+        this.position = position;
     }
 
-    public float getY() {
-        return y;
+    public Vec3f getOrientation() {
+        return orientation;
     }
 
-    public void setY(float y) {
-        this.y = y;
-    }
-
-    public float getZ() {
-        return z;
-    }
-
-    public void setZ(float z) {
-        this.z = z;
-    }
-
-    public float getOrX() {
-        return orX;
-    }
-
-    public void setOrX(float orX) {
-        this.orX = orX;
-    }
-
-    public float getOrY() {
-        return orY;
-    }
-
-    public void setOrY(float orY) {
-        this.orY = orY;
-    }
-
-    public float getOrZ() {
-        return orZ;
-    }
-
-    public void setOrZ(float orZ) {
-        this.orZ = orZ;
-    }
+    public void setOrientation(Vec3f orientation) {
+        this.orientation = orientation;
+    }    
 
     public short getScale() {
         return scale;

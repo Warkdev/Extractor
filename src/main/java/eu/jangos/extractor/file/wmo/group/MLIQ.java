@@ -26,10 +26,16 @@ import java.util.List;
  * @author Warkdev
  */
 public class MLIQ {
-
-    private static final int HAS_LIQUID = 0x02;
-    private static final int NO_LIQUID = 0x0F;
-    private static final int IS_MAGMA = 0x40;
+    
+    // Used to decode flag value. It's guessed that the flag (one byte), is ordered as made as several meaning:
+    // AA BB CC DD. Where DD is the liquid type except if CC = 11.
+    // Flag values for AA and BB are mainly unknown. It has been noticed that AA is at 0 very often.
+    private static final int FLAG_NO_LIQUID = 0x0F;
+    private static final int FLAG_IS_WATER = 0x00;
+    private static final int FLAG_IS_MAGMA = 0x02;
+    private static final int FLAG_IS_SLIME = 0x03;
+    private static final int FLAG_IS_ANIMATED = 0x04;
+    // Other flag values are unknown.
 
     private int xVerts;
     private int yVerts;
@@ -39,6 +45,8 @@ public class MLIQ {
     private short materialId;
 
     private List<WMOLVert> liquidVertexList = new ArrayList<>();
+    
+    // Flag is only one byte but as java use signed numbers and wow unsigned one, it's stored as short.
     private List<Short> flags = new ArrayList<>();
 
     public void read(ByteBuffer data, LiquidTypeEnum liquidType) {
@@ -129,22 +137,26 @@ public class MLIQ {
     }
 
     public boolean hasNoLiquid(int row, int col) {
-        return hasFlag(row, col, NO_LIQUID);
+        return hasFlag(row, col, FLAG_NO_LIQUID);
     }
 
-    public boolean hasLiquid(int row, int col) {
-        return hasFlag(row, col, HAS_LIQUID);
-    }
+    /**public boolean hasLiquid(int row, int col) {
+        return hasFlag(row, col, FLAG_HAS_LIQUID);
+    }*/
 
     public boolean isMagma(int row, int col) {
-        return hasFlag(row, col, IS_MAGMA);
+        return hasFlag(row, col, FLAG_IS_MAGMA);
+    }
+    
+    public boolean isSlime(int row, int col) {
+        return hasFlag(row, col, FLAG_IS_SLIME);
     }
     
     private boolean hasFlag(int row, int col, int flag) {
         return FlagUtils.hasFlag(this.flags.get(getFlagPosition(row, col)), flag);
     }
 
-    private int getFlagPosition(int row, int col) {
+    public int getFlagPosition(int row, int col) {
         return col * xTiles + row;
     }
 }

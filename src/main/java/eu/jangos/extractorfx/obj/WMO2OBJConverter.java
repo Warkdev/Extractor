@@ -67,18 +67,15 @@ public class WMO2OBJConverter extends ModelConverter {
             throw new ConverterException("WMOFileReader is null");
         }
 
-        this.mesh.getPoints().clear();
-        this.mesh.getNormals().clear();
-        this.mesh.getTexCoords().clear();
-        this.mesh.getFaces().clear();
+        clearMesh();
 
         int offsetVertices = 0;
 
         for (int i = 0; i < this.reader.getnGroups(); i++) {
-            String wmoGroupPath = FilenameUtils.removeExtension(wmoPath) + "_" + formatter.format(i) + ".wmo";
+            String wmoGroupPath = FilenameUtils.removeExtension(wmoPath) + "_" + formatter.format(i) + ".wmo";            
             if (wmoEditor.hasFile(wmoGroupPath)) {
                 this.reader.initGroup(wmoEditor.extractFileAsBytes(wmoGroupPath), wmoGroupPath);
-                
+
                 WMOGroup groupReader = this.reader.getWmoGroupReadersList().get(i);
                 if (!groupReader.getVertexList().isEmpty()) {
                     // Wmo group file has vertices.
@@ -174,7 +171,7 @@ public class WMO2OBJConverter extends ModelConverter {
                         Logger.getLogger(WMO2OBJConverter.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 } else {
-                    System.out.println(this.reader.getFilename()+ " - Oooops, offset for MDX is not found! " + modelInstance.getNameIndex());
+                    System.out.println(this.reader.getFilename() + " - Oooops, offset for MDX is not found! " + modelInstance.getNameIndex());
                 }
             }
         }

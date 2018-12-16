@@ -174,6 +174,13 @@ public abstract class ModelConverter {
         return rotate;
     }
 
+    protected void clearMesh() {
+        this.mesh.getPoints().clear();
+        this.mesh.getNormals().clear();
+        this.mesh.getTexCoords().clear();
+        this.mesh.getFaces().clear();
+    }
+    
     public TriangleMesh getMesh() {
         return mesh;
     }

@@ -5,6 +5,8 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
+import java.nio.ByteBuffer;
+
 /**
  * This is a lookup table containing absolute offsets and sizes for every map tile in the file. There are 16x16 = 256 entries of 16 bytes each.
  * @author Warkdev
@@ -15,6 +17,13 @@ public class MCIN {
     private int flags;
     private int asyncId;
     private static final int OBJECT_SIZE = 16;
+    
+    public void read(ByteBuffer in) {
+        this.offsetMCNK = in.getInt();
+        this.size = in.getInt();
+        this.flags = in.getInt();
+        this.asyncId = in.getInt();
+    }
     
     public int getOffsetMCNK() {
         return offsetMCNK;

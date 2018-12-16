@@ -53,10 +53,7 @@ public class M22OBJConverter extends ModelConverter {
         }
         view--;
 
-        this.mesh.getPoints().clear();
-        this.mesh.getNormals().clear();
-        this.mesh.getTexCoords().clear();
-        this.mesh.getFaces().clear();
+        clearMesh();
 
         try {
             
@@ -102,19 +99,7 @@ public class M22OBJConverter extends ModelConverter {
                 List<Short> listIndices = listSkins.get(view).getIndices();
 
                 int face = listSkins.get(view).getSubMeshes().get(i).getIndexStart();
-
-                // Point also indicates the index to remove from the indice list. This is specifically usefull when we want to limit the height of rendered objets.
-                /**
-                 * int point; boolean found; for (int index = 0; index < listRemovedPoints.size(); index++) {
-                 * point = listRemovedPoints.get(index);
-                 * found = false;
-                 *
-                 * for (int j = listIndices.size() - 1; j >= 0; j--) { if
-                 * (found) { short newValue = (short) (listIndices.get(j) -
-                 * (1)); listIndices.set(j, newValue); } if (listIndices.get(j)
-                 * == point) { listIndices.remove(j); found = true; } }
-                }
-                 */
+                                
                 while (face < listSkinSections.get(i).getIndexStart() + listSkinSections.get(i).getIndexCount()) {
                     this.mesh.getFaces().addAll(listIndices.get(face + 2), listIndices.get(face + 2), listIndices.get(face + 2),
                             listIndices.get(face + 1), listIndices.get(face + 1), listIndices.get(face + 1),
