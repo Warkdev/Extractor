@@ -26,7 +26,7 @@ limitations under the License.
     </encoder>
   </appender>
 
-  <root level="error">
+  <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>

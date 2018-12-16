@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2018 Warkdev.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -44,6 +46,8 @@ import java.util.Map;
  */
 public class WMO extends FileReader {
 
+    private static final Logger logger = LoggerFactory.getLogger(FileReader.class);
+    
     // Section for WMO ROOT File.
     private static final String HEADER_MVER = "MVER";
     private static final String HEADER_MOHD = "MOHD";
@@ -120,7 +124,13 @@ public class WMO extends FileReader {
     public boolean isRootFile(byte[] array) throws FileReaderException {
         super.data = ByteBuffer.wrap(array);
         super.data.order(ByteOrder.LITTLE_ENDIAN);
-
+        logger.debug("Checking is filename "+filename+" is a root WMO.");
+        
+        if (array.length == 0) {
+            logger.error("Data array for file "+filename+" is empty");
+            throw new WMOException("Data array is empty.");
+        }
+        
         checkHeader(HEADER_MVER);
         // Skip the size.
         super.data.getInt();
@@ -144,7 +154,11 @@ public class WMO extends FileReader {
     }
 
     @Override
-    public void init(byte[] array, String filename) throws FileReaderException {
+    public void init(byte[] array, String filename) throws FileReaderException {        
+        if (array.length == 0) {
+            logger.error("Data array for file "+filename+" is empty");
+            throw new WMOException("Data array is empty.");
+        }
         super.data = ByteBuffer.wrap(array);
         super.data.order(ByteOrder.LITTLE_ENDIAN);
         super.filename = filename;

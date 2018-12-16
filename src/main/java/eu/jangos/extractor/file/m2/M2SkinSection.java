@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2018 Warkdev.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,7 @@ public class M2SkinSection {
     private short level;
     private short vertexStart;
     private short vertexCount;
-    private short indexStart;
+    private int indexStart;
     private short indexCount;
     private short boneCount;
     private short boneComboIndex;
@@ -44,7 +44,7 @@ public class M2SkinSection {
         this.level = data.getShort();
         this.vertexStart = data.getShort();
         this.vertexCount = data.getShort();
-        this.indexStart = data.getShort();
+        this.indexStart = Short.toUnsignedInt(data.getShort());
         this.indexCount = data.getShort();
         this.boneCount = data.getShort();
         this.boneComboIndex = data.getShort();
@@ -85,11 +85,11 @@ public class M2SkinSection {
         this.vertexCount = vertexCount;
     }
 
-    public short getIndexStart() {
+    public int getIndexStart() {
         return indexStart;
     }
 
-    public void setIndexStart(short indexStart) {
+    public void setIndexStart(int indexStart) {
         this.indexStart = indexStart;
     }
 

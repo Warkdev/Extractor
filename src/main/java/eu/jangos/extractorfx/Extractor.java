@@ -1,11 +1,20 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/* 
+ * Copyright 2018 Warkdev.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package eu.jangos.extractorfx;
 
-import com.esotericsoftware.minlog.Log;
 import eu.jangos.extractor.file.ADT;
 import eu.jangos.extractor.file.M2;
 import eu.jangos.extractor.file.WDT;
@@ -21,15 +30,17 @@ import eu.jangos.extractorfx.obj.exception.ConverterException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Warkdev
  */
 public class Extractor {
+
+    private static final Logger logger = LoggerFactory.getLogger(Extractor.class);
 
     private static final String ROOT = "D:\\Downloads\\Test\\";
     private static final String DATA = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\";
@@ -49,40 +60,37 @@ public class Extractor {
     private static final ModelConverter wmoConverter = new WMO2OBJConverter(wmoReader);
     private static final M2 m2Reader = new M2();
     private static final ModelConverter m2Converter = new M22OBJConverter(m2Reader);
-    private static final Map<String, ModelConverter> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);    
+    private static final Map<String, ModelConverter> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     public static void main(String[] args) throws IOException {
-        // Disable logging for stupid 3rd party library.
-        Log.NONE();
-        
         try {
             manager = new MPQManager(DATA);
         } catch (MPQException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error(ex.getMessage());
         }
         //extractM2(m2Example);
-        //extractAllM2(true);
-        extractWmo(wmoExample, true, true);
-        //extractAllWMO(false, false);
+        extractAllM2(false);
+        //extractWmo(wmoExample, true, true);
+        extractAllWMO(false, false);
         //extractMap(map, true, false, false, false, false);
         //extractAllMaps(false, false, false, false, false);
         //extractAllWdt();
-        //extractAllTerrains();
+        extractAllTerrains();
         //extractMap();
     }
 
     private static void extractAllWMO(boolean addModels, boolean saveToFile) {
+        int total = manager.getListWMO().size();
+        int done = 0;
         for (String path : manager.getListWMO()) {
             try {
-                int total = manager.getListWMO().size();
-                int done = 0;
-
                 done++;
+
                 byte[] data = manager.getMPQForFile(path).extractFileAsBytes(path);
                 if (!wmoReader.isRootFile(data)) {
                     continue;
                 }
-                //System.out.println("Extracting WMO... " + path);
+                logger.info("Extracting WMO... " + path);
                 String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
                 wmoReader.init(data, path);
                 //((WMO2OBJConverter) (wmoConverter)).convert(manager.getMPQForFile(path), modelEditor, cache, path, addModels);
@@ -91,16 +99,10 @@ public class Extractor {
                     wmoConverter.saveToFile(outputFile, false, false);
                 }
 
-                //System.out.println("Done: " + done + " / Total: " + total);
-            } catch (IOException ex) {
-                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (ConverterException ex) {
-                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (FileReaderException ex) {
-                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (Exception e) {
-
+            } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+                logger.error(ex.getMessage());
             }
+            logger.info("Done: " + done + " / Total: " + total);
         }
     }
 
@@ -113,121 +115,89 @@ public class Extractor {
             if (saveToFile) {
                 wmoConverter.saveToFile(outputFile, false, false);
             }
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (MPQException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+            logger.error(ex.getMessage());
         }
     }
 
     private static void extractAllM2(boolean saveToFile) {
+        int total = manager.getListM2().size();
+        int done = 0;
         for (String path : manager.getListM2()) {
+            logger.info("Extracting M2... " + path);
             try {
-                int total = manager.getListM2().size();
-                int done = 0;
-                if (path.endsWith(".mdx")) {                    
-                    System.out.println("Extracting M2... " + path);
+                done++;                
+                if (path.endsWith(".m2")) {                    
                     String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";
                     m2Reader.init(manager.getMPQForFile(path).extractFileAsBytes(path), path);
                     ((M22OBJConverter) m2Converter).convert(1, 100000);
                     if (saveToFile) {
                         m2Converter.saveToFile(outputFile, false, false);
                     }
-                    done++;
-                    System.out.println("Done: " + done + " / Total: " + total);
+
                 }
-            } catch (IOException ex) {
-                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (ConverterException ex) {
-                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (FileReaderException ex) {
-                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (MPQException ex) {
-                Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+                logger.error(ex.getMessage());
             }
+            logger.info("Done: " + done + " / Total: " + total);
         }
     }
 
     private static void extractM2(String path) {
         try {
-            String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";            
+            String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";
             m2Reader.init(manager.getMPQForFile(path).extractFileAsBytes(path), path);
             ((M22OBJConverter) m2Converter).convert(1, 17);
             m2Converter.saveToFile(outputFile, false, false);
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (MPQException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+            logger.error(ex.getMessage());
         }
     }
 
     private static void extractAllTerrains() {
-        try {
-            for (String wdt : manager.getListWDT()) {
-                if (wdt.endsWith(".wdt")) {
-                    try {
-                        String base = FilenameUtils.getPath(wdt) + FilenameUtils.getBaseName(wdt);
-                        String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdt) + ".png";
-                        wdtReader.init(manager.getMPQForFile(wdt).extractFileAsBytes(wdt), wdt);
-                        for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
-                            for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
-                                if (wdtReader.hasTerrain(x, y)) {
-                                    extractMap(base + "_" + y + "_" + x + ".adt", false, false, false, false, false);
-                                }
+
+        int total = manager.getListWDT().size();
+        int done = 0;
+        for (String wdt : manager.getListWDT()) {
+            done++;
+            if (wdt.endsWith(".wdt")) {                
+                try {
+                    logger.info("Extracting WDT... " + wdt);
+                    String base = FilenameUtils.getPath(wdt) + FilenameUtils.getBaseName(wdt);
+                    String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdt) + ".png";
+                    wdtReader.init(manager.getMPQForFile(wdt).extractFileAsBytes(wdt), wdt);
+                    for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
+                        for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
+                            if (wdtReader.hasTerrain(x, y)) {
+                                extractMap(base + "_" + y + "_" + x + ".adt", false, false, false, false, false);
                             }
                         }
-                    } catch (FileReaderException ex) {
-                        Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (MPQException ex) {
-                        Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                } catch (IOException | FileReaderException | MPQException ex) {
+                    logger.error(ex.getMessage());
                 }
+                logger.info("Done: " + done + " / Total: " + total);
             }
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
         }
+
     }
 
     private static void extractAllMaps(boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO, boolean saveToFile) {
-        try {
-            for (String path : manager.getListADT()) {
-                if (path.endsWith(".adt")) {
-                    try {
-                        String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
-                        adtReader.init(manager.getMPQForFile(path).extractFileAsBytes(path), path);
-                        for (String wmo : adtReader.getWorldObjects()) {
-                            System.out.println(adtReader.getFilename() + ";" + wmo);
-                        }
-                        //adtConverter.convert(wmoEditor, modelEditor, cache, path, yUp, addWMO, addModels, addModelsInWMO);
-                        if (saveToFile) {
-                            adtConverter.saveToFile(outputFile, false, false);
-
-                        }
-                    } catch (ConverterException ex) {
-                        Logger.getLogger(Extractor.class
-                                .getName()).log(Level.SEVERE, null, ex);
-
-                    } catch (FileReaderException ex) {
-                        Logger.getLogger(Extractor.class
-                                .getName()).log(Level.SEVERE, null, ex);
-
-                    } catch (MPQException ex) {
-                        Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+        for (String path : manager.getListADT()) {
+            if (path.endsWith(".adt")) {
+                try {
+                    String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
+                    adtReader.init(manager.getMPQForFile(path).extractFileAsBytes(path), path);
+                    //adtConverter.convert(wmoEditor, modelEditor, cache, path, yUp, addWMO, addModels, addModelsInWMO);
+                    if (saveToFile) {
+                        adtConverter.saveToFile(outputFile, false, false);
                     }
+                } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+                    logger.error(ex.getMessage());
                 }
             }
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class
-                    .getName()).log(Level.SEVERE, null, ex);
         }
+
     }
 
     private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO, boolean saveToFile) {
@@ -244,42 +214,23 @@ public class Extractor {
 
             }
 
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class
-                    .getName()).log(Level.SEVERE, null, ex);
-
-        } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class
-                    .getName()).log(Level.SEVERE, null, ex);
-
-        } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class
-                    .getName()).log(Level.SEVERE, null, ex);
-        } catch (MPQException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+            logger.error(ex.getMessage());
         }
     }
 
     private static void extractAllWdt() {
-        try {
-            for (String path : manager.getListWDT()) {
-                if (path.endsWith(".wdt")) {
-                    try {
-                        String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".png";
-                        wdtReader.init(manager.getMPQForFile(path).extractFileAsBytes(path), path);
-                        //wdtReader.saveTileMap(outputFile);                        
-                    } catch (FileReaderException ex) {
-                        Logger.getLogger(Extractor.class
-                                .getName()).log(Level.SEVERE, null, ex);
-
-                    } catch (MPQException ex) {
-                        Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+        for (String path : manager.getListWDT()) {
+            if (path.endsWith(".wdt")) {
+                try {
+                    String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".png";
+                    wdtReader.init(manager.getMPQForFile(path).extractFileAsBytes(path), path);
+                    //wdtReader.saveTileMap(outputFile);                        
+                } catch (IOException | FileReaderException | MPQException ex) {
+                    logger.error(ex.getMessage());
                 }
             }
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class
-                    .getName()).log(Level.SEVERE, null, ex);
         }
+
     }
 }

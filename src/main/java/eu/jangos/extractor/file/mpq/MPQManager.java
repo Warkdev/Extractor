@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2018 Warkdev.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,13 +19,13 @@ import eu.jangos.extractor.file.exception.MPQException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.lang3.StringUtils;
 import systems.crigges.jmpq3.MPQOpenOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +95,11 @@ public class MPQManager {
                                 this.listADT.add(file);
                                 break;
                             case EXTENSION_WMO:
-                                this.listWMO.add(file);
+                                // Excluding non-root WMO.
+                                String group = FilenameUtils.getBaseName(file);
+                                if(!StringUtils.isNumeric(group.substring(group.length() - 3))) {
+                                    this.listWMO.add(file);
+                                }
                                 break;
                             case EXTENSION_M2:                                
                                 this.listM2.add(file);
