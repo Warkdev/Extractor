@@ -20,7 +20,9 @@ import eu.jangos.extractor.file.common.C4Plane;
 import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.common.CArgb;
 import eu.jangos.extractor.file.exception.FileReaderException;
+import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.exception.WMOException;
+import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractor.file.wmo.WMOBlock;
 import eu.jangos.extractor.file.wmo.WMODoodadDef;
 import eu.jangos.extractor.file.wmo.WMODoodadSet;
@@ -33,12 +35,16 @@ import eu.jangos.extractor.file.wmo.WMOPortalRef;
 import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import systems.crigges.jmpq3.JMpqException;
 
 /**
  *
@@ -47,7 +53,7 @@ import org.slf4j.LoggerFactory;
 public class WMO extends FileReader {
 
     private static final Logger logger = LoggerFactory.getLogger(FileReader.class);
-    
+
     // Section for WMO ROOT File.
     private static final String HEADER_MVER = "MVER";
     private static final String HEADER_MOHD = "MOHD";
@@ -80,9 +86,14 @@ public class WMO extends FileReader {
     private static final String HEADER_MCVP = "MCVP";
     private static final int SIZE_MCVP = 16;
 
-    public static final int FLAG_USE_LIQUID_FROM_DBC = 0x04;
-    
+    public static final int FLAG_DO_NOT_ATTENUATE_VERTICES = 0x1;
+    public static final int FLAG_USE_UNIFIED_RENDER_PATH = 0x2;
+    public static final int FLAG_USE_LIQUID_FROM_DBC = 0x4;
+    public static final int FLAG_DO_NOT_FIX_VERTEX_COLOR_ALPHA = 0x8;
+
     private static final int SUPPORTED_VERSION = 17;
+
+    private NumberFormat formatter = new DecimalFormat("000");        
 
     private int nMaterials;
     private int nGroups;
@@ -119,18 +130,18 @@ public class WMO extends FileReader {
     private List<WMOFog> fogList = new ArrayList<>();
     private List<C4Plane> convexVolumePlanesList = new ArrayList<>();
 
-    private List<WMOGroup> wmoGroupReadersList = new ArrayList<>();
+    private List<WMOGroup> wmoGroupList = new ArrayList<>();
 
     public boolean isRootFile(byte[] array) throws FileReaderException {
         super.data = ByteBuffer.wrap(array);
         super.data.order(ByteOrder.LITTLE_ENDIAN);
-        logger.debug("Checking is filename "+filename+" is a root WMO.");
-        
+        logger.debug("Checking is filename " + filename + " is a root WMO.");
+
         if (array.length == 0) {
-            logger.error("Data array for file "+filename+" is empty");
+            logger.error("Data array for file " + filename + " is empty");
             throw new WMOException("Data array is empty.");
         }
-        
+
         checkHeader(HEADER_MVER);
         // Skip the size.
         super.data.getInt();
@@ -153,13 +164,19 @@ public class WMO extends FileReader {
         return true;
     }
 
+    public void init(MPQManager manager, String filename) throws JMpqException, FileReaderException, MPQException {
+        init(manager, filename, false);
+    }
+    
     @Override
-    public void init(byte[] array, String filename) throws FileReaderException {        
-        if (array.length == 0) {
-            logger.error("Data array for file "+filename+" is empty");
+    public void init(MPQManager manager, String filename, boolean loadChildren) throws FileReaderException, MPQException, JMpqException {
+        super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
+
+        if (data.remaining() == 0) {
+            logger.error("Data array for file " + filename + " is empty");
             throw new WMOException("Data array is empty.");
         }
-        super.data = ByteBuffer.wrap(array);
+
         super.data.order(ByteOrder.LITTLE_ENDIAN);
         super.filename = filename;
         clear();
@@ -172,8 +189,8 @@ public class WMO extends FileReader {
             throw new WMOException("WMO Version is not supported by this reader.");
         }
 
-        int chunkSize = 0;        
-        
+        int chunkSize = 0;
+
         // We're now reading the header of the file.
         checkHeader(HEADER_MOHD);
         // Skip the size.
@@ -333,13 +350,16 @@ public class WMO extends FileReader {
             }
         }
 
-        init = true;
-    }
+        // Init group information.
+        WMOGroup wmoGroup;
+        for (int i = 0; i < this.nGroups; i++) {
+            String wmoGroupPath = FilenameUtils.removeExtension(this.filename) + "_" + formatter.format(i) + ".wmo";            
+            wmoGroup = new WMOGroup();
+            wmoGroup.init(manager, wmoGroupPath);
+            this.wmoGroupList.add(wmoGroup);
+        }
 
-    public void initGroup(byte[] array, String filename) throws WMOException {
-        WMOGroup reader = new WMOGroup();
-        reader.init(array, filename);
-        this.wmoGroupReadersList.add(reader);
+        init = true;
     }
 
     private void clear() {
@@ -358,50 +378,29 @@ public class WMO extends FileReader {
         this.doodadNameMap.clear();
         this.fogList.clear();
         this.convexVolumePlanesList.clear();
-        this.wmoGroupReadersList.clear();
+        this.wmoGroupList.clear();
     }
 
-    public String[][] getLiquidMap(boolean displayLiquidType) {
-        String[][] liquidMap = new String[SIZE_MOMT][SIZE_MOMT];
-        
-        int x = 0;
-        int y = 0;               
-        
-        for(WMOGroup group : wmoGroupReadersList) {
-            if(group.hasLiquid()) {
-                x = group.getLiquid().getxTiles();
-                y = group.getLiquid().getyTiles();
-                System.out.println(group.getFilename()+";true;"+x + ";"+y+";"+group.getGroup().getBoundingBox().getMin().x
-                        +";"+group.getGroup().getBoundingBox().getMin().y
-                        +";"+group.getGroup().getBoundingBox().getMin().z
-                        +";"+group.getGroup().getBoundingBox().getMax().x
-                +";"+group.getGroup().getBoundingBox().getMax().x
-                +";"+group.getGroup().getBoundingBox().getMax().z
-                +";"+group.getLiquid().getBaseCoordinates().x
-                +";"+group.getLiquid().getBaseCoordinates().y
-                +";"+group.getLiquid().getBaseCoordinates().z);                
-            } else {
-                System.out.println(group.getFilename()+";false;0;0;"+group.getGroup().getBoundingBox().getMin().x
-                        +";"+group.getGroup().getBoundingBox().getMin().y
-                        +";"+group.getGroup().getBoundingBox().getMin().z
-                        +";"+group.getGroup().getBoundingBox().getMax().x
-                +";"+group.getGroup().getBoundingBox().getMax().x
-                +";"+group.getGroup().getBoundingBox().getMax().z
-                +";0;0;0");                
-            }
-        }          
-        
-        return liquidMap;
+    public boolean doNotAttenuateVertices() {
+        return hasFlag(FLAG_DO_NOT_ATTENUATE_VERTICES);
+    }
+    
+    public boolean useUnifiedRenderPath() {
+        return hasFlag(FLAG_USE_UNIFIED_RENDER_PATH);
     }
     
     public boolean useDBCLiquidID() {
         return hasFlag(FLAG_USE_LIQUID_FROM_DBC);
     }
+
+    public boolean doNotFixVertexColorAlpha() {
+        return hasFlag(FLAG_DO_NOT_FIX_VERTEX_COLOR_ALPHA);
+    }
     
     private boolean hasFlag(int flag) {
         return FlagUtils.hasFlag(this.flags, flag);
     }
-    
+
     public ByteBuffer getData() {
         return data;
     }
@@ -667,11 +666,10 @@ public class WMO extends FileReader {
     }
 
     public List<WMOGroup> getWmoGroupReadersList() {
-        return wmoGroupReadersList;
+        return wmoGroupList;
     }
 
     public void setWmoGroupReadersList(List<WMOGroup> wmoGroupReadersList) {
-        this.wmoGroupReadersList = wmoGroupReadersList;
-    }       
-
+        this.wmoGroupList = wmoGroupReadersList;
+    }   
 }

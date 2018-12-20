@@ -19,17 +19,21 @@ import com.sun.javafx.geom.Vec2f;
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.CAaBspNode;
 import eu.jangos.extractor.file.common.CImVector;
+import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.exception.WMOException;
+import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractor.file.wmo.group.LiquidTypeEnum;
 import eu.jangos.extractor.file.wmo.group.MLIQ;
 import eu.jangos.extractor.file.wmo.group.MOBA;
 import eu.jangos.extractor.file.wmo.group.MOGP;
 import eu.jangos.extractor.file.wmo.group.MOPY;
+import eu.jangos.extractor.file.wmo.group.WaterVert;
 import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import systems.crigges.jmpq3.JMpqException;
 
 /**
  *
@@ -104,19 +108,6 @@ public class WMOGroup {
     public static final long FLAG_HAS_3_MOTV  = 0x40000000;
     public static final long FLAG_UNUSED_13  = 0x80000000;        
     
-    public static final int LIQUID_BASIC_TYPES_WATER = 0;
-    public static final int LIQUID_BASIC_TYPES_OCEAN = 1;
-    public static final int LIQUID_BASIC_TYPES_MAGMA = 2;
-    public static final int LIQUID_BASIC_TYPES_SLIME = 3;
-    public static final int LIQUID_BASIC_TYPES_MASK = 3;    
-    public static final int LIQUID_WMO_WATER = 13;
-    public static final int LIQUID_WMO_OCEAN = 14;
-    public static final int LIQUID_GREEN_LAVA = 15;
-    public static final int LIQUID_WMO_MAGMA = 19;
-    public static final int LIQUID_WMO_SLIME = 20;
-    public static final int LIQUID_FIRST_NON_BASIC_LIQUID_TYPE = 21;
-    public static final int LIQUID_NAXX_SLIME = 21;  
-    
     private ByteBuffer data;
     private String filename;
 
@@ -135,8 +126,8 @@ public class WMOGroup {
     private MLIQ liquid = new MLIQ();
     private List<Short> triangleStripIndices = new ArrayList<>();
 
-    public void init(byte[] array, String filename) throws WMOException {
-        this.data = ByteBuffer.wrap(array);
+    public void init(MPQManager manager, String filename) throws WMOException, MPQException, JMpqException {
+        this.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
         this.data.order(ByteOrder.LITTLE_ENDIAN);
         this.filename = filename;
         
@@ -232,9 +223,16 @@ public class WMOGroup {
             }
         }
 
-        if (hasVertexColors()) {
-            checkHeader(HEADER_MOCV);
-            chunkSize = data.getInt() / SIZE_MOCV;
+        if (hasVertexColors()) {            
+            checkHeader(HEADER_MOCV);                        
+            chunkSize = data.getInt();            
+            if(data.remaining() < chunkSize) {
+                // Avoid bufferoverflow while reading some files. Undercity_144.wmo seems to be the only one.
+                chunkSize /= SIZE_MOCV;
+                chunkSize--;                
+            } else {                
+                chunkSize /= SIZE_MOCV;
+            }            
             CImVector vector;
             for (int i = 0; i < chunkSize; i++) {
                 vector = new CImVector();
@@ -242,19 +240,14 @@ public class WMOGroup {
                 colorVertexList.add(vector);
             }
         }
-
-        if (hasLiquid()) {                    
+        
+        if (hasLiquid()) {                       
             checkHeader(HEADER_MLIQ);
-            chunkSize = data.getInt();
-            
-            LiquidTypeEnum liquidType = LiquidTypeEnum.LIQUID_UNKNOWN;            
-            if (this.group.getGroupLiquid() < LiquidTypeEnum.LIQUID_FIRST_NONBASIC_LIQUID_TYPE) {                
-                liquidType = LiquidTypeEnum.getLiquidToWMO(this.group.getGroupLiquid(), this.group.getFlags());
-            } else {                
-                liquidType = LiquidTypeEnum.convert(this.group.getGroupLiquid());
-            }
-                   
-            liquid.read(data, liquidType);            
+            chunkSize = data.getInt();                                                      
+            liquid.read(data);   
+            for(WaterVert vert : liquid.getLiquidVertexList()) {
+                System.out.println(this.filename+";"+vert.toCSVString());
+            }            
         }
 
         if (hasTriangleStrip()) {
@@ -296,12 +289,7 @@ public class WMOGroup {
     
     public boolean isOcean() {
         return hasFlag(FLAG_IS_OCEAN);
-    }
-    
-    public boolean isMagma() {
-        return false;
-    }
-    
+    }       
     
     public ByteBuffer getData() {
         return data;

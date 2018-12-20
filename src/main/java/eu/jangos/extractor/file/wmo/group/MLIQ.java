@@ -31,10 +31,11 @@ public class MLIQ {
     // AA BB CC DD. Where DD is the liquid type except if CC = 11.    
     private static final int MASK_LIQUID = 0x03;
     private static final int FLAG_IS_WATER = 0x00;    
+    private static final int FLAG_IS_OCEAN = 0x01;
     private static final int FLAG_IS_MAGMA = 0x02;
     private static final int FLAG_IS_SLIME = 0x03;
     private static final int FLAG_IS_ANIMATED = 0x04;
-    private static final int FLAG_NO_LIQUID = 0x08;
+    private static final int MASK_NO_LIQUID = 0x0F;
     private static final int FLAG_E = 0x10;
     private static final int FLAG_F = 0x20;
     private static final int FLAG_FISHABLE = 0x40;
@@ -49,12 +50,12 @@ public class MLIQ {
     private Vec3f baseCoordinates = new Vec3f();
     private short materialId;
 
-    private List<WMOLVert> liquidVertexList = new ArrayList<>();
+    private List<WaterVert> liquidVertexList = new ArrayList<>();
     
     // Flag is only one byte but as java use signed numbers and wow unsigned one, it's stored as short.
     private List<Short> flags = new ArrayList<>();
 
-    public void read(ByteBuffer data, LiquidTypeEnum liquidType) {
+    public void read(ByteBuffer data) {
         this.liquidVertexList.clear();
         this.flags.clear();
 
@@ -65,10 +66,10 @@ public class MLIQ {
         this.baseCoordinates.set(data.getFloat(), data.getFloat(), data.getFloat());
         this.materialId = data.getShort();
 
-        WMOLVert liquidVertex;
+        WaterVert liquidVertex;
         for (int i = 0; i < this.xVerts * this.yVerts; i++) {
-            liquidVertex = new WMOLVert();
-            liquidVertex.read(data, liquidType);
+            liquidVertex = new WaterVert();
+            liquidVertex.read(data);
             liquidVertexList.add(liquidVertex);
         }
 
@@ -125,11 +126,11 @@ public class MLIQ {
         this.materialId = materialId;
     }
 
-    public List<WMOLVert> getLiquidVertexList() {
+    public List<WaterVert> getLiquidVertexList() {
         return liquidVertexList;
     }
 
-    public void setLiquidVertexList(List<WMOLVert> liquidVertexList) {
+    public void setLiquidVertexList(List<WaterVert> liquidVertexList) {
         this.liquidVertexList = liquidVertexList;
     }
 
@@ -142,12 +143,16 @@ public class MLIQ {
     }
 
     public boolean hasNoLiquid(int row, int col) {
-        return hasFlag(row, col, FLAG_NO_LIQUID);
+        return hasFlag(row, col, MASK_NO_LIQUID);
     }    
     
     public boolean isWater(int row, int col) {
         return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_WATER;
     }
+    
+    public boolean isOcean(int row, int col) {
+        return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_OCEAN;
+    }    
     
     public boolean isMagma(int row, int col) {
         return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_MAGMA;
@@ -175,7 +180,7 @@ public class MLIQ {
     
     public boolean isOverlap(int row, int col) {
         return hasFlag(row, col, FLAG_OVERLAP);
-    }
+    }   
     
     private boolean hasFlag(int row, int col, int flag) {
         return FlagUtils.hasFlag(this.flags.get(getFlagPosition(row, col)), flag);

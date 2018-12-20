@@ -17,6 +17,7 @@ package eu.jangos.extractor.file.wmo.group;
 
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.CAaBox;
+import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
 
 /**
@@ -24,6 +25,8 @@ import java.nio.ByteBuffer;
  * @author Warkdev
  */
 public class MOGP {        
+    private static final int HAS_LIQUID = 0x0F;
+    
     private int groupName;
     private int descriptiveGroupName;
     private int flags;
@@ -36,9 +39,7 @@ public class MOGP {
     private short padding;
     private byte[] fogsIds = new byte[4];
     private int groupLiquid;
-    private int wmoAreaTableRecId;
-    private int flagEnum;
-    private int flag2;    
+    private int wmoAreaTableRecId;   
     
     public void read(ByteBuffer data) {
         this.groupName = data.getInt();
@@ -55,8 +56,9 @@ public class MOGP {
         data.get(fogsIds);
         this.groupLiquid = data.getInt();
         this.wmoAreaTableRecId = data.getInt();
-        this.flagEnum = data.getInt();
-        this.flag2 = data.getInt();          
+        // Skipping 2 null values at the end of the chunk.
+        data.getInt();
+        data.getInt();                    
     }
     
     public int getGroupName() {
@@ -155,6 +157,10 @@ public class MOGP {
         this.groupLiquid = groupLiquid;
     }
 
+    public boolean hasLiquid() {                
+        return FlagUtils.hasFlag(this.groupLiquid, HAS_LIQUID);
+    }
+    
     public int getWmoAreaTableRecId() {
         return wmoAreaTableRecId;
     }
@@ -162,20 +168,4 @@ public class MOGP {
     public void setWmoAreaTableRecId(int wmoAreaTableRecId) {
         this.wmoAreaTableRecId = wmoAreaTableRecId;
     }
-
-    public int getFlagEnum() {
-        return flagEnum;
-    }
-
-    public void setFlagEnum(int flagEnum) {
-        this.flagEnum = flagEnum;
-    }
-
-    public int getFlag2() {
-        return flag2;
-    }
-
-    public void setFlag2(int flag2) {
-        this.flag2 = flag2;
-    }    
 }

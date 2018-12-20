@@ -15,9 +15,11 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
+import com.sun.javafx.geom.Vec2f;
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.exception.FileReaderException;
+import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.mangos.shared.flags.FlagUtils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -48,6 +50,31 @@ public class MCNK extends FileReader {
     public static final int FLAG_MAGMA = 0x10;
     public static final int FLAG_SLIME = 0x20;
     public static final int FLAG_HAS_MCCV = 0x40;
+    public static final int FLAG_UNK1 = 0x80;
+    public static final int FLAG_UNK2 = 0x100;
+    public static final int FLAG_UNK3 = 0x200;
+    public static final int FLAG_UNK4 = 0x400;
+    public static final int FLAG_UNK5 = 0x800;
+    public static final int FLAG_UNK6 = 0x1000;
+    public static final int FLAG_UNK7 = 0x2000;
+    public static final int FLAG_UNK8 = 0x4000;
+    public static final int FLAG_UNK9 = 0x8000;
+    public static final int FLAG_IS_HIGH_RES_HOLE = 0x10000;
+    public static final int FLAG_UNK10 = 0x20000;
+    public static final int FLAG_UNK11 = 0x40000;
+    public static final int FLAG_UNK12 = 0x80000;
+    public static final int FLAG_UNK13 = 0x100000;
+    public static final int FLAG_UNK14 = 0x200000;
+    public static final int FLAG_UNK15 = 0x400000;
+    public static final int FLAG_UNK16 = 0x800000;
+    public static final int FLAG_UNK17 = 0x1000000;
+    public static final int FLAG_UNK18 = 0x2000000;
+    public static final int FLAG_UNK19 = 0x4000000;
+    public static final int FLAG_UNK20 = 0x8000000;
+    public static final int FLAG_UNK21 = 0x10000000;
+    public static final int FLAG_UNK22 = 0x20000000;
+    public static final int FLAG_UNK23 = 0x40000000;
+    public static final int FLAG_UNK24 = 0x80000000;
 
     private int flags;
     private int indexX;
@@ -88,7 +115,7 @@ public class MCNK extends FileReader {
     }
 
     @Override
-    public void init(byte[] data, String filename) throws IOException, FileReaderException {
+    public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -189,12 +216,12 @@ public class MCNK extends FileReader {
         // Must now parse MCLQ.
         checkHeader(HEADER_MCLQ);
 
-        size = this.sizeLiquid - 8;
+        size = super.data.getInt();
         // Then we skip the "size field" as it's always 0.
-        super.data.getInt();
+        
         // Documentation is spread over several codebase, none really figuring out what it is properly.
         // Thanks for Mangos/CMangos codebase on which this is based.            
-        if (hasLiquid()) {            
+        if (hasLiquid()) {  
             MCLQ liquid;
             // MCLQ can be made of several layers. It's assumed (guessed) that MCLQ are ordered by liquid type in the ADT.
             if (isRiver()) {
@@ -474,10 +501,22 @@ public class MCNK extends FileReader {
         this.listLiquids = listLiquids;
     }
 
+    public boolean hasMCSH() {
+        return FlagUtils.hasFlag(this.flags, FLAG_HAS_MCSH);
+    }
+    
+    public boolean isImpass() {
+        return FlagUtils.hasFlag(this.flags, FLAG_IMPASS);
+    }                        
+    
     public boolean hasLiquid() {
         return isRiver() || isOcean() || isMagma() || isSlime();
     }
 
+    public boolean hasNoLiquid() {
+        return !hasLiquid();
+    }
+    
     public boolean isRiver() {
         return FlagUtils.hasFlag(flags, FLAG_RIVER);
     }
@@ -492,5 +531,154 @@ public class MCNK extends FileReader {
 
     public boolean isSlime() {
         return FlagUtils.hasFlag(flags, FLAG_SLIME);
+    }
+    
+    public boolean hasMCCV() {
+        return FlagUtils.hasFlag(this.flags, FLAG_HAS_MCCV);
+    }
+    
+    public boolean isUnknown1() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK1);
+    }
+    
+    public boolean isUnknown2() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK2);
+    }
+    
+    public boolean isUnknown3() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK3);
+    }
+    
+    public boolean isUnknown4() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK4);
+    }
+    
+    public boolean isUnknown5() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK5);
+    }
+   
+    public boolean isUnknown6() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK6);
+    }
+    
+    public boolean isUnknown7() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK7);
+    }
+    
+    public boolean isUnknown8() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK8);
+    }
+    
+    public boolean isUnknown9() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK9);
+    }
+    
+    public boolean isHighResHole() {
+        return FlagUtils.hasFlag(this.flags, FLAG_IS_HIGH_RES_HOLE);
+    }
+    
+    public boolean isLowResHole() {
+        return !isHighResHole();
+    }
+    
+    public boolean isUnknown10() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK10);
+    }
+    
+    public boolean isUnknown11() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK11);
+    }
+    
+    public boolean isUnknown12() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK12);
+    }
+    
+    public boolean isUnknown13() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK13);
+    }
+    
+    public boolean isUnknown14() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK14);
+    }
+    
+    public boolean isUnknown15() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK15);
+    }
+    
+    public boolean isUnknown16() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK16);
+    }
+    
+    public boolean isUnknown17() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK17);
+    }
+    
+    public boolean isUnknown18() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK18);
+    }
+    
+    public boolean isUnknown19() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK19);
+    }
+    
+    public boolean isUnknown20() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK20);
+    }
+    
+    public boolean isUnknown21() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK21);
+    }
+    
+    public boolean isUnknown22() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK22);
+    }
+    
+    public boolean isUnknown23() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK23);
+    }
+    
+    public boolean isUnknown24() {
+        return FlagUtils.hasFlag(this.flags, FLAG_UNK24);
+    }  
+    
+    /**
+     * Check in the bitmap hole if there's a hole at the position x, y.
+     * @param x
+     * @param y
+     * @return True if there's a hole.
+     */
+    public boolean isHole(int x, int y) {
+        int flagHole = (int) Math.pow(2, Math.floor(x / 2f) * 1f + Math.floor(y / 2f) * 4f);
+        return FlagUtils.hasFlag(this.holes, flagHole);
+    }
+    
+    /**
+     * Provide a 2-float Vector representing the maximum and the minimum liquid height found in this chunk.
+     * Vec2f.x contains the Maximum Height while Vec2f.y contains the Minimum Height.
+     * @return A Vec2f object containing the maximum and the minimum liquid height in this chunk. If there's no liquid in this chunk, 
+     * the returned values are -Float.MAX_VALUE as maximum and Float.MAX_VALUE as minimum.
+     */
+    public Vec2f getLiquidHeightBounds() {
+        Vec2f heightBounds = new Vec2f(-Float.MAX_VALUE, Float.MAX_VALUE);
+        float height;
+        if(hasLiquid()) {
+            for(MCLQ liquid : this.listLiquids) {
+                for (int x = 0; x < MCLQ.LIQUID_DATA_LENGTH; x++) {
+                    for (int y = 0; y < MCLQ.LIQUID_DATA_LENGTH; y++) {                        
+                        height = liquid.getHeightAt(x, y);
+                        if(height == Float.MAX_VALUE) {
+                            continue;
+                        }
+                        if(heightBounds.x < height) {
+                            heightBounds.x = height;
+                        }
+                        if(heightBounds.y > height) {
+                            heightBounds.y = height;
+                        }
+                    }
+                }
+            }
+        } 
+        return heightBounds;
     }
 }

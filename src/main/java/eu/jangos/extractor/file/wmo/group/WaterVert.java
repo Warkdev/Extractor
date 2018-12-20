@@ -21,52 +21,52 @@ import java.nio.ByteBuffer;
  *
  * @author Warkdev
  */
-public class WMOWVert extends WMOLiquid {
-    private byte flow1;
-    private byte flow2;
-    private byte flow1Pct;
-    private byte filler;
+public class WaterVert {
+    private short flow1;
+    private short flow2;
+    private short flow1Pct;
+    private short filler;
     private float height;
 
     public void read(ByteBuffer data) {
-        this.flow1 = data.get();
-        this.flow2 = data.get();
-        this.flow1Pct = data.get();
-        this.filler = data.get();
-        this.height = data.getFloat();
+        this.flow1 = (short) Byte.toUnsignedInt(data.get());
+        this.flow2 = (short) Byte.toUnsignedInt(data.get());
+        this.flow1Pct = (short) Byte.toUnsignedInt(data.get());
+        this.filler = (short) Byte.toUnsignedInt(data.get());
+        this.height = data.getFloat();                
     }
     
-    public byte getFlow1() {
+    public short getFlow1() {
         return flow1;
     }
 
-    public void setFlow1(byte flow1) {
+    public void setFlow1(short flow1) {
         this.flow1 = flow1;
     }
 
-    public byte getFlow2() {
+    public short getFlow2() {
         return flow2;
     }
 
-    public void setFlow2(byte flow2) {
+    public void setFlow2(short flow2) {
         this.flow2 = flow2;
     }
 
-    public byte getFlow1Pct() {
+    public short getFlow1Pct() {
         return flow1Pct;
     }
 
-    public void setFlow1Pct(byte flow1Pct) {
+    public void setFlow1Pct(short flow1Pct) {
         this.flow1Pct = flow1Pct;
     }
 
-    public byte getFiller() {
+    public short getFiller() {
         return filler;
     }
 
-    public void setFiller(byte filler) {
+    public void setFiller(short filler) {
         this.filler = filler;
-    }
+    }  
 
     public float getHeight() {
         return height;
@@ -75,4 +75,12 @@ public class WMOWVert extends WMOLiquid {
     public void setHeight(float height) {
         this.height = height;
     }        
+    
+    public String toString() {    
+        return "WaterVert [Flow1: "+flow1+" - Flow2: "+flow2+" - Flow1Pct: "+flow1Pct+" - Filler: "+filler+" - Height: "+height+"]";
+    }
+    
+    public String toCSVString() {
+        return flow1+";"+flow2+";"+flow1Pct+";"+filler+";"+height;
+    }
 }

@@ -17,12 +17,15 @@ package eu.jangos.extractor.file;
 
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.FileReaderException;
+import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.mpq.MPQManager;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import systems.crigges.jmpq3.JMpqException;
 
 /**
  * FileReader is a parent class of WoW file formats. It provides convenience method to read and parse the files.
@@ -36,12 +39,13 @@ public abstract class FileReader {
 
     /**
      * Init will initialize the corresponding file (ADT, WDT, WMO, M2, ...) to its file structure based on the data byte array provided in parameter.
-     * @param data The byte array representing the content of the file.
+     * @param manager The manager of MPQ that will provide the file to extract.
      * @param filename The filename that is being represented by the byte data.
+     * @param loadChildren Load the children of the file (e.g. ADT is a child of WMO).
      * @throws IOException If there's any issue while reading the file.
      * @throws FileReaderException If there's any functional issue while reading the file (File version, expected header, chunk size, ..)
      */
-    public abstract void init(byte[] data, String filename) throws IOException, FileReaderException;
+    public abstract void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, JMpqException, MPQException;
     
     // Getter & Setter.
     public String getFilename() {

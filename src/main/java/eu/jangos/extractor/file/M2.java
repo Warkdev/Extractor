@@ -19,6 +19,7 @@ import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.M2Exception;
+import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.m2.M2Array;
 import eu.jangos.extractor.file.m2.M2Attachment;
 import eu.jangos.extractor.file.m2.M2Camera;
@@ -36,6 +37,7 @@ import eu.jangos.extractor.file.m2.M2Texture;
 import eu.jangos.extractor.file.m2.M2TextureTransform;
 import eu.jangos.extractor.file.m2.M2TextureWeight;
 import eu.jangos.extractor.file.m2.M2Vertex;
+import eu.jangos.extractor.file.mpq.MPQManager;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -144,17 +146,22 @@ public class M2 extends FileReader {
         this.listSkinProfiles = new ArrayList<>();
     }
 
+    public void init(MPQManager manager, String filename) throws IOException, FileReaderException, MPQException {
+        init(manager, filename, false);
+    }
+    
     @Override
-    public void init(byte[] data, String filename) throws IOException, FileReaderException {        
+    public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, MPQException {        
         super.init = false;
-        
-        if(data.length == 0) {
+                        
+        super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
+        if(data.remaining() == 0) {
             logger.error("Data array for ADT "+filename+" is empty.");
             throw new M2Exception("Data array is empty.");
-        }
-        super.filename = filename;
-        super.data = ByteBuffer.wrap(data);
+        }        
         super.data.order(ByteOrder.LITTLE_ENDIAN);
+        super.filename = filename;
+        
         clear();
         readHeader();     
         super.init = true;

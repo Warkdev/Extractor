@@ -22,16 +22,20 @@ import eu.jangos.extractor.file.m2.M2SkinSection;
 import eu.jangos.extractor.file.m2.M2Vertex;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Warkdev
  */
-public class M22OBJConverter extends ModelConverter {
+public class M2Converter extends ModelConverter {
 
+    private static final Logger logger = LoggerFactory.getLogger(M2Converter.class);
+    
     private M2 reader;
 
-    public M22OBJConverter(M2 reader) {
+    public M2Converter(M2 reader) {
         super();
         this.reader = reader;
     }
@@ -108,7 +112,8 @@ public class M22OBJConverter extends ModelConverter {
                 }
             }
         } catch (M2Exception ex) {
-            throw new ConverterException("Error while eading the M2 content " + ex.getMessage());
+            logger.error("Error while reading the M2 content "+ex.getMessage());
+            throw new ConverterException("Error while reading the M2 content " + ex.getMessage());
         }
     }
 

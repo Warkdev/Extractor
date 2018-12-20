@@ -17,31 +17,31 @@ package eu.jangos.extractorfx;
 
 import eu.jangos.extractor.file.ADT;
 import eu.jangos.extractor.file.M2;
+import eu.jangos.extractor.file.WDT;
 import eu.jangos.extractor.file.WMO;
 import eu.jangos.extractor.file.WMOGroup;
-import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.FileReaderException;
-import eu.jangos.extractor.file.exception.M2Exception;
-import eu.jangos.extractor.file.exception.WMOException;
-import eu.jangos.extractorfx.obj.ADT2OBJConverter;
-import eu.jangos.extractorfx.obj.M22OBJConverter;
+import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.mpq.MPQManager;
+import eu.jangos.extractorfx.obj.ADTConverter;
+import eu.jangos.extractorfx.obj.M2Converter;
 import eu.jangos.extractorfx.obj.ModelConverter;
-import eu.jangos.extractorfx.obj.WMO2OBJConverter;
+import eu.jangos.extractorfx.obj.WMOConverter;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
-import javafx.geometry.Point3D;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Pos;
 import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.ParallelCamera;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -50,27 +50,36 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
+import javax.imageio.ImageIO;
 import org.apache.commons.io.FilenameUtils;
-import systems.crigges.jmpq3.JMpqEditor;
-import systems.crigges.jmpq3.MPQOpenOption;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MainApp extends Application {
 
+    private static final Logger logger = LoggerFactory.getLogger(MainApp.class);
+
     private static final String ROOT = "D:\\Downloads\\Test\\";
-    private static final String DATA = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data";
-    private static final String ADT = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\terrain.MPQ";
-    //private static final String ADT = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\terrain.MPQ";
-    private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
-    private static final String WMO = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\wmo.MPQ";
-    //private static final String WMO = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\patch.MPQ";
-    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme_raid.wmo";
-    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_ScarletMonestary\\Monestary_Cathedral.wmo";
-    //private static final String wmoExample = "World\\wmo\\Lorderon\\Undercity\\Undercity.wmo";
+    private static final String DATA = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\";
+    private static final String wdt1 = "world\\maps\\azeroth\\azeroth.wdt";
+    private static final String wdt2 = "world\\maps\\kalimdor\\kalimdor.wdt";
+    private static final String map = "World\\Maps\\emeralddream\\emeralddream_33_27.adt";
+    //private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
+    //private static final String map = "world\\maps\\kalimdor\\kalimdor_32_18.adt";
+    private static MPQManager manager;
     //private static final String wmoExample = "world\\wmo\\dungeon\\kl_orgrimmarlavadungeon\\lavadungeon.wmo";
-    //private static final String wmoExample = "World\\wmo\\KhazModan\\Cities\\Ironforge\\ironforge.wmo";
+    //private static final String wmoExample = "world\\wmo\\azeroth\\buildings\\stormwind\\stormwind.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\KL_Diremaul\\KL_Diremaul_Instance.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_ScarletMonestary\\Monestary_Cathedral.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme_raid.wmo";
+    //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme_raid.wmo";
+    private static final String cathedral = "World\\wmo\\Dungeon\\LD_ScarletMonestary\\Monestary_Cathedral.wmo";
+    private static final String undercity = "World\\wmo\\Lorderon\\Undercity\\Undercity.wmo";
+    //private static final String wmoExample = "world\\wmo\\dungeon\\kl_orgrimmarlavadungeon\\lavadungeon.wmo";
+    private static final String ironforge = "World\\wmo\\KhazModan\\Cities\\Ironforge\\ironforge.wmo";
     //private static final String wmoExample = "World\\wmo\\Azeroth\\Buildings\\Stranglethorn_BootyBay\\BootyBay.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\MD_Crypt\\MD_Crypt_D.wmo";
-    private static final String wmoExample = "world\\wmo\\azeroth\\buildings\\stormwind\\stormwind.wmo";
+    private static final String stormwind = "world\\wmo\\azeroth\\buildings\\stormwind\\stormwind.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\LD_Stratholme\\Stratholme.wmo";
     //private static final String wmoExample = "World\\wmo\\Azeroth\\Buildings\\Prison_Camp\\PrisonOublietteLarge.wmo";
     //private static final String wmoExample = "World\\wmo\\Azeroth\\Collidable Doodads\\Elwynn\\AbbeyGate\\abbeygate01.wmo";
@@ -81,17 +90,15 @@ public class MainApp extends Application {
     //private static final String wmoExample = "World\\wmo\\Lorderon\\Buildings\\EasternPlaguelands\\UndeadZiggurat\\UndeadZiggurat.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\AZ_Blackrock\\Blackrock_lower_guild.wmo";
     private static final String m2Example = "world\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy04.M2";
-    private static final String MODEL = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\model.MPQ";
-    private static final ADT adtReader = new ADT();
-    private static final ADT2OBJConverter adtConverter = new ADT2OBJConverter(adtReader);
+    private static final WDT wdt = new WDT();
+    private static final ADT adt = new ADT();
+    private static final ADTConverter adtConverter = new ADTConverter(adt);
     private static final WMO wmo = new WMO();
-    private static final ModelConverter wmoConverter = new WMO2OBJConverter(wmo);
-    private static final M2 m2Reader = new M2();
-    private static final ModelConverter m2Converter = new M22OBJConverter(m2Reader);
-    private static final Map<String, ModelConverter> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    private static final File adtFile = new File(ADT);
-    private static final File modelFile = new File(MODEL);
-    private static final File wmoFile = new File(WMO);
+    private static final WMOConverter wmoConverter = new WMOConverter(wmo);
+    private static final M2 model = new M2();
+    private static final ModelConverter m2Converter = new M2Converter(model);
+    private static final Map<String, M2Converter> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private static final int MAX_HEIGHT = Integer.MAX_VALUE;
 
     private static final int VIEWPORT_W = 1920;
     private static final int VIEWPORT_H = 1080;
@@ -100,12 +107,19 @@ public class MainApp extends Application {
     private static final double MIN_SCALE = 0.1;
     private static final double MAX_SCALE = 3;
     private static final double TRANSLATE_STEP = 5;
+    private static Camera camera;
 
     @Override
     public void start(Stage stage) throws Exception {
         //Parent root = FXMLLoader.load(getClass().getResource("/fxml/Scene.fxml"));                
 
-        Camera camera = new ParallelCamera();
+        try {
+            manager = new MPQManager(DATA);
+        } catch (MPQException ex) {
+            logger.error(ex.getMessage());
+        }
+
+        camera = new ParallelCamera();
         camera.setScaleX(SCALE);
         camera.setScaleY(SCALE);
         Line xLine = new Line(VIEWPORT_W / 2, 0, VIEWPORT_W / 2, VIEWPORT_H);
@@ -114,9 +128,16 @@ public class MainApp extends Application {
         yLine.setStroke(Color.GREEN);
         Group root = new Group();
 
-        root.getChildren().addAll(xLine, yLine);
-        extractWmo(wmoExample, root, false, true);
-
+        /**root.getChildren().addAll(xLine, yLine);
+        extractWmo(ironforge, root, false, true);   
+        root.getChildren().clear();
+        extractWmo(undercity, root, false, true);        
+        root.getChildren().clear();
+        extractWmo(stormwind, root, false, true);        
+        root.getChildren().clear();
+        extractWmo(cathedral, root, false, true);   */
+        extractAllWMO(false, root, true);
+        
         Scene scene = new Scene(root);
         scene.setCamera(camera);
         scene.getStylesheets().add("/styles/Styles.css");
@@ -164,6 +185,7 @@ public class MainApp extends Application {
 
         stage.setScene(scene);
         stage.show();
+        //System.exit(0);
     }
 
     /**
@@ -178,50 +200,25 @@ public class MainApp extends Application {
         launch(args);
     }
 
-    private static void extractAllWMO(boolean addModels, boolean saveToFile) {
-        try {
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor wmoEditor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
-
-            int total = wmoEditor.getTotalFileCount();
-            int done = 0;
-            for (String path : wmoEditor.getFileNames()) {
-                done++;
-                if (!path.endsWith(".wmo")) {
-                    continue;
-                }
-                byte[] data = wmoEditor.extractFileAsBytes(path);
-                if (!wmo.isRootFile(data)) {
-                    continue;
-                }
-                //System.out.println("Extracting WMO... " + path);
-                String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
-                wmo.init(data, path);
-                ((WMO2OBJConverter) (wmoConverter)).convert(wmoEditor, modelEditor, cache, path, addModels);
-                if (saveToFile) {
-                    wmoConverter.saveToFile(outputFile, false, false);
-                }
-
-                //System.out.println("Done: " + done + " / Total: " + total);
-            }
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+    private static void extractAllWMO(boolean addModels, Group root, boolean saveToFile) {
+        int total = manager.getListWMO().size();
+        int done = 0;
+        for (String path : manager.getListWMO()) {
+            done++;
+            logger.info("Extracting WMO... " + path);
+            extractWmo(path, root, addModels, saveToFile);
+            logger.info("Done: " + done + " / Total: " + total);
+            root.getChildren().clear();
         }
     }
 
     private static void extractWmo(String path, Group root, boolean addModels, boolean saveToFile) {
         try {
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor wmoEditor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
-
             String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
-            wmo.init(wmoEditor.extractFileAsBytes(path), path);
+            String outputLiquidFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + "_liquid.png";
+            wmo.init(manager, path);
             Group liquid = new Group();
-            ((WMO2OBJConverter) (wmoConverter)).convert(wmoEditor, modelEditor, cache, path, addModels);
+            wmoConverter.convert(manager, cache, path, addModels, MAX_HEIGHT);
             Rectangle rect = new Rectangle();
             double heightRoot = wmo.getBoundingBox().getMax().y - wmo.getBoundingBox().getMin().y;
             double widthRoot = wmo.getBoundingBox().getMax().x - wmo.getBoundingBox().getMin().x;
@@ -245,87 +242,50 @@ public class MainApp extends Application {
                 r.setWidth(width);
                 r.setHeight(height);
                 r.setFill(Color.TRANSPARENT);
-                
+
                 if (group.hasLiquid()) {
-                    int eCount = 0;
-                    int fCount = 0;
                     coord = "[" + group.getLiquid().getxTiles() + "," + group.getLiquid().getyTiles() + "]";
                     double tileWidth = 4.1666666666666666666666666;
                     double tileHeight = 4.166666666666666666666666;
                     for (int x = 0; x < group.getLiquid().getxTiles(); x++) {
                         for (int y = 0; y < group.getLiquid().getyTiles(); y++) {
                             Rectangle tile = new Rectangle(x * tileWidth + group.getLiquid().getBaseCoordinates().x, -(y * tileHeight + group.getLiquid().getBaseCoordinates().y), tileWidth, tileHeight);
-                            tile.setFill(Color.RED);
+                            tile.setFill(Color.TRANSPARENT);
 
-                            //if (group.getLiquid().hasNoLiquid(x, y)) {
-                            if (false) {
-                                tile.setFill(Color.BLACK);
-                            } else {
-
-                                //System.out.println(group.getLiquid().isSlime(x, y));
-                                //System.out.println(group.getLiquid().isMagma(x, y));
-                                //System.out.println(wmo.getFlags() + ";" + group.isMagma() + ";" + group.getGroup().getFlags() + ";" + group.getGroup().getGroupLiquid());
-                                int liquidFlag = group.getLiquid().getFlags().get(group.getLiquid().getFlagPosition(x, y)) & 0x0F;
-                                int liquidType = liquidFlag & 0x3;
-                                int flag = (group.getLiquid().getFlags().get(group.getLiquid().getFlagPosition(x, y)) & 0xF0) >> 4;
-                                int xy = (liquidFlag & 0xC) >> 2;
-                                int xx = (xy & 0x2) >> 1;
-                                int yy = xy & 0x1;
-                                int aa = (flag & 0xC) >> 2;
-                                int w = (aa & 0x2) >> 1;
-                                int z = aa & 0x1;
-                                int bb = flag & 0x03;
-                                int e = (bb & 0x2) >> 1;
-                                int f = bb & 0x1;
-                                if (aa != 3) {
-                                    //continue;
-                                }
-                                if (e == 1) {
-                                    eCount++;
-                                }
-                                if (f == 1) {
-                                    fCount++;
-                                }
-                                if (group.getLiquid().hasNoLiquid(x, y)) {
-                                    tile.setFill(Color.BLACK);
-                                } else if(group.getLiquid().isWater(x, y)) {
-                                    tile.setFill(Color.BLUE);
-                                } else if (group.getLiquid().isMagma(x, y)) {
-                                    tile.setFill(Color.ORANGE);
-                                } else if (group.getLiquid().isSlime(x, y)) {
-                                    tile.setFill(Color.GREEN);
-                                } else {
+                            int flag = group.getLiquid().getFlags().get(group.getLiquid().getFlagPosition(x, y));
+                            boolean render = true;
+                            if (group.getLiquid().hasNoLiquid(x, y)) {                                                            
+                                render = false;                                
+                            } else {                                                                
+                                if(group.getLiquid().isOverlap(x, y)) {
                                     tile.setFill(Color.RED);
-                                }
-                                /**
-                                 * switch (flag) { case 0:
-                                 * tile.setFill(Color.BLUE); break; case 1:
-                                 * tile.setFill(Color.BLUEVIOLET); break; case
-                                 * 2: tile.setFill(Color.BROWN); break; case 3:
-                                 * tile.setFill(Color.CHARTREUSE); break; case
-                                 * 4: tile.setFill(Color.CHOCOLATE); break; case
-                                 * 5: tile.setFill(Color.CORAL); break; case 6:
-                                 * tile.setFill(Color.CORNFLOWERBLUE); break;
-                                 * case 7: tile.setFill(Color.CRIMSON); break;
-                                 * case 8: tile.setFill(Color.CYAN); break; case
-                                 * 9: tile.setFill(Color.DARKBLUE); break; case
-                                 * 10: tile.setFill(Color.DARKVIOLET); break;
-                                 * case 11: tile.setFill(Color.FORESTGREEN);
-                                 * break; case 12: tile.setFill(Color.FUCHSIA);
-                                 * break; case 13: tile.setFill(Color.KHAKI);
-                                 * break; case 14: tile.setFill(Color.MAROON);
-                                 * break; case 15: tile.setFill(Color.BLACK);
-                                 * break;
-                                }
-                                 */
+                                } else {                                                        
+                                    switch((flag & 0x08) >> 3) {
+                                        case 0:
+                                            tile.setFill(Color.BLUE);
+                                            break;
+                                        case 1:                                            
+                                            tile.setFill(Color.YELLOW);
+                                            break;
+                                        case 2:
+                                            tile.setFill(Color.PINK);
+                                            break;
+                                        case 3:
+                                            tile.setFill(Color.PURPLE);
+                                            break;
+                                        default:
+                                            tile.setFill(Color.DARKGOLDENROD);
+                                            break;
+                                    }                                        
+                                }                               
                             }
-                            liquid.getChildren().add(tile);
+                            if(render)
+                                liquid.getChildren().add(tile);
                         }
                     }
-                    System.out.println(group.getFilename() + ";" + eCount+";"+fCount);
                 } else {
                     coord = "[0,0]";
-                }                
+                }
                 String[] temp = FilenameUtils.getName(group.getFilename()).split("\\.")[0].split("_");
                 Text label = new Text(temp[temp.length - 1]);
                 //Text label = new Text();
@@ -352,105 +312,73 @@ public class MainApp extends Application {
             root.getChildren().add(liquid);
             //wmoReader.getLiquidMap(false);
             if (saveToFile) {
-                wmoConverter.saveToFile(outputFile, false, false);
+                WritableImage image = new WritableImage(1920, 1080);
+                SnapshotParameters params = new SnapshotParameters();
+                params.setCamera(camera);
+                root.snapshot(params, image);                                
+                File file = new File(outputLiquidFile);
+                if(!file.exists()) {
+                    file.getParentFile().mkdirs();
+                }
+                ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+                //wmoConverter.saveToFile(outputFile, false, false);
             }
         } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("Error IO Exception");
         } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("Error IO Exception");
         } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("Error IO Exception");
+        } catch (MPQException ex) {
+            logger.error("Error IO Exception");
         }
     }
 
     private static void extractAllM2(boolean saveToFile) {
-        try {
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
+        int total = manager.getListM2().size();
+        int done = 0;
+        for (String path : manager.getListM2()) {
+            logger.info("Extracting M2... " + path);
+            done++;
+            extractM2(path);
 
-            int total = modelEditor.getTotalFileCount();
-            int done = 0;
-            for (String file : modelEditor.getFileNames()) {
-                if (file.endsWith(".m2")) {
-                    System.out.println("Extracting M2... " + file);
-                    String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(file) + ".obj";
-                    m2Reader.init(modelEditor.extractFileAsBytes(file), file);
-                    ((M22OBJConverter) m2Converter).convert(1, 100000);
-                    if (saveToFile) {
-                        m2Converter.saveToFile(outputFile, false, false);
-                    }
-                }
-                done++;
-                System.out.println("Done: " + done + " / Total: " + total);
-            }
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            logger.info("Done: " + done + " / Total: " + total);
         }
     }
 
     private static void extractM2(String path) {
         try {
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-
             String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";
-            m2Reader.init(modelEditor.extractFileAsBytes(path), path);
-            ((M22OBJConverter) m2Converter).convert(1, 17);
+            model.init(manager, path);
+            ((M2Converter) m2Converter).convert(1, 17);
             m2Converter.saveToFile(outputFile, false, false);
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+            logger.error(ex.getMessage());
         }
     }
 
-    private static void extractAllMaps(boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO) {
-        try {
-            JMpqEditor adtEditor = new JMpqEditor(adtFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor wmoEditor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
-
-            for (String path : adtEditor.getFileNames()) {
-                if (path.endsWith(".adt")) {
-                    String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
-                    adtReader.init(adtEditor.extractFileAsBytes(path), path);
-                    adtConverter.convert(wmoEditor, modelEditor, cache, path, yUp, addWMO, addModels, addModelsInWMO);
-                }
+    private static void extractAllMaps(boolean yUp, boolean addWMO, boolean addModels, int modelMaxHeight, boolean addModelsInWMO, int wmoModelMaxHeight, boolean saveToFile) {
+        for (String path : manager.getListADT()) {
+            if (path.endsWith(".adt")) {
+                extractMap(path, yUp, addWMO, addModels, modelMaxHeight, addModelsInWMO, wmoModelMaxHeight, saveToFile);
             }
-            //adtConverter.saveToFile(outputFile, false, false);
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO) {
+    private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, int modelMaxHeight, boolean addModelsInWMO, int wmoModelMaxHeight, boolean saveToFile) {
         try {
-            JMpqEditor adtEditor = new JMpqEditor(adtFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor modelEditor = new JMpqEditor(modelFile, MPQOpenOption.READ_ONLY);
-            JMpqEditor wmoEditor = new JMpqEditor(wmoFile, MPQOpenOption.READ_ONLY);
-
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
             String outputLiquidMap = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + "_liquid_map.png";
             String outputDetailedLiquidMap = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + "_liquid_map_details.png";
-            adtReader.init(adtEditor.extractFileAsBytes(path), path);
-            //adtReader.saveLiquidMap(outputLiquidMap, false);
-            //adtReader.saveLiquidMap(outputDetailedLiquidMap, true);
-            adtConverter.convert(wmoEditor, modelEditor, cache, path, yUp, addWMO, addModels, addModelsInWMO);
-            adtConverter.saveToFile(outputFile, false, false);
-        } catch (IOException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ConverterException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FileReaderException ex) {
-            Logger.getLogger(Extractor.class.getName()).log(Level.SEVERE, null, ex);
+            String outputHoleMap = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + "_hole_map.png";
+            adt.init(manager, path);
+            //adt.saveLiquidMap(outputDetailedLiquidMap, true);
+            adtConverter.convert(manager, cache, path, yUp, addWMO, addModels, modelMaxHeight, addModelsInWMO, wmoModelMaxHeight);
+            if (saveToFile) {
+                adtConverter.saveToFile(outputFile, false, false);
+            }
+        } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+            logger.error(ex.getMessage());
         }
     }
 }
