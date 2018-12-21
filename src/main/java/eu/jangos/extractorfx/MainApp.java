@@ -28,6 +28,8 @@ import eu.jangos.extractorfx.obj.M2Converter;
 import eu.jangos.extractorfx.obj.ModelConverter;
 import eu.jangos.extractorfx.obj.WMOConverter;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractorfx.rendering.LiquidTileMapRenderType;
+import eu.jangos.extractorfx.rendering.PolygonMeshView;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -35,19 +37,28 @@ import java.util.TreeMap;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.Camera;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.ParallelCamera;
+import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.CullFace;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javax.imageio.ImageIO;
@@ -108,6 +119,7 @@ public class MainApp extends Application {
     private static final double MAX_SCALE = 3;
     private static final double TRANSLATE_STEP = 5;
     private static Camera camera;
+    private static PolygonMeshView view;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -119,7 +131,11 @@ public class MainApp extends Application {
             logger.error(ex.getMessage());
         }
 
-        camera = new ParallelCamera();
+        camera = new PerspectiveCamera(false);
+        camera.setNearClip(0.1);
+        camera.setFarClip(100000.0);
+        camera.getTransforms().addAll(new Rotate(0, Rotate.X_AXIS), new Rotate(0, Rotate.Y_AXIS), new Translate(-250, -150, 0));
+        //camera = new ParallelCamera();
         camera.setScaleX(SCALE);
         camera.setScaleY(SCALE);
         Line xLine = new Line(VIEWPORT_W / 2, 0, VIEWPORT_W / 2, VIEWPORT_H);
@@ -127,18 +143,17 @@ public class MainApp extends Application {
         Line yLine = new Line(0, VIEWPORT_H / 2, VIEWPORT_W, VIEWPORT_H / 2);
         yLine.setStroke(Color.GREEN);
         Group root = new Group();
-
-        /**root.getChildren().addAll(xLine, yLine);
-        extractWmo(ironforge, root, false, true);   
-        root.getChildren().clear();
-        extractWmo(undercity, root, false, true);        
-        root.getChildren().clear();
-        extractWmo(stormwind, root, false, true);        
-        root.getChildren().clear();
-        extractWmo(cathedral, root, false, true);   */
-        extractAllWMO(false, root, true);
+        view = new PolygonMeshView();
+        view.setCullFace(CullFace.NONE);
+        view.setDrawMode(DrawMode.FILL);
+        view.setMaterial(new PhongMaterial(Color.LIGHTYELLOW));        
         
-        Scene scene = new Scene(root);
+        //root.getChildren().addAll(xLine, yLine);
+        root.getChildren().add(view);
+        extractWmo(ironforge, root, false, false);                   
+        //extractAllWMO(false, root, true);
+        
+        Scene scene = new Scene(root, VIEWPORT_W, VIEWPORT_H, true, SceneAntialiasing.BALANCED);
         scene.setCamera(camera);
         scene.getStylesheets().add("/styles/Styles.css");
         scene.getRoot().requestFocus();
@@ -216,101 +231,13 @@ public class MainApp extends Application {
         try {
             String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
             String outputLiquidFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + "_liquid.png";
-            wmo.init(manager, path);
-            Group liquid = new Group();
-            wmoConverter.convert(manager, cache, path, addModels, MAX_HEIGHT);
-            Rectangle rect = new Rectangle();
-            double heightRoot = wmo.getBoundingBox().getMax().y - wmo.getBoundingBox().getMin().y;
-            double widthRoot = wmo.getBoundingBox().getMax().x - wmo.getBoundingBox().getMin().x;
-            rect.setX(wmo.getBoundingBox().getMin().x);
-            rect.setY(-wmo.getBoundingBox().getMin().y - heightRoot);
-            rect.setWidth(widthRoot);
-            rect.setHeight(heightRoot);
-            rect.setFill(Color.TRANSPARENT);
-            rect.setStroke(Color.RED);
-            liquid.getChildren().add(rect);
-
-            for (WMOGroup group : wmo.getWmoGroupReadersList()) {
-                StackPane pane = new StackPane();
-                Rectangle r = new Rectangle();
-                String coord;
-                double height = group.getGroup().getBoundingBox().getMax().y - group.getGroup().getBoundingBox().getMin().y;
-                double width = group.getGroup().getBoundingBox().getMax().x - group.getGroup().getBoundingBox().getMin().x;
-
-                r.setX(group.getGroup().getBoundingBox().getMin().x);
-                r.setY(-group.getGroup().getBoundingBox().getMin().y - height);
-                r.setWidth(width);
-                r.setHeight(height);
-                r.setFill(Color.TRANSPARENT);
-
-                if (group.hasLiquid()) {
-                    coord = "[" + group.getLiquid().getxTiles() + "," + group.getLiquid().getyTiles() + "]";
-                    double tileWidth = 4.1666666666666666666666666;
-                    double tileHeight = 4.166666666666666666666666;
-                    for (int x = 0; x < group.getLiquid().getxTiles(); x++) {
-                        for (int y = 0; y < group.getLiquid().getyTiles(); y++) {
-                            Rectangle tile = new Rectangle(x * tileWidth + group.getLiquid().getBaseCoordinates().x, -(y * tileHeight + group.getLiquid().getBaseCoordinates().y), tileWidth, tileHeight);
-                            tile.setFill(Color.TRANSPARENT);
-
-                            int flag = group.getLiquid().getFlags().get(group.getLiquid().getFlagPosition(x, y));
-                            boolean render = true;
-                            if (group.getLiquid().hasNoLiquid(x, y)) {                                                            
-                                render = false;                                
-                            } else {                                                                
-                                if(group.getLiquid().isOverlap(x, y)) {
-                                    tile.setFill(Color.RED);
-                                } else {                                                        
-                                    switch((flag & 0x08) >> 3) {
-                                        case 0:
-                                            tile.setFill(Color.BLUE);
-                                            break;
-                                        case 1:                                            
-                                            tile.setFill(Color.YELLOW);
-                                            break;
-                                        case 2:
-                                            tile.setFill(Color.PINK);
-                                            break;
-                                        case 3:
-                                            tile.setFill(Color.PURPLE);
-                                            break;
-                                        default:
-                                            tile.setFill(Color.DARKGOLDENROD);
-                                            break;
-                                    }                                        
-                                }                               
-                            }
-                            if(render)
-                                liquid.getChildren().add(tile);
-                        }
-                    }
-                } else {
-                    coord = "[0,0]";
-                }
-                String[] temp = FilenameUtils.getName(group.getFilename()).split("\\.")[0].split("_");
-                Text label = new Text(temp[temp.length - 1]);
-                //Text label = new Text();
-                Text coordinates = new Text(coord);
-
-                if (group.hasLiquid()) {
-                    r.setStroke(Color.BLUE);
-                    label.setStroke(Color.RED);
-                    coordinates.setStroke(Color.BLUE);
-                } else {
-                    r.setStroke(Color.BLACK);
-                }
-                pane.setLayoutX(r.getX());
-                pane.setLayoutY(r.getY());
-                pane.getChildren().addAll(r, label);
-                //pane.getChildren().addAll(r, label, coordinates);
-                StackPane.setAlignment(label, Pos.TOP_LEFT);
-                StackPane.setAlignment(coordinates, Pos.BOTTOM_RIGHT);
-                root.getChildren().add(pane);
-                //pane.getTransforms().addAll(new Rotate(180, VIEWPORT_W/2, VIEWPORT_H/2, 0, Rotate.X_AXIS), new Translate(VIEWPORT_W/2, VIEWPORT_H/2));                                
-                pane.getTransforms().addAll(new Translate(VIEWPORT_W / 2, VIEWPORT_H / 2));
-            }
-            liquid.getTransforms().addAll(new Translate(VIEWPORT_W / 2, VIEWPORT_H / 2));
-            root.getChildren().add(liquid);
-            //wmoReader.getLiquidMap(false);
+            wmo.init(manager, path);            
+            wmoConverter.convert(manager, cache, path, addModels, MAX_HEIGHT);            
+            //root.getChildren().add(wmo.getLiquidTileMap(VIEWPORT_W, VIEWPORT_H, LiquidTileMapRenderType.RENDER_LIQUID_TYPE, false, false, false, true));           
+            //root.getChildren().get(0).add(wmo.renderLiquid());           
+            view.setMesh(wmo.renderLiquid());
+            //System.out.println(wmo.renderLiquidInWavefront(false, false));
+            wmo.saveWavefront("D:\\Downloads\\Test\\liquid.obj", false);
             if (saveToFile) {
                 WritableImage image = new WritableImage(1920, 1080);
                 SnapshotParameters params = new SnapshotParameters();

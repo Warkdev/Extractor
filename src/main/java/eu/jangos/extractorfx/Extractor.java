@@ -47,7 +47,7 @@ public class Extractor {
     private static final String azeroth = "world\\maps\\azeroth\\azeroth.wdt";
     private static final String kalimdor = "world\\maps\\kalimdor\\kalimdor.wdt";
     //private static final String map = "World\\Maps\\emeralddream\\emeralddream_33_27.adt";
-    private static final String map = "World\\Maps\\Azeroth\\Azeroth_38_25.adt";
+    private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
     //private static final String map = "world\\maps\\kalimdor\\kalimdor_44_34.adt";
     private static MPQManager manager;
     //private static final String wmoExample = "world\\wmo\\dungeon\\kl_orgrimmarlavadungeon\\lavadungeon.wmo";
@@ -92,8 +92,8 @@ public class Extractor {
         //extractM2(m2Example);
         //extractAllM2(false);
         //extractWmo(wmoExample, true, false);
-        extractAllWMO(true, false);        
-        //extractMap(map, true, false, false,MAX_HEIGHT, false, MAX_HEIGHT, true);
+        //extractAllWMO(true, false);        
+        //extractMap(map, true, true, true,MAX_HEIGHT, true, MAX_HEIGHT, true);
         //extractAllMaps(false, false, false, false, false);
         //extractAllWdt();
         //extractAllTerrains();

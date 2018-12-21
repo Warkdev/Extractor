@@ -19,6 +19,7 @@ import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.mpq.MPQManager;
+import eu.jangos.extractorfx.obj.ModelConverter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ import systems.crigges.jmpq3.JMpqException;
  * FileReader is a parent class of WoW file formats. It provides convenience method to read and parse the files.
  * @author Warkdev
  */
-public abstract class FileReader {
+public abstract class FileReader extends ModelConverter {
     
     protected String filename;
     protected ByteBuffer data;

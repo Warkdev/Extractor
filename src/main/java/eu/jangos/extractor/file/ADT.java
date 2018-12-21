@@ -28,18 +28,12 @@ import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.mpq.MPQManager;
 import java.awt.image.BufferedImage;
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,11 +60,6 @@ public class ADT extends FileReader {
 
     // Size as from which the offset calculation is made.
     private static final int GLOBAL_OFFSET = 0x14;
-
-    public static final float TILE_SIZE = 533.33333f;
-    public static final float CHUNK_SIZE = TILE_SIZE / 16.0f;
-    public static final float UNIT_SIZE = CHUNK_SIZE / 8.0f;
-    public static final float ZERO_POINT = 32.0f * TILE_SIZE;
 
     public static final int SIZE_TILE_MAP = 128;
     public static final int SIZE_TILE_HEIGHTMAP = 144;
@@ -312,25 +301,25 @@ public class ADT extends FileReader {
                     for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
                         if (liquid.hasNoLiquid(i, j)) {
                             liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = "N ";
-                        } else /*if (liquid.hasLiquid(i, j))*/ {                            
-                                if (displayLiquidType) {
-                                    String letter = "L";
-                                    if (chunk.isRiver()) {
-                                        letter += "R ";
-                                    } else if (chunk.isOcean()) {
-                                        letter += "O ";
-                                    } else if (chunk.isMagma()) {
-                                        letter += "M ";
-                                    } else if (chunk.isSlime()) {
-                                        letter += "S ";
-                                    }
-                                    liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = letter;
-                                } else {
-                                    liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = "L ";
+                        } else /*if (liquid.hasLiquid(i, j))*/ {
+                            if (displayLiquidType) {
+                                String letter = "L";
+                                if (chunk.isRiver()) {
+                                    letter += "R ";
+                                } else if (chunk.isOcean()) {
+                                    letter += "O ";
+                                } else if (chunk.isMagma()) {
+                                    letter += "M ";
+                                } else if (chunk.isSlime()) {
+                                    letter += "S ";
                                 }
+                                liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = letter;
+                            } else {
+                                liquids[LIQUID_FLAG_LENGTH * idx + i][LIQUID_FLAG_LENGTH * idy + j] = "L ";
                             }
                         }
-                    }                
+                    }
+                }
             }
 
             idx++;
@@ -342,13 +331,17 @@ public class ADT extends FileReader {
 
         return liquids;
     }
-/**
-     * Generate an image corresponding to the liquid light map. !!! This method isn't working properly !!!
+
+    /**
+     * Generate an image corresponding to the liquid light map. !!! This method
+     * isn't working properly !!!
+     *
      * @return The liquid light map under the form of a buffered image.
-     * @throws FileReaderException If there was an issue while reading the map chunk of the ADT file.
+     * @throws FileReaderException If there was an issue while reading the map
+     * chunk of the ADT file.
      */
     public BufferedImage getLiquidLightMap() throws FileReaderException {
-        BufferedImage img = new BufferedImage(SIZE_TILE_HEIGHTMAP, SIZE_TILE_HEIGHTMAP, BufferedImage.TYPE_INT_RGB);        
+        BufferedImage img = new BufferedImage(SIZE_TILE_HEIGHTMAP, SIZE_TILE_HEIGHTMAP, BufferedImage.TYPE_INT_RGB);
         int idx = 0;
         int idy = 0;
         List<MCNK> mapChunks = getMapChunks();
@@ -358,17 +351,18 @@ public class ADT extends FileReader {
                     for (int j = 0; j < CHUNK_TILE_HEIGHTMAP_LENGTH; j++) {
                         img.setRGB(CHUNK_TILE_HEIGHTMAP_LENGTH * idx + i, CHUNK_TILE_HEIGHTMAP_LENGTH * idy + j, Color.BLACK.getRGB());
                     }
-                }                
-            } else {                
-                for (MCLQ liquid : chunk.getListLiquids()) {                    
+                }
+            } else {
+                for (MCLQ liquid : chunk.getListLiquids()) {
                     for (int i = 0; i < CHUNK_TILE_HEIGHTMAP_LENGTH; i++) {
-                        for (int j = 0; j < CHUNK_TILE_HEIGHTMAP_LENGTH; j++) {  
+                        for (int j = 0; j < CHUNK_TILE_HEIGHTMAP_LENGTH; j++) {
                             int value = (int) liquid.getLightAt(i, j);
-                            if(value < 0 || value > 255)
+                            if (value < 0 || value > 255) {
                                 System.out.println(this.filename + ";" + value);
+                            }
                             //img.setRGB(CHUNK_TILE_HEIGHTMAP_LENGTH * idx + i, CHUNK_TILE_HEIGHTMAP_LENGTH * idy + j, new Color(value, value, value).getRGB());                                                            
                         }
-                    }                    
+                    }
                 }
             }
 
@@ -378,10 +372,10 @@ public class ADT extends FileReader {
                 idy++;
             }
         }
-        
+
         return img;
     }
-    
+
     public void saveLiquidLightMap(String pngPath) throws FileReaderException, IOException {
         File imgFile = new File(pngPath);
         if (imgFile.exists()) {
@@ -392,9 +386,9 @@ public class ADT extends FileReader {
 
         ImageIO.write(getLiquidHeightMap(), "PNG", imgFile);
     }
-    
-    public BufferedImage getLiquidHeightMap() throws FileReaderException {        
-        BufferedImage img = new BufferedImage(SIZE_TILE_HEIGHTMAP, SIZE_TILE_HEIGHTMAP, BufferedImage.TYPE_INT_RGB);        
+
+    public BufferedImage getLiquidHeightMap() throws FileReaderException {
+        BufferedImage img = new BufferedImage(SIZE_TILE_HEIGHTMAP, SIZE_TILE_HEIGHTMAP, BufferedImage.TYPE_INT_RGB);
         int idx = 0;
         int idy = 0;
         Vec2f heightBounds = getLiquidMapBounds();
@@ -402,7 +396,7 @@ public class ADT extends FileReader {
         float minHeight = heightBounds.y;
         float diffHeight = maxHeight - minHeight;
         int value = 0;
-        
+
         List<MCNK> mapChunks = getMapChunks();
         for (MCNK chunk : mapChunks) {
             if (chunk.hasNoLiquid()) {
@@ -410,24 +404,24 @@ public class ADT extends FileReader {
                     for (int j = 0; j < CHUNK_TILE_HEIGHTMAP_LENGTH; j++) {
                         img.setRGB(CHUNK_TILE_HEIGHTMAP_LENGTH * idx + i, CHUNK_TILE_HEIGHTMAP_LENGTH * idy + j, Color.BLACK.getRGB());
                     }
-                }                
-            } else {                
-                for (MCLQ liquid : chunk.getListLiquids()) {                            
-                    for (int i = 0; i < CHUNK_TILE_HEIGHTMAP_LENGTH; i++) {                          
-                        for (int j = 0; j < CHUNK_TILE_HEIGHTMAP_LENGTH; j++) {  
-                            float height = liquid.getHeightAt(i, j);                            
-                            if(height < Float.MAX_VALUE) { 
-                                if(diffHeight == 0) {
+                }
+            } else {
+                for (MCLQ liquid : chunk.getListLiquids()) {
+                    for (int i = 0; i < CHUNK_TILE_HEIGHTMAP_LENGTH; i++) {
+                        for (int j = 0; j < CHUNK_TILE_HEIGHTMAP_LENGTH; j++) {
+                            float height = liquid.getHeightAt(i, j);
+                            if (height < Float.MAX_VALUE) {
+                                if (diffHeight == 0) {
                                     value = 255;
                                 } else {
-                                    value = (int) ((height - minHeight) / diffHeight * 255f);                                
-                                }                                
+                                    value = (int) ((height - minHeight) / diffHeight * 255f);
+                                }
                             } else {
                                 value = 0;
-                            }                                                                   
-                            img.setRGB(CHUNK_TILE_HEIGHTMAP_LENGTH * idx + i, CHUNK_TILE_HEIGHTMAP_LENGTH * idy + j, new Color(value, value, value).getRGB());                                                            
-                        }                        
-                    }                                        
+                            }
+                            img.setRGB(CHUNK_TILE_HEIGHTMAP_LENGTH * idx + i, CHUNK_TILE_HEIGHTMAP_LENGTH * idy + j, new Color(value, value, value).getRGB());
+                        }
+                    }
                 }
             }
 
@@ -437,25 +431,28 @@ public class ADT extends FileReader {
                 idy++;
             }
         }
-        
+
         return img;
     }
-    
+
     /**
-     * Generate an image corresponding to the liquid height map with coloring depending on maximum and minimum liquid height provided in parameter.
+     * Generate an image corresponding to the liquid height map with coloring
+     * depending on maximum and minimum liquid height provided in parameter.
      * maximum height being WHITE and minimum height being close to black.
+     *
      * @param maxHeight The maximum height value to be considered.
      * @param minHeight The minimum height value to be considered.
      * @return The liquid height map under the form of a buffered image.
-     * @throws FileReaderException If there was an issue while reading the map chunk of the ADT file.
+     * @throws FileReaderException If there was an issue while reading the map
+     * chunk of the ADT file.
      */
-    public BufferedImage getLiquidHeightMap(float maxHeight, float minHeight) throws FileReaderException {        
-        BufferedImage img = new BufferedImage(SIZE_TILE_HEIGHTMAP, SIZE_TILE_HEIGHTMAP, BufferedImage.TYPE_INT_RGB);        
+    public BufferedImage getLiquidHeightMap(float maxHeight, float minHeight) throws FileReaderException {
+        BufferedImage img = new BufferedImage(SIZE_TILE_HEIGHTMAP, SIZE_TILE_HEIGHTMAP, BufferedImage.TYPE_INT_RGB);
         int idx = 0;
         int idy = 0;
         float diffHeight = maxHeight - minHeight;
         int value = 0;
-        
+
         List<MCNK> mapChunks = getMapChunks();
         for (MCNK chunk : mapChunks) {
             if (chunk.hasNoLiquid()) {
@@ -463,29 +460,29 @@ public class ADT extends FileReader {
                     for (int j = 0; j < CHUNK_TILE_HEIGHTMAP_LENGTH; j++) {
                         img.setRGB(CHUNK_TILE_HEIGHTMAP_LENGTH * idx + i, CHUNK_TILE_HEIGHTMAP_LENGTH * idy + j, Color.BLACK.getRGB());
                     }
-                }                
-            } else {                
-                for (MCLQ liquid : chunk.getListLiquids()) {                            
-                    for (int i = 0; i < CHUNK_TILE_HEIGHTMAP_LENGTH; i++) {                          
-                        for (int j = 0; j < CHUNK_TILE_HEIGHTMAP_LENGTH; j++) {  
-                            float height = liquid.getHeightAt(i, j);                            
-                            if(height < Float.MAX_VALUE) { 
+                }
+            } else {
+                for (MCLQ liquid : chunk.getListLiquids()) {
+                    for (int i = 0; i < CHUNK_TILE_HEIGHTMAP_LENGTH; i++) {
+                        for (int j = 0; j < CHUNK_TILE_HEIGHTMAP_LENGTH; j++) {
+                            float height = liquid.getHeightAt(i, j);
+                            if (height < Float.MAX_VALUE) {
                                 // In case there's no height difference between min & max. Render it full white.
-                                if(diffHeight == 0) {
+                                if (diffHeight == 0) {
                                     value = 255;
                                 } else {
                                     value = (int) ((height - minHeight) / diffHeight * 255f);
                                     // Avoid full black case when there's liquid.
-                                    if(value < 10) {
+                                    if (value < 10) {
                                         value = 10;
                                     }
-                                }                                
+                                }
                             } else {
                                 value = 0;
-                            }                                                                   
-                            img.setRGB(CHUNK_TILE_HEIGHTMAP_LENGTH * idx + i, CHUNK_TILE_HEIGHTMAP_LENGTH * idy + j, new Color(value, value, value).getRGB());                                                            
-                        }                        
-                    }                                        
+                            }
+                            img.setRGB(CHUNK_TILE_HEIGHTMAP_LENGTH * idx + i, CHUNK_TILE_HEIGHTMAP_LENGTH * idy + j, new Color(value, value, value).getRGB());
+                        }
+                    }
                 }
             }
 
@@ -495,10 +492,10 @@ public class ADT extends FileReader {
                 idy++;
             }
         }
-        
+
         return img;
     }
-    
+
     public void saveLiquidHeightMap(String pngPath) throws FileReaderException, IOException {
         File imgFile = new File(pngPath);
         if (imgFile.exists()) {
@@ -509,7 +506,7 @@ public class ADT extends FileReader {
 
         ImageIO.write(getLiquidHeightMap(), "PNG", imgFile);
     }
-    
+
     public BufferedImage getLiquidMap(boolean displayLiquidType) throws FileReaderException {
         BufferedImage img = new BufferedImage(SIZE_TILE_MAP, SIZE_TILE_MAP, BufferedImage.TYPE_INT_RGB);
         int alpha = 100;
@@ -522,39 +519,32 @@ public class ADT extends FileReader {
                     for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
                         img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, Color.BLACK.getRGB());
                     }
-                }                
+                }
             } else {
-                int layer = 0;                
+                int layer = 0;
                 for (MCLQ liquid : chunk.getListLiquids()) {
                     for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
-                        for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {                                                        
+                        for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
                             if (liquid.hasNoLiquid(i, j)) {
                                 // Don't render.
                                 img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, Color.BLACK.getRGB());
-                                if(liquid.isFlagD(i, j)) {
-                                    img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, Color.RED.getRGB());
-                                }
-                            } else {                                
-                                    if (displayLiquidType) {
-                                        if(liquid.isDark(i, j)) {
-                                            img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, Color.YELLOW.getRGB());
-                                        }
-                                        else if (liquid.isRiver(i, j) && layer < 1) {
-                                            img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(0, 176, 240, alpha).getRGB());
-                                        } else if (liquid.isOcean(i, j) && layer < 2) {
-                                            img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(112, 48, 160, alpha).getRGB());
-                                        } else if (liquid.isMagma(i, j) && layer < 3) {
-                                            img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(244, 176, 132, alpha).getRGB());
-                                        } else if (liquid.isSlime(i, j) && layer < 4) {
-                                            img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(169, 208, 142, alpha).getRGB());
-                                        }
-                                        if(liquid.isAnimated(i, j)) {
-                                            img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, Color.RED.getRGB());
-                                        }
-                                    } else {
+                            } else {
+                                if (displayLiquidType) {
+                                    if (liquid.isDark(i, j)) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, Color.YELLOW.getRGB());
+                                    } else if (liquid.isRiver(i, j) && layer < 1) {
                                         img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(0, 176, 240, alpha).getRGB());
-                                    }                                                              
-                            }                                                                                    
+                                    } else if (liquid.isOcean(i, j) && layer < 2) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(112, 48, 160, alpha).getRGB());
+                                    } else if (liquid.isMagma(i, j) && layer < 3) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(244, 176, 132, alpha).getRGB());
+                                    } else if (liquid.isSlime(i, j) && layer < 4) {
+                                        img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(169, 208, 142, alpha).getRGB());
+                                    }
+                                } else {
+                                    img.setRGB(LIQUID_FLAG_LENGTH * idx + i, LIQUID_FLAG_LENGTH * idy + j, new Color(0, 176, 240, alpha).getRGB());
+                                }
+                            }
                         }
                     }
 
@@ -569,10 +559,10 @@ public class ADT extends FileReader {
                 idy++;
             }
         }
-        
+
         return img;
-    }    
-    
+    }
+
     public void saveLiquidMap(String pngPath, boolean displayLiquidType) throws FileReaderException, IOException {
         File imgFile = new File(pngPath);
         if (imgFile.exists()) {
@@ -583,7 +573,7 @@ public class ADT extends FileReader {
 
         ImageIO.write(getLiquidMap(displayLiquidType), "PNG", imgFile);
     }
-    
+
     public boolean[][] getHoleMap() throws FileReaderException {
         List<MCNK> mapChunks = getMapChunks();
         boolean[][] holeMap = new boolean[SIZE_TILE_MAP][SIZE_TILE_MAP];
@@ -640,22 +630,22 @@ public class ADT extends FileReader {
     public Vec2f getLiquidMapBounds() throws FileReaderException {
         Vec2f heightBounds = new Vec2f(-Float.MAX_VALUE, Float.MAX_VALUE);
         Vec2f heightChunkBounds;
-        
-        for(MCNK chunk : getMapChunks()) {
-            if(chunk.hasLiquid()) {
+
+        for (MCNK chunk : getMapChunks()) {
+            if (chunk.hasLiquid()) {
                 heightChunkBounds = chunk.getLiquidHeightBounds();
-                if(heightChunkBounds.x > heightBounds.x) {
+                if (heightChunkBounds.x > heightBounds.x) {
                     heightBounds.x = heightChunkBounds.x;
                 }
-                if(heightChunkBounds.y < heightBounds.y) {
+                if (heightChunkBounds.y < heightBounds.y) {
                     heightBounds.y = heightChunkBounds.y;
                 }
             }
         }
-        
+
         return heightBounds;
     }
-    
+
     public int getVersion() {
         return version;
     }

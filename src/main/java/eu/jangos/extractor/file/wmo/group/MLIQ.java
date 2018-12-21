@@ -186,7 +186,15 @@ public class MLIQ {
         return FlagUtils.hasFlag(this.flags.get(getFlagPosition(row, col)), flag);
     }
 
-    public int getFlagPosition(int row, int col) {
+    public WaterVert getVertextAt(int row, int col) {
+        return this.liquidVertexList.get(getDataPosition(row, col));
+    }
+    
+    private int getDataPosition(int row, int col) {
+        return col * xVerts + row;
+    }
+    
+    private int getFlagPosition(int row, int col) {
         return col * xTiles + row;
     }
 }

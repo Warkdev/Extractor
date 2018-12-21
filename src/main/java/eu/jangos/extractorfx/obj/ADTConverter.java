@@ -21,6 +21,7 @@ import eu.jangos.extractor.file.WMO;
 import eu.jangos.extractor.file.adt.chunk.MCNK;
 import eu.jangos.extractor.file.adt.chunk.MDDF;
 import eu.jangos.extractor.file.adt.chunk.MODF;
+import eu.jangos.extractor.file.common.MapUnit;
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
@@ -102,16 +103,16 @@ public class ADTConverter extends ModelConverter {
                     this.mesh.getNormals().addAll(chunk.getNormals().getPoints()[idx].getX() / 127.0f, chunk.getNormals().getPoints()[idx].getY() / 127.0f, chunk.getNormals().getPoints()[idx].getZ() / 127.0f);
                     float x, y, z;
                     // Calculating Positions.                    
-                    x = chunk.getPosition().x - (i * ADT.UNIT_SIZE * 0.5f);
-                    y = chunk.getPosition().y - (j * ADT.UNIT_SIZE);
+                    x = chunk.getPosition().x - (i * MapUnit.UNIT_SIZE * 0.5f);
+                    y = chunk.getPosition().y - (j * MapUnit.UNIT_SIZE);
                     z = chunk.getVertices().getPoints()[idx] + chunk.getPosition().z;                    
                     if ((i % 2) != 0) {
-                        y -= 0.5f * ADT.UNIT_SIZE;
+                        y -= 0.5f * MapUnit.UNIT_SIZE;
                     }
                     this.mesh.getPoints().addAll(x, y, z);
                     // Calculating TexCoord in high resolution.
-                    x = ((chunk.getPosition().x - initialChunkX) * (-1)) / ADT.CHUNK_SIZE;
-                    y = (chunk.getPosition().y - initialChunkY) * (-1) / ADT.CHUNK_SIZE;
+                    x = ((chunk.getPosition().x - initialChunkX) * (-1)) / MapUnit.CHUNK_SIZE;
+                    y = (chunk.getPosition().y - initialChunkY) * (-1) / MapUnit.CHUNK_SIZE;
                     this.mesh.getTexCoords().addAll(x, y);
                 }
             }

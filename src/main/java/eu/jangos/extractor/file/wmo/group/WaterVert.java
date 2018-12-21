@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
  * @author Warkdev
  */
 public class WaterVert {
+    // Note: first short seems to be understood as "depth" by Noggit.
     private short flow1;
     private short flow2;
     private short flow1Pct;

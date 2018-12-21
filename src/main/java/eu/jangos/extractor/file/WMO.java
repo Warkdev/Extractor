@@ -19,6 +19,7 @@ import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.C4Plane;
 import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.common.CArgb;
+import eu.jangos.extractor.file.common.MapUnit;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.exception.WMOException;
@@ -32,7 +33,14 @@ import eu.jangos.extractor.file.wmo.WMOLight;
 import eu.jangos.extractor.file.wmo.WMOMaterials;
 import eu.jangos.extractor.file.wmo.WMOPortal;
 import eu.jangos.extractor.file.wmo.WMOPortalRef;
+import eu.jangos.extractor.file.wmo.group.MLIQ;
+import eu.jangos.extractorfx.rendering.LiquidTileMapRenderType;
+import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.mangos.shared.flags.FlagUtils;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.text.DecimalFormat;
@@ -41,7 +49,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javafx.geometry.Pos;
+import javafx.scene.Group;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.TriangleMesh;
+import javafx.scene.shape.VertexFormat;
+import javafx.scene.text.Text;
+import javafx.scene.transform.Translate;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import systems.crigges.jmpq3.JMpqException;
@@ -93,7 +113,7 @@ public class WMO extends FileReader {
 
     private static final int SUPPORTED_VERSION = 17;
 
-    private NumberFormat formatter = new DecimalFormat("000");        
+    private NumberFormat formatter = new DecimalFormat("000");
 
     private int nMaterials;
     private int nGroups;
@@ -132,6 +152,9 @@ public class WMO extends FileReader {
 
     private List<WMOGroup> wmoGroupList = new ArrayList<>();
 
+    private TriangleMesh objectMesh = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
+    private PolygonMesh liquidMesh = new PolygonMesh();
+    
     public boolean isRootFile(byte[] array) throws FileReaderException {
         super.data = ByteBuffer.wrap(array);
         super.data.order(ByteOrder.LITTLE_ENDIAN);
@@ -167,7 +190,7 @@ public class WMO extends FileReader {
     public void init(MPQManager manager, String filename) throws JMpqException, FileReaderException, MPQException {
         init(manager, filename, false);
     }
-    
+
     @Override
     public void init(MPQManager manager, String filename, boolean loadChildren) throws FileReaderException, MPQException, JMpqException {
         super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
@@ -353,7 +376,7 @@ public class WMO extends FileReader {
         // Init group information.
         WMOGroup wmoGroup;
         for (int i = 0; i < this.nGroups; i++) {
-            String wmoGroupPath = FilenameUtils.removeExtension(this.filename) + "_" + formatter.format(i) + ".wmo";            
+            String wmoGroupPath = FilenameUtils.removeExtension(this.filename) + "_" + formatter.format(i) + ".wmo";
             wmoGroup = new WMOGroup();
             wmoGroup.init(manager, wmoGroupPath);
             this.wmoGroupList.add(wmoGroup);
@@ -379,16 +402,27 @@ public class WMO extends FileReader {
         this.fogList.clear();
         this.convexVolumePlanesList.clear();
         this.wmoGroupList.clear();
+        this.liquidMesh.getPoints().clear();
+        this.liquidMesh.getTexCoords().clear();
+        this.liquidMesh.getFaceSmoothingGroups().clear();        
+        clearMesh(this.objectMesh);
     }
 
+    private void clearMesh(TriangleMesh mesh) {        
+        mesh.getPoints().clear();        
+        mesh.getTexCoords().clear();
+        mesh.getFaces().clear();        
+        mesh.getNormals().clear();
+    }
+    
     public boolean doNotAttenuateVertices() {
         return hasFlag(FLAG_DO_NOT_ATTENUATE_VERTICES);
     }
-    
+
     public boolean useUnifiedRenderPath() {
         return hasFlag(FLAG_USE_UNIFIED_RENDER_PATH);
     }
-    
+
     public boolean useDBCLiquidID() {
         return hasFlag(FLAG_USE_LIQUID_FROM_DBC);
     }
@@ -396,7 +430,7 @@ public class WMO extends FileReader {
     public boolean doNotFixVertexColorAlpha() {
         return hasFlag(FLAG_DO_NOT_FIX_VERTEX_COLOR_ALPHA);
     }
-    
+
     private boolean hasFlag(int flag) {
         return FlagUtils.hasFlag(this.flags, flag);
     }
@@ -671,5 +705,228 @@ public class WMO extends FileReader {
 
     public void setWmoGroupReadersList(List<WMOGroup> wmoGroupReadersList) {
         this.wmoGroupList = wmoGroupReadersList;
-    }   
+    }
+
+    public PolygonMesh renderLiquid() {
+        this.liquidMesh.getPoints().clear();
+        this.liquidMesh.getTexCoords().clear();
+        
+        int offsetVertices = 0;
+        
+        for (int i = 0; i < this.nGroups; i++) {            
+            WMOGroup wmoGroup = this.wmoGroupList.get(i);            
+            
+            if (wmoGroup.hasLiquid()) {
+                // Wmo group file has liquid information.
+                
+                int[][] faces = new int[wmoGroup.getLiquidIndicesList().size()/4][8];                
+                for (int face = 0, idx = 0; face < wmoGroup.getLiquidIndicesList().size(); face += 4, idx++) {                    
+                    faces[idx][7] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                    
+                    faces[idx][6] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                    
+                    faces[idx][5] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;
+                    faces[idx][4] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;                    
+                    faces[idx][3] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;
+                    faces[idx][2] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;                    
+                    faces[idx][1] = wmoGroup.getLiquidIndicesList().get(face + 3) + offsetVertices;                    
+                    faces[idx][0] = wmoGroup.getLiquidIndicesList().get(face + 3) + offsetVertices;                    
+                    liquidMesh.getFaceSmoothingGroups().addAll(0);                    
+                }                        
+                liquidMesh.faces = ArrayUtils.addAll(liquidMesh.faces, faces);                                                
+                
+                int idx = 0;
+                for (Vec3f v : wmoGroup.getLiquidVerticesList()) {
+                    liquidMesh.getPoints().addAll(v.x, v.y, v.z);                    
+                    liquidMesh.getTexCoords().addAll(wmoGroup.getTextureVertexList().get(idx).x, wmoGroup.getTextureVertexList().get(idx).y);
+                    idx++;
+                    offsetVertices++;
+                }
+
+            }
+        }
+        
+        return this.liquidMesh;
+    }
+    
+    public void saveWavefront(String file, boolean addTextures) throws IOException {
+        // Check if liquid are already rendered.                
+        if (this.liquidMesh.getPoints().size() == 0) {
+            renderLiquid();
+        }
+
+        File objFile = new File(file);
+        if (objFile.exists()) {
+            objFile.delete();
+        } else {
+            objFile.getParentFile().mkdirs();
+        }
+
+        OutputStreamWriter writer = new FileWriter(objFile);
+        writer.write(renderLiquidInWavefront(addTextures));
+        writer.close();
+    }
+    
+    /**
+     * This methid returns the OBJ file as a String representation (including
+     * carriage return).
+     *
+     * @return A String object representing the corresponding OBJ file
+     * structure.
+     */
+    public String renderLiquidInWavefront(boolean addTextures) {        
+        StringBuilder sb = new StringBuilder();        
+
+        for (int i = 0; i < this.liquidMesh.getPoints().size(); i += 3) {
+            sb.append("v " + this.liquidMesh.getPoints().get(i) + " " + this.liquidMesh.getPoints().get(i + 1) + " " + this.liquidMesh.getPoints().get(i + 2) + "\n");
+        }
+
+        if(addTextures) {
+            for (int i = 0; i < this.liquidMesh.getTexCoords().size(); i += 2) {
+                sb.append("vt " + this.liquidMesh.getTexCoords().get(i) + " " + this.liquidMesh.getTexCoords().get(i + 1) + "\n");
+            }
+        }
+
+        for (int i = 0; i < this.liquidMesh.faces.length; i++) {
+            sb.append("f ");
+            for (int j = 0; j < this.liquidMesh.faces[i].length; j+=2) {
+                sb.append(this.liquidMesh.faces[i][j]+1);
+                if(addTextures) {
+                    sb.append("/"+this.liquidMesh.faces[i][j+1]);
+                }
+                sb.append(" ");                
+            }
+            sb.append("\n");
+        }        
+
+        return sb.toString();
+    }
+    
+    /**
+     * This method return the liquid tile map that can be added to any JavaFX
+     * group later on.
+     *
+     * @param viewportWidth The viewport width size into which this liquid tile
+     * map will need to be rendered. Used to translate the position of the Tile
+     * Map to the visible area.
+     * @param viewportHeight The viewport width size into which this liquid tile
+     * map will need to be rendered. Used to translate the position of the Tile
+     * Map to the visible area.
+     * @param renderType Indicates which type of rendering is requested.
+     * @param renderWMOBoundaries Indicates whether total WMO boundaries must be
+     * rendered or not.
+     * @param renderGroup Indicates whether group rectangle must be displayed or
+     * not.
+     * @param renderNonLiquidGroup Indicates whether non-liquid wmo group must
+     * be drawn or not.
+     * @param displayGroupNumber Indicates whether group number must be shown or
+     * not. Side-note, only the group number of rendered groups will be
+     * displayed. If renderGroup and renderNonLiquidGroup are both set to false,
+     * this parameter has no effect.
+     * @return A Pane containing the liquid tile map.
+     */
+    public Pane getLiquidTileMap(int viewportWidth, int viewportHeight, LiquidTileMapRenderType renderType, boolean renderWMOBoundaries, boolean renderGroup, boolean renderNonLiquidGroup, boolean displayGroupNumber) {
+        Pane pane = new AnchorPane();        
+        
+        Group liquid = new Group();
+        Rectangle rect = new Rectangle();
+        double heightRoot = this.boundingBox.getMax().y - this.boundingBox.getMin().y;
+        double widthRoot = this.boundingBox.getMax().x - this.boundingBox.getMin().x;
+        rect.setX(this.boundingBox.getMin().x);
+        rect.setY(-this.boundingBox.getMin().y - heightRoot);
+        rect.setWidth(widthRoot);
+        rect.setHeight(heightRoot);
+        rect.setFill(Color.TRANSPARENT);
+        rect.setStroke(Color.RED);
+        
+        if (renderWMOBoundaries) {
+            liquid.getChildren().add(rect);
+        }
+
+        for (WMOGroup group : this.wmoGroupList) {
+            StackPane stackPane = new StackPane();
+            Rectangle r = new Rectangle();
+            double height = group.getGroup().getBoundingBox().getMax().y - group.getGroup().getBoundingBox().getMin().y;
+            double width = group.getGroup().getBoundingBox().getMax().x - group.getGroup().getBoundingBox().getMin().x;
+
+            r.setX(group.getGroup().getBoundingBox().getMin().x);
+            r.setY(-group.getGroup().getBoundingBox().getMin().y - height);
+            r.setWidth(width);
+            r.setHeight(height);
+            r.setFill(Color.TRANSPARENT);
+
+            if (group.hasLiquid()) {                
+                for (int x = 0; x < group.getLiquid().getxTiles(); x++) {
+                    for (int y = 0; y < group.getLiquid().getyTiles(); y++) {
+                        Rectangle tile = new Rectangle(x * MapUnit.UNIT_SIZE + group.getLiquid().getBaseCoordinates().x, -(y * MapUnit.UNIT_SIZE + group.getLiquid().getBaseCoordinates().y), MapUnit.UNIT_SIZE, MapUnit.UNIT_SIZE);
+                        tile.setFill(Color.TRANSPARENT);
+
+                        boolean render = true;
+                        if (group.getLiquid().hasNoLiquid(x, y)) {
+                            render = false;
+                        } else {
+                            tile.setFill(getColorForLiquid(renderType, group, x, y));
+                        }
+                        if (render) {
+                            liquid.getChildren().add(tile);
+                        }
+                    }
+                }
+            }
+
+            String[] temp = FilenameUtils.getName(group.getFilename()).split("\\.")[0].split("_");
+            Text label = new Text(temp[temp.length - 1]);
+
+            if (group.hasLiquid()) {
+                r.setStroke(Color.BLUE);
+                label.setStroke(Color.RED);
+            } else {
+                r.setStroke(Color.BLACK);
+            }
+            stackPane.setLayoutX(r.getX());
+            stackPane.setLayoutY(r.getY());
+            if ((renderGroup && group.hasLiquid()) || (renderNonLiquidGroup && !group.hasLiquid())) {
+                stackPane.getChildren().add(r);
+                if (displayGroupNumber) {
+                    stackPane.getChildren().add(label);
+                    StackPane.setAlignment(label, Pos.TOP_LEFT);
+                }
+            }
+            pane.getChildren().add(stackPane);
+            stackPane.getTransforms().addAll(new Translate(viewportWidth / 2, viewportHeight / 2));
+        }
+        liquid.getTransforms().addAll(new Translate(viewportWidth / 2, viewportHeight / 2));
+        pane.getChildren().add(liquid);
+
+        return pane;
+    }
+
+    private Color getColorForLiquid(LiquidTileMapRenderType renderType, WMOGroup group, int x, int y) {
+        switch (renderType) {
+            case RENDER_LIQUID_TYPE:
+                if (group.getLiquid().isOverlap(x, y)) {
+                    return Color.YELLOW;
+                } else if (group.getLiquid().isWater(x, y)) {
+                    return Color.BLUE;
+                } else if (group.getLiquid().isOcean(x, y)) {
+                    return Color.PURPLE;
+                } else if (group.getLiquid().isMagma(x, y)) {
+                    return Color.ORANGE;
+                } else if (group.getLiquid().isSlime(x, y)) {
+                    return Color.GREEN;
+                }
+                break;
+            case RENDER_LIQUID_FISHABLE:
+                if (group.getLiquid().isFishable(x, y)) {
+                    return Color.GREEN;
+                } else {
+                    return Color.RED;
+                }
+            case RENDER_LIQUID_ANIMATED:
+                if (group.getLiquid().isAnimated(x, y)) {
+                    return Color.GREEN;
+                } else {
+                    return Color.RED;
+                }
+        }
+        return Color.BLACK;
+    }
 }
