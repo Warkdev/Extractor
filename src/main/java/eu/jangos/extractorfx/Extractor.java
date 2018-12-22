@@ -22,7 +22,6 @@ import eu.jangos.extractor.file.impl.WMO;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.mpq.MPQManager;
-import eu.jangos.extractor.file.ModelRenderer;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
 import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.Render3DType;
@@ -85,11 +84,11 @@ public class Extractor {
         } catch (MPQException ex) {
             logger.error(ex.getMessage());
         }
-        extractM2(m2Example, true);
-        //extractAllM2(false);
-        //extractWmo(wmoExample, true, false);
+        //extractM2(m2Example, true);
+        //extractAllM2(true);
+        //extractWmo(wmoExample, true, true);
         //extractAllWMO(true, false);        
-        //extractMap(map, true, true, true,MAX_HEIGHT, true, MAX_HEIGHT, true);
+        extractMap(map, true, true, true, MAX_HEIGHT, true, MAX_HEIGHT, true);
         //extractAllMaps(false, false, false, false, false);
         //extractAllWdt();
         //extractAllTerrains();
@@ -113,8 +112,9 @@ public class Extractor {
         try {
             String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
             wmo.init(manager, path);
+            wmo.setAddModels(addModels);
             if (saveToFile) {
-                if (wmo.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, addModels)) {
+                if (wmo.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, false)) {
                     logger.info("WMO file saved succesfully !");
                 } else {
                     logger.error("WMO file not saved !");
@@ -141,7 +141,11 @@ public class Extractor {
             String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";
             model.init(manager, path);
             if (saveToFile) {
-                model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, saveToFile);
+                if(model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, false)) {
+                    logger.info("Model file saved succesfully !");
+                } else {
+                    logger.error("Model file couldn't be saved.");
+                }
             }
         } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
             logger.error(ex.getMessage());
@@ -186,8 +190,15 @@ public class Extractor {
         try {
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
             adt.init(manager, path);
+            adt.setyUp(yUp);
+            adt.setAddWMO(addWMO);
+            adt.setAddModels(addModels);            
             if (saveToFile) {
-                adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false);
+                if(adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false)) {
+                    logger.info("Terrain file saved succesfully !");
+                } else {
+                    logger.error("Terrain file couldn't be saved.");
+                }
             }
         } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
             logger.error(ex.getMessage());

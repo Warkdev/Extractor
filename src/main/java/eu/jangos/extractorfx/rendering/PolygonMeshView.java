@@ -351,7 +351,7 @@ public class PolygonMeshView extends Parent {
                     int lastTexIndex = face[3];
                     for (int p=4;p<face.length;p+=2) {
                         int pointIndex = face[p];
-                        int texIndex = face[p+1];
+                        int texIndex = face[p+1];                        
                         facesArray[facesInd * faceElementSize] = firstPointIndex;
                         facesArray[facesInd * faceElementSize + 1] = firstTexIndex;
                         facesArray[facesInd * faceElementSize + 2] = lastPointIndex;

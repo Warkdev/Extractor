@@ -35,17 +35,12 @@ import eu.jangos.extractor.file.wmo.WMOMaterials;
 import eu.jangos.extractor.file.wmo.WMOPortal;
 import eu.jangos.extractor.file.wmo.WMOPortalRef;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
-import eu.jangos.extractorfx.rendering.FileType2D;
-import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.PolygonMeshView;
 import eu.jangos.extractorfx.rendering.Render3DType;
 import eu.mangos.shared.flags.FlagUtils;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.text.DecimalFormat;
@@ -54,6 +49,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -947,8 +943,13 @@ public class WMO extends FileReader {
         if (this.init == false) {
             logger.error("This WMO has not been initialized !");
             throw new ConverterException("This WMO has not been initialized !");
+        }        
+        
+        if(cache == null) {
+            logger.info("Cache entry is null, creating a temporary empty cache.");
+            cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         }
-
+        
         clearShapeMesh();
 
         int offsetVertices = 0;
@@ -960,17 +961,17 @@ public class WMO extends FileReader {
                 // Wmo group file has vertices.
 
                 // Adding the faces counter clock-wise.
-                int[][] faces = new int[wmoGroup.getLiquidIndicesList().size()/3][6];                
-                for (int face = 0, idx = 0; face < wmoGroup.getLiquidIndicesList().size(); face += 3, idx++) {                    
-                    faces[idx][0] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                    
-                    faces[idx][1] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                                        
-                    faces[idx][2] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;
-                    faces[idx][3] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;                    
-                    faces[idx][4] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;                    
-                    faces[idx][5] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;                                    
+                int[][] faces = new int[wmoGroup.getIndexList().size()/3][6];                       
+                for (int face = 0, idx = 0; face < wmoGroup.getIndexList().size(); face += 3, idx++) {                    
+                    faces[idx][0] = wmoGroup.getIndexList().get(face) + offsetVertices;                    
+                    faces[idx][1] = wmoGroup.getIndexList().get(face) + offsetVertices;                                        
+                    faces[idx][2] = wmoGroup.getIndexList().get(face + 2) + offsetVertices;
+                    faces[idx][3] = wmoGroup.getIndexList().get(face + 2) + offsetVertices;                    
+                    faces[idx][4] = wmoGroup.getIndexList().get(face + 1) + offsetVertices;                    
+                    faces[idx][5] = wmoGroup.getIndexList().get(face + 1) + offsetVertices;                                    
                     shapeMesh.getFaceSmoothingGroups().addAll(0);                    
                 }                        
-                shapeMesh.faces = ArrayUtils.addAll(liquidMesh.faces, faces);                
+                shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);                
 
                 int idx = 0;
                 for (Vec3f v : wmoGroup.getVertexList()) {
@@ -1010,7 +1011,7 @@ public class WMO extends FileReader {
 
                         // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
                         // First, we create a view to apply these transformations.
-                        PolygonMeshView view = new PolygonMeshView(shapeMesh);
+                        clearView();
 
                         // We translate the object location.
                         Translate translate = new Translate(modelInstance.getPosition().x, modelInstance.getPosition().y, modelInstance.getPosition().z);
@@ -1039,15 +1040,17 @@ public class WMO extends FileReader {
                         this.shapeMesh.getPoints().addAll(temp.getPoints());
                         //this.mesh.getNormals().addAll(converter.mesh.getNormals());
                         this.shapeMesh.getTexCoords().addAll(model.getShapeMesh().getTexCoords());
+                        this.shapeMesh.getFaceSmoothingGroups().addAll(model.getShapeMesh().getFaceSmoothingGroups());
 
                         // And we recalculate the faces of the model mesh.
-                        int[][] faces = new int[model.getShapeMesh().faces.length][model.getShapeMesh().faces[0].length];
+                        int[][] faces = new int[model.getShapeMesh().faces.length][6];
                         for (int i = 0; i < model.getShapeMesh().faces.length; i++) {
                             for (int j = 0; j < model.getShapeMesh().faces[i].length; j++) {
-                                faces[i][j] += offset;
+                                faces[i][j] = model.getShapeMesh().faces[i][j] + offset;
                             }
-                        }
-                        shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);                        
+                        }                        
+                        
+                        shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);                          
                     } catch (IOException ex) {
                         logger.error("Error while adding a new model to this WMO: " + modelFile);
                     } catch (FileReaderException ex) {

@@ -29,8 +29,6 @@ import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
-import eu.jangos.extractorfx.rendering.FileType2D;
-import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.PolygonMeshView;
 import eu.jangos.extractorfx.rendering.Render2DType;
@@ -41,6 +39,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.layout.Pane;
@@ -115,8 +114,9 @@ public class ADT extends FileReader {
 
     @Override
     public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, MPQException {
-        init = false;
-
+        super.init = false;
+        super.manager = manager;
+        
         super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
 
         if (data.remaining() == 0) {
@@ -419,8 +419,13 @@ public class ADT extends FileReader {
     }
 
     private PolygonMesh renderTerrain(Map<String, M2> cache) throws FileReaderException, ConverterException, MPQException {
-        clearMesh();
-
+        clearMesh();        
+        
+        if(cache == null) {
+            logger.info("Cache entry is null, creating a temporary empty cache.");
+            cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        }
+        
         List<MCNK> mapChunks;
         try {
             mapChunks = getMapChunks();
@@ -455,7 +460,7 @@ public class ADT extends FileReader {
             }
 
             // We allocate the maximum amount of faces.
-            int[][] faces = new int[544][6];
+            int[][] faces = new int[256][6];
             int idx = 0;
             for (int j = 9, x = 0, y = 0; j < 145; j++, x++) {
                 if (x >= 8) {
@@ -474,6 +479,7 @@ public class ADT extends FileReader {
                     faces[idx][5] = offset + j;
 
                     idx++;
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);
                     /**
                      * this.mesh.getFaces().addAll(offset + j + 8, offset + j +
                      * 8, offset + j + 8); this.mesh.getFaces().addAll(offset +
@@ -491,6 +497,7 @@ public class ADT extends FileReader {
                     faces[idx][5] = offset + j;
 
                     idx++;
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);
                     /**
                      * this.mesh.getFaces().addAll(offset + j - 9, offset + j -
                      * 9, offset + j - 9); this.mesh.getFaces().addAll(offset +
@@ -508,6 +515,7 @@ public class ADT extends FileReader {
                     faces[idx][5] = offset + j;
 
                     idx++;
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);
                     /**
                      * this.mesh.getFaces().addAll(offset + j - 8, offset + j -
                      * 8, offset + j - 8); this.mesh.getFaces().addAll(offset +
@@ -525,21 +533,23 @@ public class ADT extends FileReader {
                     faces[idx][5] = offset + j;
 
                     idx++;
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);
                     /**
                      * this.mesh.getFaces().addAll(offset + j + 9, offset + j +
                      * 9, offset + j + 9); this.mesh.getFaces().addAll(offset +
                      * j + 8, offset + j + 8, offset + j + 8);
                      * this.mesh.getFaces().addAll(offset + j, offset + j,
                      * offset + j);
-                     */
-                    
-                    shapeMesh.getFaceSmoothingGroups().addAll(0);
+                     */                                        
                 }
 
                 if ((j + 1) % (9 + 8) == 0) {
                     j += 9;
                 }
             }
+            
+            // We include only faces for which we had record. Holes are not included in here.
+            shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, ArrayUtils.subarray(faces, 0, idx));
         }
 
         if (addModels) {
@@ -566,7 +576,7 @@ public class ADT extends FileReader {
 
                     // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
                     // First, we create a view to apply these transformations.
-                    PolygonMeshView view = new PolygonMeshView(shapeMesh);
+                    clearView();
 
                     // We translate the object location.                
                     Translate translate = new Translate(17066 - modelPlacement.getPosition().z, 17066 - modelPlacement.getPosition().x, modelPlacement.getPosition().y);
@@ -598,12 +608,13 @@ public class ADT extends FileReader {
                     shapeMesh.getPoints().addAll(temp.getPoints());
                     //this.mesh.getNormals().addAll(converter.mesh.getNormals());
                     shapeMesh.getTexCoords().addAll(model.getShapeMesh().getTexCoords());
+                    shapeMesh.getFaceSmoothingGroups().addAll(model.getShapeMesh().getFaceSmoothingGroups());
 
                     // And we recalculate the faces of the model mesh.
                     int[][] faces = new int[model.getShapeMesh().faces.length][model.getShapeMesh().faces[0].length];
                     for (int i = 0; i < model.getShapeMesh().faces.length; i++) {
                         for (int j = 0; j < model.getShapeMesh().faces[i].length; j++) {
-                            faces[i][j] += offset;
+                            faces[i][j] = model.getShapeMesh().faces[i][j] + offset;
                         }
                     }
                     shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
@@ -632,7 +643,7 @@ public class ADT extends FileReader {
 
                     // Now, we have the vertices of this WMO, we need to rotate & position.                                                                                
                     // First, we create a view to apply these transformations.
-                    PolygonMeshView view = new PolygonMeshView(wmo.getShapeMesh());
+                    clearView();
 
                     // We translate the object location.                
                     Translate translate = new Translate(17066 - modelPlacement.getPosition().z, 17066 - modelPlacement.getPosition().x, modelPlacement.getPosition().y);
@@ -660,12 +671,13 @@ public class ADT extends FileReader {
                     shapeMesh.getPoints().addAll(temp.getPoints());
                     //this.mesh.getNormals().addAll(converter.mesh.getNormals());
                     shapeMesh.getTexCoords().addAll(wmo.getShapeMesh().getTexCoords());
+                    shapeMesh.getFaceSmoothingGroups().addAll(wmo.getShapeMesh().getFaceSmoothingGroups());
 
                     // And we recalculate the faces of the model mesh.
                     int[][] faces = new int[wmo.getShapeMesh().faces.length][wmo.getShapeMesh().faces[0].length];
                     for (int i = 0; i < wmo.getShapeMesh().faces.length; i++) {
                         for (int j = 0; j < wmo.getShapeMesh().faces[i].length; j++) {
-                            faces[i][j] += offset;
+                            faces[i][j] = wmo.getShapeMesh().faces[i][j] + offset;
                         }
                     }
                     shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
@@ -680,7 +692,7 @@ public class ADT extends FileReader {
         if (yUp) {
             Rotate rx = new Rotate(-90, Rotate.X_AXIS);
 
-            PolygonMeshView view = new PolygonMeshView(shapeMesh);
+            clearView();
             view.getTransforms().addAll(rx);
             Transform concat = view.getLocalToSceneTransform();
 
@@ -692,7 +704,7 @@ public class ADT extends FileReader {
                 shapeMesh.getPoints().set(i + 2, (float) point.getZ());
             }
         }
-
+        
         return shapeMesh;
     }
 

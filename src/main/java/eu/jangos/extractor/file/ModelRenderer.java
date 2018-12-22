@@ -23,6 +23,7 @@ import eu.jangos.extractorfx.obj.exception.ConverterException;
 import eu.jangos.extractorfx.rendering.FileType2D;
 import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
+import eu.jangos.extractorfx.rendering.PolygonMeshView;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
 import java.io.File;
@@ -48,12 +49,14 @@ public abstract class ModelRenderer {
     
     private static final Logger logger = LoggerFactory.getLogger(ModelRenderer.class);
     
+    protected PolygonMeshView view;
     protected PolygonMesh shapeMesh;
-    protected PolygonMesh liquidMesh;
+    protected PolygonMesh liquidMesh;    
 
     public ModelRenderer() {
         this.liquidMesh = new PolygonMesh();
         this.shapeMesh = new PolygonMesh();
+        this.view = new PolygonMeshView();
     }
 
     /**
@@ -89,7 +92,9 @@ public abstract class ModelRenderer {
      * @throws FileReaderException This method throws a file reader exception if an error occured during the reading of the file.
      * @return True if the file has been saved, false otherwise.
      */
-    public boolean save2D(String path, FileType2D fileType, Render2DType renderType, int width, int height) throws ConverterException, FileReaderException {
+    public boolean save2D(String path, FileType2D fileType, Render2DType renderType, int width, int height) throws ConverterException, FileReaderException {        
+        render2D(renderType, width, height);
+        
         switch(fileType) {
             case PNG:
                 return savePNG(path, renderType, width, height);
@@ -107,7 +112,9 @@ public abstract class ModelRenderer {
      * @throws ConverterException This method can throw a converter exception in case of some conversion went wront.
      * @return True if the file has been saved, false otherwise.
      */
-    public  boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addTextures) throws ConverterException {
+    public  boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addTextures) throws ConverterException, MPQException, FileReaderException {        
+        render3D(renderType, null);    
+        
         switch(fileType) {
             case OBJ:
                 return saveWavefront(path, renderType, addTextures);
@@ -150,41 +157,6 @@ public abstract class ModelRenderer {
 
         return sb.toString();
     }
-
-    /**
-     * This methid returns the OBJ file as a String representation (including
-     * carriage return).
-     *
-     * @return A String object representing the corresponding OBJ file
-     * structure.
-     */
-    /**public String getOBJasAString(boolean addNormals, boolean addTextures) {
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < this.mesh.getPoints().size(); i += 3) {
-            sb.append("v " + this.mesh.getPoints().get(i) + " " + this.mesh.getPoints().get(i + 1) + " " + this.mesh.getPoints().get(i + 2) + "\n");
-        }
-
-        if (addNormals) {
-            for (int i = 0; i < this.mesh.getNormals().size(); i += 3) {
-                sb.append("vn " + this.mesh.getNormals().get(i) + " " + this.mesh.getNormals().get(i + 1) + " " + this.mesh.getNormals().get(i + 2) + "\n");
-            }
-        }
-
-        if (addTextures) {
-            for (int i = 0; i < this.mesh.getTexCoords().size(); i += 2) {
-                sb.append("vt " + this.mesh.getTexCoords().get(i) + " " + this.mesh.getTexCoords().get(i + 1) + "\n");
-            }
-        }
-
-        for (int i = 0; i < this.mesh.getFaces().size(); i += 9) {
-            sb.append("f " + (this.mesh.getFaces().get(i) + 1) + "/" + (addNormals ? (this.mesh.getFaces().get(i + 1) + 1) : "") + "/" + (addTextures ? (this.mesh.getFaces().get(i + 2) + 1) : "")
-                    + " " + (this.mesh.getFaces().get(i + 3) + 1) + "/" + (addNormals ? (this.mesh.getFaces().get(i + 4) + 1) : "") + "/" + (addTextures ? (this.mesh.getFaces().get(i + 5) + 1) : "")
-                    + " " + (this.mesh.getFaces().get(i + 6) + 1) + "/" + (addNormals ? (this.mesh.getFaces().get(i + 7) + 1) : "") + "/" + (addTextures ? (this.mesh.getFaces().get(i + 8) + 1) : "") + "\n");
-        }
-
-        return sb.toString();
-    }*/
 
     /**
      * This method is saving the OBJ file structure to the file given in
@@ -343,6 +315,7 @@ public abstract class ModelRenderer {
     protected void clearMesh() {
         clearLiquidMesh();
         clearShapeMesh();
+        clearView();
     }
     
     protected void clearLiquidMesh() {
@@ -357,6 +330,10 @@ public abstract class ModelRenderer {
         this.shapeMesh.getTexCoords().clear();
     }
 
+    protected void clearView() {
+        this.view.getTransforms().clear();
+    }
+    
     public PolygonMesh getShapeMesh() {
         return shapeMesh;
     }

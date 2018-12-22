@@ -41,8 +41,6 @@ import eu.jangos.extractor.file.m2.M2TextureWeight;
 import eu.jangos.extractor.file.m2.M2Vertex;
 import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
-import eu.jangos.extractorfx.rendering.FileType2D;
-import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
