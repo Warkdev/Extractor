@@ -16,11 +16,14 @@
 package eu.jangos.extractorfx.rendering;
 
 /**
- * This enum represents the possible render for a liquid map.
+ * RenderingType indicates which rendering is wished from the object.
  * @author Warkdev
  */
-public enum LiquidTileMapRenderType {
-    RENDER_LIQUID_TYPE,
-    RENDER_LIQUID_FISHABLE,
-    RENDER_LIQUID_ANIMATED;
+public enum Render3DType {
+    // Render the liquid in 3D.    
+    LIQUID,
+    // Render the terrain data in 3D.
+    TERRAIN,
+    // Render the model data.
+    MODEL;
 }

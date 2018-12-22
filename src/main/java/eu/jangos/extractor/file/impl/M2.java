@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.jangos.extractor.file;
+package eu.jangos.extractor.file.impl;
 
 import com.sun.javafx.geom.Vec3f;
+import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.M2Exception;
@@ -33,16 +34,26 @@ import eu.jangos.extractor.file.m2.M2Particle;
 import eu.jangos.extractor.file.m2.M2Ribbon;
 import eu.jangos.extractor.file.m2.M2Sequence;
 import eu.jangos.extractor.file.m2.M2SkinProfile;
+import eu.jangos.extractor.file.m2.M2SkinSection;
 import eu.jangos.extractor.file.m2.M2Texture;
 import eu.jangos.extractor.file.m2.M2TextureTransform;
 import eu.jangos.extractor.file.m2.M2TextureWeight;
 import eu.jangos.extractor.file.m2.M2Vertex;
 import eu.jangos.extractor.file.mpq.MPQManager;
+import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractorfx.rendering.FileType2D;
+import eu.jangos.extractorfx.rendering.FileType3D;
+import eu.jangos.extractorfx.rendering.PolygonMesh;
+import eu.jangos.extractorfx.rendering.Render2DType;
+import eu.jangos.extractorfx.rendering.Render3DType;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import javafx.scene.layout.Pane;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,13 +64,13 @@ import org.slf4j.LoggerFactory;
 public class M2 extends FileReader {
 
     private static final Logger logger = LoggerFactory.getLogger(M2.class);
-    
+
     private static final String HEADER_MD20 = "MD20";
     private static final int SUPPORTED_VERSION = 256;
-    
+
     // Magic & version.
     private int version;
-    
+
     // Header info.
     private M2Array<Character> name;
     private int globalFlags;
@@ -98,10 +109,15 @@ public class M2 extends FileReader {
     private M2Array<Short> cameraLookupTable;
     private M2Array<M2Ribbon> ribbonEmitters;
     private M2Array<M2Particle> particleEmitters;
-    private M2Array<Short> textureCombinerCombos;    
-    private List<M2Vertex> listVertices;    
+    private M2Array<Short> textureCombinerCombos;
+    private List<M2Vertex> listVertices;
     private List<M2SkinProfile> listSkinProfiles;
-    
+
+    // Render variables.
+    private boolean cut = false;
+    private int view = 0;
+    private float maxHeight = 0;
+
     public M2() {
         this.name = new M2Array<>();
         this.globalLoops = new M2Array<>();
@@ -139,8 +155,8 @@ public class M2 extends FileReader {
         this.cameraLookupTable = new M2Array<>();
         this.ribbonEmitters = new M2Array<>();
         this.particleEmitters = new M2Array<>();
-        this.textureCombinerCombos = new M2Array<>();    
-        
+        this.textureCombinerCombos = new M2Array<>();
+
         // Caching objects.
         this.listVertices = new ArrayList<>();
         this.listSkinProfiles = new ArrayList<>();
@@ -149,26 +165,26 @@ public class M2 extends FileReader {
     public void init(MPQManager manager, String filename) throws IOException, FileReaderException, MPQException {
         init(manager, filename, false);
     }
-    
+
     @Override
-    public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, MPQException {        
+    public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, MPQException {
         super.init = false;
-                        
+
         super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
-        if(data.remaining() == 0) {
-            logger.error("Data array for ADT "+filename+" is empty.");
+        if (data.remaining() == 0) {
+            logger.error("Data array for ADT " + filename + " is empty.");
             throw new M2Exception("Data array is empty.");
-        }        
+        }
         super.data.order(ByteOrder.LITTLE_ENDIAN);
         super.filename = filename;
-        
+
         clear();
-        readHeader();     
+        readHeader();
         super.init = true;
     }
 
-    private void readHeader() throws FileReaderException {  
-        checkHeader(HEADER_MD20, false);        
+    private void readHeader() throws FileReaderException {
+        checkHeader(HEADER_MD20, false);
 
         // Version.
         int version = super.data.getInt();
@@ -198,7 +214,7 @@ public class M2 extends FileReader {
         this.textureLookupTable.read(super.data);
         this.texUnitLookupTable.read(super.data);
         this.transparencyLookupTable.read(super.data);
-        this.textureTransformsLookupTable.read(super.data);        
+        this.textureTransformsLookupTable.read(super.data);
         this.boundingBox.read(super.data);
         this.boundingSphereRadius = super.data.getFloat();
         this.collisionBox.read(super.data);
@@ -214,66 +230,151 @@ public class M2 extends FileReader {
         this.cameraLookupTable.read(super.data);
         this.ribbonEmitters.read(super.data);
         this.particleEmitters.read(super.data);
-        this.textureCombinerCombos.read(super.data);        
+        this.textureCombinerCombos.read(super.data);
     }
 
     public List<M2Vertex> getVertices() throws M2Exception {
-        if(!init) {
+        if (!init) {
             throw new M2Exception("M2 file has not been initialized, please use init(data) function to initialize your M2 file !");
         }
-        
+
         // Prefer to use cached objects as they will be re-used many times.
-        if(this.listVertices.size() > 0) {
+        if (this.listVertices.size() > 0) {
             return this.listVertices;
         }
-                
+
         M2Vertex vertex;
-        
+
         super.data.position(this.vertices.getOffset());
-        for(int i = 0; i < this.vertices.getSize(); i++) {
+        for (int i = 0; i < this.vertices.getSize(); i++) {
             vertex = new M2Vertex();
-            vertex.read(super.data);            
+            vertex.read(super.data);
             this.listVertices.add(vertex);
         }
-        
+
         return this.listVertices;
     }
-    
+
     public List<M2SkinProfile> getSkins() throws M2Exception {
-        if(!init) {
+        if (!init) {
             throw new M2Exception("M2 file has not been initialized, please use init(data) function to initialize your M2 file !");
         }
-        
+
         // Prefer to use cached objects as they will be re-used many times.
-        if(this.listSkinProfiles.size() > 0) {
+        if (this.listSkinProfiles.size() > 0) {
             return this.listSkinProfiles;
         }
-                
+
         M2SkinProfile skin;
-        
-        super.data.position(this.skinProfiles.getOffset());            
-        for(int i = 0; i < this.skinProfiles.getSize(); i++) {
+
+        super.data.position(this.skinProfiles.getOffset());
+        for (int i = 0; i < this.skinProfiles.getSize(); i++) {
             skin = new M2SkinProfile();
             skin.read(super.data);
             this.listSkinProfiles.add(skin);
         }
-        
+
         return this.listSkinProfiles;
     }
-    
+
     public List<Short> getTextureLookup() {
         List<Short> listTextureLookup = new ArrayList<>();
-        
+
         super.data.position(this.textureLookupTable.getOffset());
-        for(int i = 0; i < this.textureLookupTable.getSize(); i++) {
+        for (int i = 0; i < this.textureLookupTable.getSize(); i++) {
             listTextureLookup.add(super.data.getShort());
         }
-        
+
         return listTextureLookup;
     }
 
     private void clear() {
         this.listVertices.clear();
         this.listSkinProfiles.clear();
+    }
+
+    @Override
+    public Pane render2D(Render2DType renderType, int width, int height) throws ConverterException, FileReaderException {
+        throw new UnsupportedOperationException("This render is not supported for models");
+    }
+
+    @Override
+    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ConverterException, MPQException, FileReaderException {
+        switch(renderType) {
+            case MODEL:
+                return renderModel();
+            default:
+                throw new UnsupportedOperationException("This render type is not supported for models");
+        }
+    }
+
+    private PolygonMesh renderModel() throws ConverterException {
+        if (init == false) {
+            throw new ConverterException("M2FileReader is null");
+        }
+
+        if (view < 0 || view > 3) {
+            throw new ConverterException("View number must be between 0 and 3");
+        }
+        view--;
+
+        clearShapeMesh();
+
+        try {
+
+            float minX = 0;
+            float maxX = 0;
+            float minY = 0;
+            float maxY = 0;
+            if (cut) {
+                for (M2Vertex v : getVertices()) {
+                    if (v.getPosition().z <= maxHeight && v.getPosition().z > maxHeight / 3 * 2) {
+                        if (v.getPosition().x > maxX) {
+                            maxX = v.getPosition().x;
+                        }
+                        if (v.getPosition().x < minX) {
+                            minX = v.getPosition().x;
+                        }
+                        if (v.getPosition().y > maxY) {
+                            maxY = v.getPosition().y;
+                        }
+                        if (v.getPosition().y < minY) {
+                            minY = v.getPosition().y;
+                        }
+                    }
+                }
+            }
+
+            for (M2Vertex v : getVertices()) {
+                shapeMesh.getPoints().addAll(v.getPosition().x, v.getPosition().y, v.getPosition().z);
+                //mesh.getNormals().addAll(v.getNormal().x, v.getNormal().y, v.getNormal().z);
+                shapeMesh.getTexCoords().addAll(v.getTexCoords()[0].x, v.getTexCoords()[0].y);
+            }
+
+            List<M2SkinProfile> listSkins = getSkins();                        
+            for (int i = 0; i < listSkins.get(view).getSubMeshes().size(); i++) {
+                List<M2SkinSection> listSkinSections = listSkins.get(view).getSubMeshes();
+                List<Short> listIndices = listSkins.get(view).getIndices();                                                 
+                
+                // Adding the faces counter clock-wise.
+                int[][] faces = new int[listSkinSections.get(i).getIndexCount()/3][6];                
+                for (int face = listSkinSections.get(i).getIndexStart(), idx = 0; face < listSkinSections.get(i).getIndexStart() + listSkinSections.get(i).getIndexCount(); face += 3, idx++) {                    
+                    faces[idx][0] = listIndices.get(face);
+                    faces[idx][1] = listIndices.get(face);
+                    faces[idx][2] = listIndices.get(face + 2);
+                    faces[idx][3] = listIndices.get(face + 2); 
+                    faces[idx][4] = listIndices.get(face + 1);
+                    faces[idx][5] = listIndices.get(face + 1);
+                    
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);                    
+                }                        
+                shapeMesh.faces = ArrayUtils.addAll(liquidMesh.faces, faces);                                
+            }            
+        } catch (M2Exception ex) {
+            logger.error("Error while reading the M2 content " + ex.getMessage());
+            throw new ConverterException("Error while reading the M2 content " + ex.getMessage());
+        }
+        
+        return shapeMesh;
     }
 }

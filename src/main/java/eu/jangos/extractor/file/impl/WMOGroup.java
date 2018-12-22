@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.jangos.extractor.file;
+package eu.jangos.extractor.file.impl;
 
 import com.sun.javafx.geom.Vec2f;
 import com.sun.javafx.geom.Vec3f;
@@ -269,13 +269,13 @@ public class WMOGroup {
                     if (!liquid.hasNoLiquid(x, y)) {
                         pos = x * (liquid.getyVerts()) + y;
                         
-                        this.liquidTexCoordList.add(new Vec2f(x, y));
-                        this.liquidVerticesList.add(tempVertices.get(pos));
-                        this.liquidIndicesList.add(index++);                                                                                                                                                
-                        
                         this.liquidTexCoordList.add(new Vec2f(x, y + 1));                                                      
                         this.liquidVerticesList.add(tempVertices.get(pos + 1));
                         this.liquidIndicesList.add(index++);                                                
+                        
+                        this.liquidTexCoordList.add(new Vec2f(x, y));
+                        this.liquidVerticesList.add(tempVertices.get(pos));
+                        this.liquidIndicesList.add(index++);                                                                                                                                                                                                
                         
                         this.liquidTexCoordList.add(new Vec2f(x + 1, y));                              
                         this.liquidVerticesList.add(tempVertices.get(pos + liquid.getyVerts() + 1));

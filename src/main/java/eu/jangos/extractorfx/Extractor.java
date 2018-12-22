@@ -15,18 +15,17 @@
  */
 package eu.jangos.extractorfx;
 
-import eu.jangos.extractor.file.ADT;
-import eu.jangos.extractor.file.M2;
-import eu.jangos.extractor.file.WDT;
-import eu.jangos.extractor.file.WMO;
+import eu.jangos.extractor.file.impl.ADT;
+import eu.jangos.extractor.file.impl.M2;
+import eu.jangos.extractor.file.impl.WDT;
+import eu.jangos.extractor.file.impl.WMO;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.mpq.MPQManager;
-import eu.jangos.extractorfx.obj.ADTConverter;
-import eu.jangos.extractorfx.obj.M2Converter;
-import eu.jangos.extractorfx.obj.ModelConverter;
-import eu.jangos.extractorfx.obj.WMOConverter;
+import eu.jangos.extractor.file.ModelRenderer;
 import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractorfx.rendering.FileType3D;
+import eu.jangos.extractorfx.rendering.Render3DType;
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
@@ -75,12 +74,9 @@ public class Extractor {
     private static final String m2Example = "world\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy04.M2";
     private static final WDT wdt = new WDT();
     private static final ADT adt = new ADT();
-    private static final ADTConverter adtConverter = new ADTConverter(adt);
     private static final WMO wmo = new WMO();
-    private static final WMOConverter wmoConverter = new WMOConverter(wmo);
     private static final M2 model = new M2();
-    private static final ModelConverter m2Converter = new M2Converter(model);
-    private static final Map<String, M2Converter> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private static final Map<String, M2> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private static final int MAX_HEIGHT = Integer.MAX_VALUE;
 
     public static void main(String[] args) throws IOException {
@@ -89,7 +85,7 @@ public class Extractor {
         } catch (MPQException ex) {
             logger.error(ex.getMessage());
         }
-        //extractM2(m2Example);
+        extractM2(m2Example, true);
         //extractAllM2(false);
         //extractWmo(wmoExample, true, false);
         //extractAllWMO(true, false);        
@@ -106,25 +102,10 @@ public class Extractor {
         int total = manager.getListWMO().size();
         int done = 0;
         for (String path : manager.getListWMO()) {
-            try {
-                done++;
-
-                byte[] data = manager.getMPQForFile(path).extractFileAsBytes(path);
-                if (!wmo.isRootFile(data)) {
-                    continue;
-                }
-                //logger.info("Extracting WMO... " + path);
-                String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
-                wmo.init(manager, path);                
-                //wmoConverter.convert(manager, cache, path, addModels, MAX_HEIGHT);                
-                if (saveToFile) {
-                    wmoConverter.saveToFile(outputFile, false, false);
-                }
-
-            } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
-                logger.error(ex.getMessage());
-            }
-            //logger.info("Done: " + done + " / Total: " + total);
+            done++;
+            logger.info("Extracting WMO... " + path);
+            extractWmo(path, addModels, saveToFile);
+            logger.info("Done: " + done + " / Total: " + total);
         }
     }
 
@@ -132,9 +113,12 @@ public class Extractor {
         try {
             String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
             wmo.init(manager, path);
-            wmoConverter.convert(manager, cache, path, addModels, MAX_HEIGHT);            
             if (saveToFile) {
-                wmoConverter.saveToFile(outputFile, false, false);
+                if (wmo.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, addModels)) {
+                    logger.info("WMO file saved succesfully !");
+                } else {
+                    logger.error("WMO file not saved !");
+                }
             }
         } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
             logger.error(ex.getMessage());
@@ -145,31 +129,20 @@ public class Extractor {
         int total = manager.getListM2().size();
         int done = 0;
         for (String path : manager.getListM2()) {
+            done++;
             logger.info("Extracting M2... " + path);
-            try {
-                done++;
-                if (path.endsWith(".m2")) {
-                    String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";
-                    model.init(manager, path);
-                    ((M2Converter) m2Converter).convert(1, 100000);
-                    if (saveToFile) {
-                        m2Converter.saveToFile(outputFile, false, false);
-                    }
-
-                }
-            } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
-                logger.error(ex.getMessage());
-            }
+            extractM2(path, saveToFile);
             logger.info("Done: " + done + " / Total: " + total);
         }
     }
 
-    private static void extractM2(String path) {
+    private static void extractM2(String path, boolean saveToFile) {
         try {
             String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";
             model.init(manager, path);
-            ((M2Converter) m2Converter).convert(1, 17);
-            m2Converter.saveToFile(outputFile, false, false);
+            if (saveToFile) {
+                model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, saveToFile);
+            }
         } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
             logger.error(ex.getMessage());
         }
@@ -186,8 +159,6 @@ public class Extractor {
                     logger.info("Extracting WDT... " + wdtFile);
                     String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
                     String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + ".png";
-                    String holesOutputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + "_holes.png";
-                    String liquidOutputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + "_liquid.png";                    
                     wdt.init(manager, wdtFile, true);
                     for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
                         for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
@@ -195,8 +166,7 @@ public class Extractor {
                                 extractMap(base + "_" + y + "_" + x + ".adt", false, false, false, MAX_HEIGHT, false, MAX_HEIGHT, false);
                             }
                         }
-                    }                    
-                    wdt.saveLiquidMap(liquidOutputFile);                                        
+                    }
                 } catch (IOException | FileReaderException | MPQException ex) {
                     logger.error(ex.getMessage());
                 }
@@ -207,18 +177,7 @@ public class Extractor {
 
     private static void extractAllMaps(boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO, boolean saveToFile) {
         for (String path : manager.getListADT()) {
-            if (path.endsWith(".adt")) {
-                try {
-                    String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
-                    adt.init(manager, path);
-                    //adtConverter.convert(wmoEditor, modelEditor, cache, path, yUp, addWMO, addModels, addModelsInWMO);
-                    if (saveToFile) {
-                        adtConverter.saveToFile(outputFile, false, false);
-                    }
-                } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
-                    logger.error(ex.getMessage());
-                }
-            }
+            extractMap(path, yUp, addWMO, addModels, MAX_HEIGHT, addModelsInWMO, MAX_HEIGHT, saveToFile);
         }
 
     }
@@ -226,16 +185,9 @@ public class Extractor {
     private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, int modelMaxHeight, boolean addModelsInWMO, int wmoModelMaxHeight, boolean saveToFile) {
         try {
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
-            String outputLiquidMap = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + "_liquid_map.png";
-            String outputLiquidHeightMap = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + "_liquid_heightmap.png";
-            String outputDetailedLiquidMap = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + "_liquid_map_details.png";
-            String outputHoleMap = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + "_hole_map.png";
             adt.init(manager, path);
-            //adt.saveLiquidMap(outputDetailedLiquidMap, true);
-            //adt.saveLiquidHeightMap(outputLiquidHeightMap);
-            adtConverter.convert(manager, cache, path, yUp, addWMO, addModels, modelMaxHeight, addModelsInWMO, wmoModelMaxHeight);
             if (saveToFile) {
-                adtConverter.saveToFile(outputFile, false, false);
+                adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false);
             }
         } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
             logger.error(ex.getMessage());
@@ -244,15 +196,7 @@ public class Extractor {
 
     private static void extractAllWdt() {
         for (String path : manager.getListWDT()) {
-            if (path.endsWith(".wdt")) {
-                try {
-                    String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".png";
-                    wdt.init(manager, path, false);
-                    //wdtReader.saveTileMap(outputFile);                        
-                } catch (IOException | FileReaderException | MPQException ex) {
-                    logger.error(ex.getMessage());
-                }
-            }
+            extractWdt(path);
         }
 
     }
@@ -263,10 +207,6 @@ public class Extractor {
             logger.info("Extracting WDT... " + wdtFile);
             String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + ".png";
-            String holesOutputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + "_holes.png";
-            String liquidOutputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + "_liquid.png";
-            String liquidHeightOutputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + "_liquid_height.png";
-            String liquidLightOutputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + "_liquid_light.png";
             wdt.init(manager, wdtFile, true);
             for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
                 for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
@@ -275,9 +215,6 @@ public class Extractor {
                     }
                 }
             }
-            //wdt.saveLiquidMap(liquidOutputFile);
-            //wdt.saveLiquidHeightMap(liquidHeightOutputFile);
-            wdt.saveLiquidLightMap(liquidLightOutputFile);
         } catch (IOException | FileReaderException | MPQException ex) {
             logger.error(ex.getMessage());
         }

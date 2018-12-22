@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.jangos.extractor.file;
+package eu.jangos.extractor.file.impl;
 
 import com.sun.javafx.geom.Vec3f;
+import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.common.C4Plane;
 import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.common.CArgb;
@@ -33,9 +34,13 @@ import eu.jangos.extractor.file.wmo.WMOLight;
 import eu.jangos.extractor.file.wmo.WMOMaterials;
 import eu.jangos.extractor.file.wmo.WMOPortal;
 import eu.jangos.extractor.file.wmo.WMOPortalRef;
-import eu.jangos.extractor.file.wmo.group.MLIQ;
-import eu.jangos.extractorfx.rendering.LiquidTileMapRenderType;
+import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractorfx.rendering.FileType2D;
+import eu.jangos.extractorfx.rendering.FileType3D;
+import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
+import eu.jangos.extractorfx.rendering.PolygonMeshView;
+import eu.jangos.extractorfx.rendering.Render3DType;
 import eu.mangos.shared.flags.FlagUtils;
 import java.io.File;
 import java.io.FileWriter;
@@ -49,6 +54,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.layout.AnchorPane;
@@ -56,9 +62,10 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.TriangleMesh;
-import javafx.scene.shape.VertexFormat;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -151,9 +158,13 @@ public class WMO extends FileReader {
     private List<C4Plane> convexVolumePlanesList = new ArrayList<>();
 
     private List<WMOGroup> wmoGroupList = new ArrayList<>();
-
-    private TriangleMesh objectMesh = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
-    private PolygonMesh liquidMesh = new PolygonMesh();
+    
+    // Options for rendering.
+    private boolean addModels = false;
+    private boolean renderWMOBoundaries = false;
+    private boolean renderGroup = false;
+    private boolean renderNonLiquidGroup = false;
+    private boolean displayGroupNumber = false;
     
     public boolean isRootFile(byte[] array) throws FileReaderException {
         super.data = ByteBuffer.wrap(array);
@@ -202,6 +213,7 @@ public class WMO extends FileReader {
 
         super.data.order(ByteOrder.LITTLE_ENDIAN);
         super.filename = filename;
+        super.manager = manager;
         clear();
 
         checkHeader(HEADER_MVER);
@@ -402,17 +414,7 @@ public class WMO extends FileReader {
         this.fogList.clear();
         this.convexVolumePlanesList.clear();
         this.wmoGroupList.clear();
-        this.liquidMesh.getPoints().clear();
-        this.liquidMesh.getTexCoords().clear();
-        this.liquidMesh.getFaceSmoothingGroups().clear();        
-        clearMesh(this.objectMesh);
-    }
-
-    private void clearMesh(TriangleMesh mesh) {        
-        mesh.getPoints().clear();        
-        mesh.getTexCoords().clear();
-        mesh.getFaces().clear();        
-        mesh.getNormals().clear();
+        clearMesh();        
     }
     
     public boolean doNotAttenuateVertices() {
@@ -707,98 +709,45 @@ public class WMO extends FileReader {
         this.wmoGroupList = wmoGroupReadersList;
     }
 
-    public PolygonMesh renderLiquid() {
-        this.liquidMesh.getPoints().clear();
-        this.liquidMesh.getTexCoords().clear();
-        
-        int offsetVertices = 0;
-        
-        for (int i = 0; i < this.nGroups; i++) {            
-            WMOGroup wmoGroup = this.wmoGroupList.get(i);            
-            
-            if (wmoGroup.hasLiquid()) {
-                // Wmo group file has liquid information.
-                
-                int[][] faces = new int[wmoGroup.getLiquidIndicesList().size()/4][8];                
-                for (int face = 0, idx = 0; face < wmoGroup.getLiquidIndicesList().size(); face += 4, idx++) {                    
-                    faces[idx][7] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                    
-                    faces[idx][6] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                    
-                    faces[idx][5] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;
-                    faces[idx][4] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;                    
-                    faces[idx][3] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;
-                    faces[idx][2] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;                    
-                    faces[idx][1] = wmoGroup.getLiquidIndicesList().get(face + 3) + offsetVertices;                    
-                    faces[idx][0] = wmoGroup.getLiquidIndicesList().get(face + 3) + offsetVertices;                    
-                    liquidMesh.getFaceSmoothingGroups().addAll(0);                    
-                }                        
-                liquidMesh.faces = ArrayUtils.addAll(liquidMesh.faces, faces);                                                
-                
-                int idx = 0;
-                for (Vec3f v : wmoGroup.getLiquidVerticesList()) {
-                    liquidMesh.getPoints().addAll(v.x, v.y, v.z);                    
-                    liquidMesh.getTexCoords().addAll(wmoGroup.getTextureVertexList().get(idx).x, wmoGroup.getTextureVertexList().get(idx).y);
-                    idx++;
-                    offsetVertices++;
-                }
-
-            }
-        }
-        
-        return this.liquidMesh;
+    public boolean isAddModels() {
+        return addModels;
     }
-    
-    public void saveWavefront(String file, boolean addTextures) throws IOException {
-        // Check if liquid are already rendered.                
-        if (this.liquidMesh.getPoints().size() == 0) {
-            renderLiquid();
-        }
 
-        File objFile = new File(file);
-        if (objFile.exists()) {
-            objFile.delete();
-        } else {
-            objFile.getParentFile().mkdirs();
-        }
+    public void setAddModels(boolean addModels) {
+        this.addModels = addModels;
+    }    
 
-        OutputStreamWriter writer = new FileWriter(objFile);
-        writer.write(renderLiquidInWavefront(addTextures));
-        writer.close();
+    public boolean isRenderWMOBoundaries() {
+        return renderWMOBoundaries;
     }
-    
-    /**
-     * This methid returns the OBJ file as a String representation (including
-     * carriage return).
-     *
-     * @return A String object representing the corresponding OBJ file
-     * structure.
-     */
-    public String renderLiquidInWavefront(boolean addTextures) {        
-        StringBuilder sb = new StringBuilder();        
 
-        for (int i = 0; i < this.liquidMesh.getPoints().size(); i += 3) {
-            sb.append("v " + this.liquidMesh.getPoints().get(i) + " " + this.liquidMesh.getPoints().get(i + 1) + " " + this.liquidMesh.getPoints().get(i + 2) + "\n");
-        }
-
-        if(addTextures) {
-            for (int i = 0; i < this.liquidMesh.getTexCoords().size(); i += 2) {
-                sb.append("vt " + this.liquidMesh.getTexCoords().get(i) + " " + this.liquidMesh.getTexCoords().get(i + 1) + "\n");
-            }
-        }
-
-        for (int i = 0; i < this.liquidMesh.faces.length; i++) {
-            sb.append("f ");
-            for (int j = 0; j < this.liquidMesh.faces[i].length; j+=2) {
-                sb.append(this.liquidMesh.faces[i][j]+1);
-                if(addTextures) {
-                    sb.append("/"+this.liquidMesh.faces[i][j+1]);
-                }
-                sb.append(" ");                
-            }
-            sb.append("\n");
-        }        
-
-        return sb.toString();
+    public void setRenderWMOBoundaries(boolean renderWMOBoundaries) {
+        this.renderWMOBoundaries = renderWMOBoundaries;
     }
+
+    public boolean isRenderGroup() {
+        return renderGroup;
+    }
+
+    public void setRenderGroup(boolean renderGroup) {
+        this.renderGroup = renderGroup;
+    }
+
+    public boolean isRenderNonLiquidGroup() {
+        return renderNonLiquidGroup;
+    }
+
+    public void setRenderNonLiquidGroup(boolean renderNonLiquidGroup) {
+        this.renderNonLiquidGroup = renderNonLiquidGroup;
+    }
+
+    public boolean isDisplayGroupNumber() {
+        return displayGroupNumber;
+    }
+
+    public void setDisplayGroupNumber(boolean displayGroupNumber) {
+        this.displayGroupNumber = displayGroupNumber;
+    }                     
     
     /**
      * This method return the liquid tile map that can be added to any JavaFX
@@ -811,19 +760,9 @@ public class WMO extends FileReader {
      * map will need to be rendered. Used to translate the position of the Tile
      * Map to the visible area.
      * @param renderType Indicates which type of rendering is requested.
-     * @param renderWMOBoundaries Indicates whether total WMO boundaries must be
-     * rendered or not.
-     * @param renderGroup Indicates whether group rectangle must be displayed or
-     * not.
-     * @param renderNonLiquidGroup Indicates whether non-liquid wmo group must
-     * be drawn or not.
-     * @param displayGroupNumber Indicates whether group number must be shown or
-     * not. Side-note, only the group number of rendered groups will be
-     * displayed. If renderGroup and renderNonLiquidGroup are both set to false,
-     * this parameter has no effect.
      * @return A Pane containing the liquid tile map.
      */
-    public Pane getLiquidTileMap(int viewportWidth, int viewportHeight, LiquidTileMapRenderType renderType, boolean renderWMOBoundaries, boolean renderGroup, boolean renderNonLiquidGroup, boolean displayGroupNumber) {
+    private Pane renderLiquidTileMap(int viewportWidth, int viewportHeight, Render2DType renderType) {
         Pane pane = new AnchorPane();        
         
         Group liquid = new Group();
@@ -899,9 +838,9 @@ public class WMO extends FileReader {
         return pane;
     }
 
-    private Color getColorForLiquid(LiquidTileMapRenderType renderType, WMOGroup group, int x, int y) {
+    private Color getColorForLiquid(Render2DType renderType, WMOGroup group, int x, int y) {
         switch (renderType) {
-            case RENDER_LIQUID_TYPE:
+            case RENDER_TILEMAP_LIQUID_TYPE:
                 if (group.getLiquid().isOverlap(x, y)) {
                     return Color.YELLOW;
                 } else if (group.getLiquid().isWater(x, y)) {
@@ -914,13 +853,13 @@ public class WMO extends FileReader {
                     return Color.GREEN;
                 }
                 break;
-            case RENDER_LIQUID_FISHABLE:
+            case RENDER_TILEMAP_LIQUID_FISHABLE:
                 if (group.getLiquid().isFishable(x, y)) {
                     return Color.GREEN;
                 } else {
                     return Color.RED;
                 }
-            case RENDER_LIQUID_ANIMATED:
+            case RENDER_TILEMAP_LIQUID_ANIMATED:
                 if (group.getLiquid().isAnimated(x, y)) {
                     return Color.GREEN;
                 } else {
@@ -928,5 +867,198 @@ public class WMO extends FileReader {
                 }
         }
         return Color.BLACK;
+    }
+
+    @Override
+    public Pane render2D(Render2DType renderType, int width, int height) throws ConverterException {
+        switch(renderType) {
+            case RENDER_TILEMAP_LIQUID_TYPE:
+            case RENDER_TILEMAP_LIQUID_FISHABLE:
+            case RENDER_TILEMAP_LIQUID_ANIMATED:
+                return renderLiquidTileMap(width, height, renderType);                                        
+            case RENDER_TILEMAP_LIQUID_HEIGHTMAP:
+            case RENDER_TILEMAP_TERRAIN_HEIGHTMAP:
+            default:
+                throw new UnsupportedOperationException("This render type is not yet supported");
+        }        
+    }
+
+    @Override
+    public PolygonMesh render3D(Render3DType type, Map<String, M2> cache) throws ConverterException, MPQException {
+        switch(type) {            
+            case LIQUID:
+                return renderLiquid();
+            case MODEL:
+                return renderModel(cache);
+            default:
+                throw new UnsupportedOperationException("The type method is not supported on this object.");
+        }
+    }
+    
+    /**
+     * This method will provide a PolygonMesh containing the rendered Liquid. This mesh can be used to display with JavaFX.
+     * @return A PolygonMesh type of object being the 3D representation of the liquid present in this WMO.
+     */
+    private PolygonMesh renderLiquid() throws ConverterException {
+        if (this.init == false) {
+            logger.error("This WMO has not been initialized !");
+            throw new ConverterException("This WMO has not been initialized !");
+        }
+        
+        clearLiquidMesh();
+        
+        int offsetVertices = 0;                
+        
+        for (int i = 0; i < this.nGroups; i++) {            
+            WMOGroup wmoGroup = this.wmoGroupList.get(i);            
+            
+            if (wmoGroup.hasLiquid()) {
+                // Wmo group file has liquid information.
+                
+                int[][] faces = new int[wmoGroup.getLiquidIndicesList().size()/4][8];                
+                for (int face = 0, idx = 0; face < wmoGroup.getLiquidIndicesList().size(); face += 4, idx++) {                    
+                    faces[idx][0] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                    
+                    faces[idx][1] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                                        
+                    faces[idx][2] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;
+                    faces[idx][3] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;                    
+                    faces[idx][4] = wmoGroup.getLiquidIndicesList().get(face + 3) + offsetVertices;                    
+                    faces[idx][5] = wmoGroup.getLiquidIndicesList().get(face + 3) + offsetVertices;                
+                    faces[idx][6] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;
+                    faces[idx][7] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;                    
+                    liquidMesh.getFaceSmoothingGroups().addAll(0);                    
+                }                        
+                liquidMesh.faces = ArrayUtils.addAll(liquidMesh.faces, faces);                                                
+                
+                int idx = 0;
+                for (Vec3f v : wmoGroup.getLiquidVerticesList()) {
+                    liquidMesh.getPoints().addAll(v.x, v.y, v.z);                    
+                    liquidMesh.getTexCoords().addAll(wmoGroup.getTextureVertexList().get(idx).x, wmoGroup.getTextureVertexList().get(idx).y);
+                    idx++;
+                    offsetVertices++;
+                }
+
+            }
+        }
+        
+        return this.liquidMesh;
+    }
+    
+    private PolygonMesh renderModel(Map<String, M2> cache) throws ConverterException, MPQException {
+        if (this.init == false) {
+            logger.error("This WMO has not been initialized !");
+            throw new ConverterException("This WMO has not been initialized !");
+        }
+
+        clearShapeMesh();
+
+        int offsetVertices = 0;
+
+        for (int i = 0; i < this.nGroups; i++) {
+
+            WMOGroup wmoGroup = this.wmoGroupList.get(i);
+            if (!wmoGroup.getVertexList().isEmpty()) {
+                // Wmo group file has vertices.
+
+                // Adding the faces counter clock-wise.
+                int[][] faces = new int[wmoGroup.getLiquidIndicesList().size()/3][6];                
+                for (int face = 0, idx = 0; face < wmoGroup.getLiquidIndicesList().size(); face += 3, idx++) {                    
+                    faces[idx][0] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                    
+                    faces[idx][1] = wmoGroup.getLiquidIndicesList().get(face) + offsetVertices;                                        
+                    faces[idx][2] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;
+                    faces[idx][3] = wmoGroup.getLiquidIndicesList().get(face + 2) + offsetVertices;                    
+                    faces[idx][4] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;                    
+                    faces[idx][5] = wmoGroup.getLiquidIndicesList().get(face + 1) + offsetVertices;                                    
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);                    
+                }                        
+                shapeMesh.faces = ArrayUtils.addAll(liquidMesh.faces, faces);                
+
+                int idx = 0;
+                for (Vec3f v : wmoGroup.getVertexList()) {
+                    shapeMesh.getPoints().addAll(v.x, v.y, v.z);
+                    //shapeMesh.getNormals().addAll(wmoGroup.getNormalList().get(idx).x, wmoGroup.getNormalList().get(idx).y, wmoGroup.getNormalList().get(idx).z);
+                    shapeMesh.getTexCoords().addAll(wmoGroup.getTextureVertexList().get(idx).x, wmoGroup.getTextureVertexList().get(idx).y);
+                    idx++;
+                    offsetVertices++;
+                }
+
+            }
+        }
+
+        if (addModels) {
+            M2 model;            
+            // Now we add models.
+            for (WMODoodadDef modelInstance : this.doodadDefList) {
+
+                if (this.doodadNameMap.containsKey(modelInstance.getNameIndex())) {
+                    // MDX model files are stored as M2 in the MPQ. God knows why.
+                    String modelFile = FilenameUtils.removeExtension(this.doodadNameMap.get(modelInstance.getNameIndex())) + ".M2";
+                    if (!manager.getMPQForFile(modelFile).hasFile(modelFile)) {
+                        logger.warn("Oooops, m2Editor doesn't have the file: " + modelFile);
+                        continue;
+                    }
+
+                    try {
+                        // First, check if the M2 is in cache. Must be much faster than parsing it again and again.
+                        if (cache.containsKey(modelFile)) {
+                            model = cache.get(modelFile);
+                        } else {
+                            model = new M2();                            
+                            model.init(manager, modelFile);
+                            model.render3D(Render3DType.MODEL, null);
+                            cache.put(modelFile, model);
+                        }
+
+                        // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
+                        // First, we create a view to apply these transformations.
+                        PolygonMeshView view = new PolygonMeshView(shapeMesh);
+
+                        // We translate the object location.
+                        Translate translate = new Translate(modelInstance.getPosition().x, modelInstance.getPosition().y, modelInstance.getPosition().z);
+
+                        // We convert the quaternion to a Rotate object with angle (in degrees) & pivot point.
+                        Rotate rotate = getAngleAndAxis(modelInstance.getOrientation());
+
+                        // We scale.
+                        Scale scale = new Scale(modelInstance.getScale(), modelInstance.getScale(), modelInstance.getScale());
+
+                        // We add all transformations to the view and we get back the transformation matrix.
+                        view.getTransforms().addAll(translate, rotate, scale);
+                        Transform concat = view.getLocalToSceneTransform();
+
+                        // We apply the transformation matrix to all points of the mesh.
+                        PolygonMesh temp = new PolygonMesh();
+                        for (int i = 0; i < model.getShapeMesh().getPoints().size(); i += 3) {
+                            Point3D point = new Point3D(model.getShapeMesh().getPoints().get(i), model.getShapeMesh().getPoints().get(i + 1), model.getShapeMesh().getPoints().get(i + 2));
+                            point = concat.transform(point);
+                            temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
+                        }
+
+                        int offset = shapeMesh.getPoints().size() / 3;
+
+                        // Then, we add the converted model mesh to the WMO mesh.
+                        this.shapeMesh.getPoints().addAll(temp.getPoints());
+                        //this.mesh.getNormals().addAll(converter.mesh.getNormals());
+                        this.shapeMesh.getTexCoords().addAll(model.getShapeMesh().getTexCoords());
+
+                        // And we recalculate the faces of the model mesh.
+                        int[][] faces = new int[model.getShapeMesh().faces.length][model.getShapeMesh().faces[0].length];
+                        for (int i = 0; i < model.getShapeMesh().faces.length; i++) {
+                            for (int j = 0; j < model.getShapeMesh().faces[i].length; j++) {
+                                faces[i][j] += offset;
+                            }
+                        }
+                        shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);                        
+                    } catch (IOException ex) {
+                        logger.error("Error while adding a new model to this WMO: " + modelFile);
+                    } catch (FileReaderException ex) {
+                        logger.error("Error while adding a new model to this WMO: " + modelFile);
+                    }
+                } else {
+                    logger.warn(filename + " - Oooops, offset for MDX is not found! " + modelInstance.getNameIndex());
+                }
+            }
+        }
+        
+        return shapeMesh;
     }
 }

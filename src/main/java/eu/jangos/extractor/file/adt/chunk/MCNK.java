@@ -19,12 +19,22 @@ import com.sun.javafx.geom.Vec2f;
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.exception.FileReaderException;
+import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.impl.M2;
 import eu.jangos.extractor.file.mpq.MPQManager;
+import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractorfx.rendering.FileType2D;
+import eu.jangos.extractorfx.rendering.FileType3D;
+import eu.jangos.extractorfx.rendering.PolygonMesh;
+import eu.jangos.extractorfx.rendering.Render2DType;
+import eu.jangos.extractorfx.rendering.Render3DType;
 import eu.mangos.shared.flags.FlagUtils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import javafx.scene.layout.Pane;
 
 /**
  *
@@ -680,5 +690,25 @@ public class MCNK extends FileReader {
             }
         } 
         return heightBounds;
+    }
+
+    @Override
+    public Pane render2D(Render2DType renderType, int width, int height) throws ConverterException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ConverterException, MPQException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean save2D(String path, FileType2D fileType, Render2DType renderType, int width, int height) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addTextures) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
