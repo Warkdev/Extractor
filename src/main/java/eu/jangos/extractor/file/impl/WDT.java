@@ -24,7 +24,7 @@ import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.exception.WDTException;
 import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractor.file.wdt.AreaInfo;
-import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
@@ -197,7 +197,7 @@ public class WDT extends FileReader {
         return pane;
     }    
 
-    private Pane renderMergedTileMap(Render2DType renderType) throws ConverterException, FileReaderException {
+    private Pane renderMergedTileMap(Render2DType renderType) throws ModelRendererException, FileReaderException {
         Pane pane = new Pane();
         Group adtGroup = new Group();
         
@@ -319,7 +319,7 @@ public class WDT extends FileReader {
     }        
     
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ConverterException, FileReaderException {
+    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException, FileReaderException {
         switch(renderType) {
             case RENDER_TILEMAP_TERRAIN:
                 return renderTerrainTileMap();
@@ -336,7 +336,7 @@ public class WDT extends FileReader {
     }
 
     @Override
-    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ConverterException, MPQException, FileReaderException {
+    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException, FileReaderException {
         switch(renderType) {
             case LIQUID:
                 return renderLiquid();

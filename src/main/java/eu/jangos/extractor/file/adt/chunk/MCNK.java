@@ -22,7 +22,7 @@ import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.impl.M2;
 import eu.jangos.extractor.file.mpq.MPQManager;
-import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractorfx.rendering.FileType2D;
 import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
@@ -693,12 +693,12 @@ public class MCNK extends FileReader {
     }
 
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ConverterException {
+    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ConverterException, MPQException {
+    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

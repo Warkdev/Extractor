@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.jangos.extractorfx.obj.exception;
+package eu.jangos.extractor.file.exception;
 
 /**
  *
  * @author Warkdev
  */
-public class ConverterException extends Exception{
+public class ModelRendererException extends Exception{
     
-    public ConverterException(String message) {
+    public ModelRendererException(String message) {
         super(message);
     }
     

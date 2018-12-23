@@ -34,7 +34,7 @@ import eu.jangos.extractor.file.wmo.WMOLight;
 import eu.jangos.extractor.file.wmo.WMOMaterials;
 import eu.jangos.extractor.file.wmo.WMOPortal;
 import eu.jangos.extractor.file.wmo.WMOPortalRef;
-import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.PolygonMeshView;
@@ -866,7 +866,7 @@ public class WMO extends FileReader {
     }
 
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ConverterException {
+    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException {
         switch(renderType) {
             case RENDER_TILEMAP_LIQUID_TYPE:
             case RENDER_TILEMAP_LIQUID_FISHABLE:
@@ -880,7 +880,7 @@ public class WMO extends FileReader {
     }
 
     @Override
-    public PolygonMesh render3D(Render3DType type, Map<String, M2> cache) throws ConverterException, MPQException {
+    public PolygonMesh render3D(Render3DType type, Map<String, M2> cache) throws ModelRendererException, MPQException {
         switch(type) {            
             case LIQUID:
                 return renderLiquid();
@@ -895,10 +895,10 @@ public class WMO extends FileReader {
      * This method will provide a PolygonMesh containing the rendered Liquid. This mesh can be used to display with JavaFX.
      * @return A PolygonMesh type of object being the 3D representation of the liquid present in this WMO.
      */
-    private PolygonMesh renderLiquid() throws ConverterException {
+    private PolygonMesh renderLiquid() throws ModelRendererException {
         if (this.init == false) {
             logger.error("This WMO has not been initialized !");
-            throw new ConverterException("This WMO has not been initialized !");
+            throw new ModelRendererException("This WMO has not been initialized !");
         }
         
         clearLiquidMesh();
@@ -939,10 +939,10 @@ public class WMO extends FileReader {
         return this.liquidMesh;
     }
     
-    private PolygonMesh renderModel(Map<String, M2> cache) throws ConverterException, MPQException {
+    private PolygonMesh renderModel(Map<String, M2> cache) throws ModelRendererException, MPQException {
         if (this.init == false) {
             logger.error("This WMO has not been initialized !");
-            throw new ConverterException("This WMO has not been initialized !");
+            throw new ModelRendererException("This WMO has not been initialized !");
         }        
         
         if(cache == null) {

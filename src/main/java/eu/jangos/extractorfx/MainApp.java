@@ -23,7 +23,7 @@ import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractor.file.ModelRenderer;
-import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.PolygonMeshView;
 import eu.jangos.extractorfx.rendering.Render3DType;
@@ -222,7 +222,7 @@ public class MainApp extends Application {
                     logger.error("WMO file not saved !");
                 }
             }
-        } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+        } catch (IOException | FileReaderException | MPQException | ModelRendererException ex) {
             logger.error(ex.getMessage());
         }
     }
@@ -245,7 +245,7 @@ public class MainApp extends Application {
             if (saveToFile) {
                 model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, saveToFile);
             }
-        } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+        } catch (IOException | FileReaderException | MPQException | ModelRendererException ex) {
             logger.error(ex.getMessage());
         }
     }
@@ -291,7 +291,7 @@ public class MainApp extends Application {
             if (saveToFile) {
                 adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false);
             }
-        } catch (IOException | FileReaderException | MPQException | ConverterException ex) {
+        } catch (IOException | FileReaderException | MPQException | ModelRendererException ex) {
             logger.error(ex.getMessage());
         }
     }

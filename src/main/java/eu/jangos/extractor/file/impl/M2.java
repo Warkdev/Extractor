@@ -40,7 +40,7 @@ import eu.jangos.extractor.file.m2.M2TextureTransform;
 import eu.jangos.extractor.file.m2.M2TextureWeight;
 import eu.jangos.extractor.file.m2.M2Vertex;
 import eu.jangos.extractor.file.mpq.MPQManager;
-import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
@@ -166,8 +166,8 @@ public class M2 extends FileReader {
 
     @Override
     public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, MPQException {
-        super.init = false;        
-        
+        super.init = false;
+
         super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
         if (data.remaining() == 0) {
             logger.error("Data array for ADT " + filename + " is empty.");
@@ -292,13 +292,13 @@ public class M2 extends FileReader {
     }
 
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ConverterException, FileReaderException {
+    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException, FileReaderException {
         throw new UnsupportedOperationException("This render is not supported for models");
     }
 
     @Override
-    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ConverterException, MPQException, FileReaderException {        
-        switch(renderType) {
+    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException, FileReaderException {
+        switch (renderType) {
             case MODEL:
                 return renderModel();
             default:
@@ -306,18 +306,23 @@ public class M2 extends FileReader {
         }
     }
 
-    private PolygonMesh renderModel() throws ConverterException {
+    private PolygonMesh renderModel() throws ModelRendererException {
         if (init == false) {
-            throw new ConverterException("M2FileReader is null");
+            throw new ModelRendererException("M2FileReader is null");
         }
 
         if (view < 0 || view > 3) {
-            throw new ConverterException("View number must be between 0 and 3");
+            throw new ModelRendererException("View number must be between 0 and 3");
         }
 
         clearShapeMesh();
 
         try {
+            // The model doesn't have any vertice.
+            if (getVertices().isEmpty()) {
+                logger.debug("[Model: "+this.filename+" cannot be rendered, it doesn't have vertex.");
+                throw new ModelRendererException("The model cannot be rendered as it doesn't have any vertex");
+            }
 
             float minX = 0;
             float maxX = 0;
@@ -348,31 +353,31 @@ public class M2 extends FileReader {
                 shapeMesh.getTexCoords().addAll(v.getTexCoords()[0].x, v.getTexCoords()[0].y);
             }
 
-            List<M2SkinProfile> listSkins = getSkins();                        
+            List<M2SkinProfile> listSkins = getSkins();
             for (int i = 0; i < listSkins.get(view).getSubMeshes().size(); i++) {
                 List<M2SkinSection> listSkinSections = listSkins.get(view).getSubMeshes();
-                List<Short> listIndices = listSkins.get(view).getIndices();                                                 
-                
+                List<Short> listIndices = listSkins.get(view).getIndices();
+
                 // Adding the faces counter clock-wise.
-                int[][] faces = new int[listSkinSections.get(i).getIndexCount()/3][6];                
-                for (int face = listSkinSections.get(i).getIndexStart(), idx = 0; face < listSkinSections.get(i).getIndexStart() + listSkinSections.get(i).getIndexCount(); face += 3, idx++) {                    
+                int[][] faces = new int[listSkinSections.get(i).getIndexCount() / 3][6];
+                for (int face = listSkinSections.get(i).getIndexStart(), idx = 0; face < listSkinSections.get(i).getIndexStart() + listSkinSections.get(i).getIndexCount(); face += 3, idx++) {
                     faces[idx][0] = listIndices.get(face + 2);
                     faces[idx][1] = listIndices.get(face + 2);
                     faces[idx][2] = listIndices.get(face + 1);
-                    faces[idx][3] = listIndices.get(face + 1); 
+                    faces[idx][3] = listIndices.get(face + 1);
                     faces[idx][4] = listIndices.get(face);
                     faces[idx][5] = listIndices.get(face);
-                    
-                    shapeMesh.getFaceSmoothingGroups().addAll(0);                    
-                }                        
-                
-                shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);                                
-            }            
+
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);
+                }
+
+                shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
+            }
         } catch (M2Exception ex) {
             logger.error("Error while reading the M2 content " + ex.getMessage());
-            throw new ConverterException("Error while reading the M2 content " + ex.getMessage());
+            throw new ModelRendererException("Error while reading the M2 content " + ex.getMessage());
         }
-        
+
         return shapeMesh;
     }
 }

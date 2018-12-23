@@ -28,7 +28,7 @@ import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.mpq.MPQManager;
-import eu.jangos.extractorfx.obj.exception.ConverterException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.PolygonMeshView;
 import eu.jangos.extractorfx.rendering.Render2DType;
@@ -116,7 +116,7 @@ public class ADT extends FileReader {
     public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, MPQException {
         super.init = false;
         super.manager = manager;
-        
+
         super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
 
         if (data.remaining() == 0) {
@@ -348,8 +348,8 @@ public class ADT extends FileReader {
 
     public void setMinHeight(float minHeight) {
         this.minHeight = minHeight;
-    }    
-    
+    }
+
     public Vec2f getLiquidMapBounds() throws FileReaderException {
         Vec2f heightBounds = new Vec2f(-Float.MAX_VALUE, Float.MAX_VALUE);
         Vec2f heightChunkBounds;
@@ -378,10 +378,10 @@ public class ADT extends FileReader {
     }
 
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ConverterException, FileReaderException {
+    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException, FileReaderException {
         if (this.init == false) {
             logger.error("This ADT has not been initialized !");
-            throw new ConverterException("This ADT has not been initialized !");
+            throw new ModelRendererException("This ADT has not been initialized !");
         }
 
         switch (renderType) {
@@ -398,10 +398,10 @@ public class ADT extends FileReader {
     }
 
     @Override
-    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ConverterException, MPQException, FileReaderException {
+    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException, FileReaderException {
         if (this.init == false) {
             logger.error("This ADT has not been initialized !");
-            throw new ConverterException("This ADT has not been initialized !");
+            throw new ModelRendererException("This ADT has not been initialized !");
         }
 
         switch (renderType) {
@@ -418,19 +418,19 @@ public class ADT extends FileReader {
         return liquidMesh;
     }
 
-    private PolygonMesh renderTerrain(Map<String, M2> cache) throws FileReaderException, ConverterException, MPQException {
-        clearMesh();        
-        
-        if(cache == null) {
+    private PolygonMesh renderTerrain(Map<String, M2> cache) throws FileReaderException, ModelRendererException, MPQException {
+        clearMesh();
+
+        if (cache == null) {
             logger.info("Cache entry is null, creating a temporary empty cache.");
             cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         }
-        
+
         List<MCNK> mapChunks;
         try {
             mapChunks = getMapChunks();
         } catch (ADTException exception) {
-            throw new ConverterException(exception.getMessage());
+            throw new ModelRendererException(exception.getMessage());
         }
 
         float initialChunkX = mapChunks.get(0).getPosition().x;
@@ -480,13 +480,6 @@ public class ADT extends FileReader {
 
                     idx++;
                     shapeMesh.getFaceSmoothingGroups().addAll(0);
-                    /**
-                     * this.mesh.getFaces().addAll(offset + j + 8, offset + j +
-                     * 8, offset + j + 8); this.mesh.getFaces().addAll(offset +
-                     * j - 9, offset + j - 9, offset + j - 9);
-                     * this.mesh.getFaces().addAll(offset + j, offset + j,
-                     * offset + j);
-                     */
 
                     // Face 2.
                     faces[idx][0] = offset + j - 9;
@@ -498,13 +491,6 @@ public class ADT extends FileReader {
 
                     idx++;
                     shapeMesh.getFaceSmoothingGroups().addAll(0);
-                    /**
-                     * this.mesh.getFaces().addAll(offset + j - 9, offset + j -
-                     * 9, offset + j - 9); this.mesh.getFaces().addAll(offset +
-                     * j - 8, offset + j - 8, offset + j - 8);
-                     * this.mesh.getFaces().addAll(offset + j, offset + j,
-                     * offset + j);
-                     */
 
                     // Face 3.                    
                     faces[idx][0] = offset + j - 8;
@@ -516,13 +502,6 @@ public class ADT extends FileReader {
 
                     idx++;
                     shapeMesh.getFaceSmoothingGroups().addAll(0);
-                    /**
-                     * this.mesh.getFaces().addAll(offset + j - 8, offset + j -
-                     * 8, offset + j - 8); this.mesh.getFaces().addAll(offset +
-                     * j + 9, offset + j + 9, offset + j + 9);
-                     * this.mesh.getFaces().addAll(offset + j, offset + j,
-                     * offset + j);
-                     */
 
                     //Face 4.
                     faces[idx][0] = offset + j + 9;
@@ -534,26 +513,19 @@ public class ADT extends FileReader {
 
                     idx++;
                     shapeMesh.getFaceSmoothingGroups().addAll(0);
-                    /**
-                     * this.mesh.getFaces().addAll(offset + j + 9, offset + j +
-                     * 9, offset + j + 9); this.mesh.getFaces().addAll(offset +
-                     * j + 8, offset + j + 8, offset + j + 8);
-                     * this.mesh.getFaces().addAll(offset + j, offset + j,
-                     * offset + j);
-                     */                                        
                 }
 
                 if ((j + 1) % (9 + 8) == 0) {
                     j += 9;
                 }
             }
-            
+
             // We include only faces for which we had record. Holes are not included in here.
             shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, ArrayUtils.subarray(faces, 0, idx));
         }
 
         if (addModels) {
-            M2 model;            
+            M2 model;
             // Now we add models.                    
             for (MDDF modelPlacement : this.getDoodadPlacement()) {
                 // MDX model files are stored as M2 in the MPQ. God knows why.
@@ -568,10 +540,17 @@ public class ADT extends FileReader {
                     if (cache.containsKey(modelFile)) {
                         model = cache.get(modelFile);
                     } else {
-                        model = new M2();                        
+                        model = new M2();
                         model.init(manager, modelFile);
                         model.render3D(Render3DType.MODEL, null);
                         cache.put(modelFile, model);
+                    }
+
+                    if (model.getShapeMesh().faces == null) {
+                        // Malformed or empty model.
+                        logger.error("Error with the rendering of the model.");
+                        logger.debug("[ADT: " + this.filename + " - [Model: " + model.getFilename() + "]]");
+                        continue;
                     }
 
                     // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
@@ -611,7 +590,7 @@ public class ADT extends FileReader {
                     shapeMesh.getFaceSmoothingGroups().addAll(model.getShapeMesh().getFaceSmoothingGroups());
 
                     // And we recalculate the faces of the model mesh.
-                    int[][] faces = new int[model.getShapeMesh().faces.length][model.getShapeMesh().faces[0].length];
+                    int[][] faces = new int[model.getShapeMesh().faces.length][6];
                     for (int i = 0; i < model.getShapeMesh().faces.length; i++) {
                         for (int j = 0; j < model.getShapeMesh().faces[i].length; j++) {
                             faces[i][j] = model.getShapeMesh().faces[i][j] + offset;
@@ -674,7 +653,7 @@ public class ADT extends FileReader {
                     shapeMesh.getFaceSmoothingGroups().addAll(wmo.getShapeMesh().getFaceSmoothingGroups());
 
                     // And we recalculate the faces of the model mesh.
-                    int[][] faces = new int[wmo.getShapeMesh().faces.length][wmo.getShapeMesh().faces[0].length];
+                    int[][] faces = new int[wmo.getShapeMesh().faces.length][6];
                     for (int i = 0; i < wmo.getShapeMesh().faces.length; i++) {
                         for (int j = 0; j < wmo.getShapeMesh().faces[i].length; j++) {
                             faces[i][j] = wmo.getShapeMesh().faces[i][j] + offset;
@@ -704,7 +683,7 @@ public class ADT extends FileReader {
                 shapeMesh.getPoints().set(i + 2, (float) point.getZ());
             }
         }
-        
+
         return shapeMesh;
     }
 
@@ -758,21 +737,21 @@ public class ADT extends FileReader {
     }
 
     private Pane renderHoleTileMap() throws FileReaderException {
-        Pane pane = new Pane();                        
+        Pane pane = new Pane();
         Group tileGroup = new Group();
-        
+
         int idx = 0;
         int idy = 0;
         List<MCNK> mapChunks = getMapChunks();
-        for (MCNK chunk : mapChunks) {            
+        for (MCNK chunk : mapChunks) {
             for (int i = 0; i < CHUNK_TILE_MAP_LENGTH; i++) {
                 for (int j = 0; j < CHUNK_TILE_MAP_LENGTH; j++) {
                     Rectangle tile = new Rectangle((i * MapUnit.UNIT_SIZE) + (idx * MapUnit.CHUNK_SIZE), (j * MapUnit.UNIT_SIZE) + (idy * MapUnit.CHUNK_SIZE), MapUnit.UNIT_SIZE, MapUnit.UNIT_SIZE);
-                    if(chunk.isHole(i, j)) {
+                    if (chunk.isHole(i, j)) {
                         tile.setFill(Color.WHITE);
                     } else {
                         tile.setFill(Color.BLACK);
-                    }                 
+                    }
                     tileGroup.getChildren().add(tile);
                 }
             }
@@ -783,7 +762,7 @@ public class ADT extends FileReader {
                 idy++;
             }
         }
-        
+
         pane.getChildren().add(tileGroup);
         return pane;
     }
@@ -842,4 +821,4 @@ public class ADT extends FileReader {
         }
         return new Color(value, value, value, 100);
     }
-} 
+}
