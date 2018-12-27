@@ -653,8 +653,8 @@ public class MCNK extends FileReader {
     /**
      * Check in the bitmap hole if there's a hole at the position x, y.
      *
-     * @param x
-     * @param y
+     * @param x The x position to be checked.
+     * @param y The y position to be checked.
      * @return True if there's a hole.
      */
     public boolean isHole(int x, int y) {

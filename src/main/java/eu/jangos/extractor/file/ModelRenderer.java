@@ -78,8 +78,8 @@ public abstract class ModelRenderer {
      * Render3D provides a PolygonMesh object containing a 3D representation of
      * the requested render type.
      *
-     * @param renderType
-     * @param cache
+     * @param renderType The render type that needs to be used when generating this polygon mesh.
+     * @param cache A cache of models, in case of generation of mesh with a lot of models, this helps to speed up the mesh generation process.
      * @return A PolygonMesh object representing the object to be rendered.
      * @throws ModelRendererException This method can throw a converter
      * exception if an error occured during the rendering.
@@ -122,6 +122,8 @@ public abstract class ModelRenderer {
      * @throws ModelRendererException This method can throw a converter
      * exception in case of some conversion went wront.
      * @return True if the file has been saved, false otherwise.
+     * @throws eu.jangos.extractor.file.exception.MPQException MPQ Exception can be raised in case there's an error to find the requested file.
+     * @throws eu.jangos.extractor.file.exception.FileReaderException File Reader exception can be raised in case there's an error while reading the requested file.
      */
     public boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addTextures) throws ModelRendererException, MPQException, FileReaderException {
         render3D(renderType, modelCache);
@@ -209,9 +211,9 @@ public abstract class ModelRenderer {
         }
 
         try {
-            OutputStreamWriter writer = new FileWriter(objFile);
-            writer.write(content);
-            writer.close();
+            try (OutputStreamWriter writer = new FileWriter(objFile)) {
+                writer.write(content);
+            }
         } catch (IOException ex) {
             logger.error(ex.getMessage());
             return false;
@@ -300,7 +302,7 @@ public abstract class ModelRenderer {
     /**
      * Provides a rotation object matching the Euler angles provided for
      * rotation. This method assumes that the provided information are in
-     * degrees. Tip: WoW rotation for Euler angle is YXZ. ZXY. --> XZY
+     * degrees. Tip: WoW rotation for Euler angle is YXZ. ZXY. -- XZY
      *
      * @param attitude The first rotation angle.
      * @param heading The second rotation angle.

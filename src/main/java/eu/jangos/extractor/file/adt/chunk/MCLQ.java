@@ -108,14 +108,6 @@ public class MCLQ extends ChunkLiquidRenderer {
         this.height = height;
     }
 
-/**    public float getHeightAt(int row, int col) {
-        return this.height.get(getDataPosition(row, col));
-    }
-
-    public float getLightAt(int row, int col) {
-        return this.light.get(getDataPosition(row, col));
-    }    */
-
     public boolean hasNoSurroundingLiquid(int row, int col) {
         // Check bottom right tile.
         if (row >= 0 && row < LIQUID_FLAG_LENGTH && (col - 1) >= 0 && (col - 1) < LIQUID_FLAG_LENGTH) {

@@ -45,6 +45,8 @@ public abstract class FileReader extends ModelRenderer {
      * @param loadChildren Load the children of the file (e.g. ADT is a child of WMO).
      * @throws IOException If there's any issue while reading the file.
      * @throws FileReaderException If there's any functional issue while reading the file (File version, expected header, chunk size, ..)
+     * @throws systems.crigges.jmpq3.JMpqException
+     * @throws eu.jangos.extractor.file.exception.MPQException
      */
     public abstract void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, JMpqException, MPQException;
     
