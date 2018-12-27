@@ -15,6 +15,7 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
+import com.sun.javafx.geom.Vec3d;
 import java.nio.ByteBuffer;
 
 /**
@@ -22,19 +23,19 @@ import java.nio.ByteBuffer;
  * @author Warkdev
  */
 public class MCNR {    
-    private Vector[] points = new Vector[145];
+    private Vec3d[] points = new Vec3d[145];
 
     public void read(ByteBuffer in) {
         for (int j = 0; j < points.length; j++) {
-            this.points[j] = new Vector((int) in.get(), (int) in.get(), (int) in.get());
+            this.points[j] = new Vec3d((double) in.get(), (double) in.get(), (double) in.get());
         }
     }
     
-    public Vector[] getPoints() {
+    public Vec3d[] getPoints() {
         return points;
     }
 
-    public void setPoints(Vector[] points) {
+    public void setPoints(Vec3d[] points) {
         this.points = points;
     }
     

@@ -221,7 +221,7 @@ public abstract class ModelRenderer {
     }
 
     /**
-     * Save a JavaFX Pane object to PNG file.
+     * Save a JavaFX Pane object to PNG file, this method will also scale down any too large image to a maximum of 5000 * 5000 pixels.
      *
      * @param path The file where this image must be saved.
      * @param renderType The desired render type that will be used to render

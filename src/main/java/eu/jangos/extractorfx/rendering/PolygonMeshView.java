@@ -66,8 +66,7 @@ public class PolygonMeshView extends Parent {
 
     /**
      * Specifies the 3D mesh data of this {@code MeshView}.
-     *
-     * @defaultValue null
+     *     
      */
     private ObjectProperty<PolygonMesh> meshProperty;
     public PolygonMesh getMesh() { return meshProperty().get(); }
@@ -98,7 +97,6 @@ public class PolygonMeshView extends Parent {
     /**
      * Defines the drawMode this {@code Shape3D}.
      *
-     * @defaultValue DrawMode.FILL
      */
     private ObjectProperty<DrawMode> drawMode;
     public final void setDrawMode(DrawMode value) { drawModeProperty().set(value); }
@@ -118,8 +116,7 @@ public class PolygonMeshView extends Parent {
 
     /**
      * Defines the drawMode this {@code Shape3D}.
-     *
-     * @defaultValue CullFace.BACK
+     *     
      */
     private ObjectProperty<CullFace> cullFace;
     public final void setCullFace(CullFace value) { cullFaceProperty().set(value); }
@@ -139,8 +136,7 @@ public class PolygonMeshView extends Parent {
      * Defines the material this {@code Shape3D}.
      * The default material is null. If {@code Material} is null, a PhongMaterial
      * with a diffuse color of Color.LIGHTGRAY is used for rendering.
-     *
-     * @defaultValue null
+     *     
      */
     private ObjectProperty<Material> materialProperty = new SimpleObjectProperty<Material>();
     public Material getMaterial() { return materialProperty.get(); }
@@ -149,8 +145,7 @@ public class PolygonMeshView extends Parent {
 
     /**
      * Number of iterations of Catmull Clark subdivision to apply to the mesh
-     *
-     * @defaultValue 0
+     *     
      */
     private SimpleIntegerProperty subdivisionLevelProperty;
     public void setSubdivisionLevel(int subdivisionLevel) { subdivisionLevelProperty().set(subdivisionLevel); }
@@ -179,8 +174,7 @@ public class PolygonMeshView extends Parent {
 
     /**
      * Texture mapping boundary rule for Catmull Clark subdivision applied to the mesh
-     *
-     * @defaultValue BoundaryMode.CREASE_EDGES
+     *     
      */
     private SimpleObjectProperty<BoundaryMode> boundaryMode;
     public void setBoundaryMode(BoundaryMode boundaryMode) { boundaryModeProperty().set(boundaryMode); }
@@ -203,8 +197,7 @@ public class PolygonMeshView extends Parent {
 
     /**
      * Texture mapping smoothness option for Catmull Clark subdivision applied to the mesh
-     *
-     * @defaultValue MapBorderMode.NOT_SMOOTH
+     *     
      */
     private SimpleObjectProperty<MapBorderMode> mapBorderMode;
     public void setMapBorderMode(MapBorderMode mapBorderMode) { mapBorderModeProperty().set(mapBorderMode); }
