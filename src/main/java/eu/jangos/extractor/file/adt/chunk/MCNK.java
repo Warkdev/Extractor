@@ -20,11 +20,9 @@ import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractor.file.impl.M2;
 import eu.jangos.extractor.file.mpq.MPQManager;
-import eu.jangos.extractor.file.exception.ModelRendererException;
-import eu.jangos.extractorfx.rendering.FileType2D;
-import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
@@ -34,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.layout.Pane;
 
 /**
@@ -109,7 +108,7 @@ public class MCNK extends FileReader {
     private int nSndEmitters;
     private int offsetMCLQ;
     private int sizeLiquid;
-    private Vec3f position = new Vec3f();    
+    private Vec3f position = new Vec3f();
     private int offsetMCCV;
     private int offsetMCLV;
     private MCVT vertices = new MCVT();
@@ -131,9 +130,9 @@ public class MCNK extends FileReader {
 
     public void read(ByteBuffer in) throws FileReaderException {
         super.data = in;
-        
+
         int size;
-        int start;                
+        int start;
 
         this.flags = super.data.getInt();
         this.indexX = super.data.getInt();
@@ -167,11 +166,11 @@ public class MCNK extends FileReader {
         this.position.y = super.data.getFloat();
         this.position.z = super.data.getFloat();
         this.offsetMCCV = super.data.getInt();
-        this.offsetMCLV = super.data.getInt();                
-        
+        this.offsetMCLV = super.data.getInt();
+
         // Unused
         super.data.getInt();
-                
+
         // Must now parse MCVT            
         checkHeader(HEADER_MCVT);
         // We ignore size.
@@ -195,14 +194,14 @@ public class MCNK extends FileReader {
         // We ignore size.
         super.data.getInt();
         for (int j = 0; j < this.nbLayers; j++) {
-            this.textureLayers[j].read(super.data);            
+            this.textureLayers[j].read(super.data);
         }
-        
+
         // Must now parse MCRF.
         checkHeader(HEADER_MCRF);
 
         size = super.data.getInt();
-        start = super.data.position();        
+        start = super.data.position();
         while (super.data.position() - start < size) {
             this.mcrfList.add(super.data.getInt());
         }
@@ -228,10 +227,10 @@ public class MCNK extends FileReader {
 
         size = super.data.getInt();
         // Then we skip the "size field" as it's always 0.
-        
+
         // Documentation is spread over several codebase, none really figuring out what it is properly.
         // Thanks for Mangos/CMangos codebase on which this is based.            
-        if (hasLiquid()) {  
+        if (hasLiquid()) {
             MCLQ liquid;
             // MCLQ can be made of several layers. It's assumed (guessed) that MCLQ are ordered by liquid type in the ADT.
             if (isRiver()) {
@@ -253,7 +252,7 @@ public class MCNK extends FileReader {
                 liquid = new MCLQ();
                 liquid.read(super.data);
                 this.listLiquids.add(liquid);
-            }            
+            }
         }
 
         // Must now parse MCSE.
@@ -514,11 +513,11 @@ public class MCNK extends FileReader {
     public boolean hasMCSH() {
         return FlagUtils.hasFlag(this.flags, FLAG_HAS_MCSH);
     }
-    
+
     public boolean isImpass() {
         return FlagUtils.hasFlag(this.flags, FLAG_IMPASS);
-    }                        
-    
+    }
+
     public boolean hasLiquid() {
         return isRiver() || isOcean() || isMagma() || isSlime();
     }
@@ -526,7 +525,7 @@ public class MCNK extends FileReader {
     public boolean hasNoLiquid() {
         return !hasLiquid();
     }
-    
+
     public boolean isRiver() {
         return FlagUtils.hasFlag(flags, FLAG_RIVER);
     }
@@ -542,117 +541,118 @@ public class MCNK extends FileReader {
     public boolean isSlime() {
         return FlagUtils.hasFlag(flags, FLAG_SLIME);
     }
-    
+
     public boolean hasMCCV() {
         return FlagUtils.hasFlag(this.flags, FLAG_HAS_MCCV);
     }
-    
+
     public boolean isUnknown1() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK1);
     }
-    
+
     public boolean isUnknown2() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK2);
     }
-    
+
     public boolean isUnknown3() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK3);
     }
-    
+
     public boolean isUnknown4() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK4);
     }
-    
+
     public boolean isUnknown5() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK5);
     }
-   
+
     public boolean isUnknown6() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK6);
     }
-    
+
     public boolean isUnknown7() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK7);
     }
-    
+
     public boolean isUnknown8() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK8);
     }
-    
+
     public boolean isUnknown9() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK9);
     }
-    
+
     public boolean isHighResHole() {
         return FlagUtils.hasFlag(this.flags, FLAG_IS_HIGH_RES_HOLE);
     }
-    
+
     public boolean isLowResHole() {
         return !isHighResHole();
     }
-    
+
     public boolean isUnknown10() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK10);
     }
-    
+
     public boolean isUnknown11() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK11);
     }
-    
+
     public boolean isUnknown12() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK12);
     }
-    
+
     public boolean isUnknown13() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK13);
     }
-    
+
     public boolean isUnknown14() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK14);
     }
-    
+
     public boolean isUnknown15() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK15);
     }
-    
+
     public boolean isUnknown16() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK16);
     }
-    
+
     public boolean isUnknown17() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK17);
     }
-    
+
     public boolean isUnknown18() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK18);
     }
-    
+
     public boolean isUnknown19() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK19);
     }
-    
+
     public boolean isUnknown20() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK20);
     }
-    
+
     public boolean isUnknown21() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK21);
     }
-    
+
     public boolean isUnknown22() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK22);
     }
-    
+
     public boolean isUnknown23() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK23);
     }
-    
+
     public boolean isUnknown24() {
         return FlagUtils.hasFlag(this.flags, FLAG_UNK24);
-    }  
-    
+    }
+
     /**
      * Check in the bitmap hole if there's a hole at the position x, y.
+     *
      * @param x
      * @param y
      * @return True if there's a hole.
@@ -661,54 +661,69 @@ public class MCNK extends FileReader {
         int flagHole = (int) Math.pow(2, Math.floor(x / 2f) * 1f + Math.floor(y / 2f) * 4f);
         return FlagUtils.hasFlag(this.holes, flagHole);
     }
-    
+
     /**
-     * Provide a 2-float Vector representing the maximum and the minimum liquid height found in this chunk.
-     * Vec2f.x contains the Maximum Height while Vec2f.y contains the Minimum Height.
-     * @return A Vec2f object containing the maximum and the minimum liquid height in this chunk. If there's no liquid in this chunk, 
-     * the returned values are -Float.MAX_VALUE as maximum and Float.MAX_VALUE as minimum.
+     * Provide a 2-float Vector representing the maximum and the minimum liquid
+     * height found in this chunk. Vec2f.x contains the Maximum Height while
+     * Vec2f.y contains the Minimum Height.
+     *
+     * @return A Vec2f object containing the maximum and the minimum liquid
+     * height in this chunk. If there's no liquid in this chunk, the returned
+     * values are -Float.MAX_VALUE as maximum and Float.MAX_VALUE as minimum.
      */
     public Vec2f getLiquidHeightBounds() {
         Vec2f heightBounds = new Vec2f(-Float.MAX_VALUE, Float.MAX_VALUE);
         float height;
-        if(hasLiquid()) {
-            for(MCLQ liquid : this.listLiquids) {
+        if (hasLiquid()) {
+            for (MCLQ liquid : this.listLiquids) {
                 for (int x = 0; x < MCLQ.LIQUID_DATA_LENGTH; x++) {
-                    for (int y = 0; y < MCLQ.LIQUID_DATA_LENGTH; y++) {                        
-                        height = liquid.getHeightAt(x, y);
-                        if(height == Float.MAX_VALUE) {
+                    for (int y = 0; y < MCLQ.LIQUID_DATA_LENGTH; y++) {
+                        //height = liquid.getHeightAt(x, y);
+                        height = 0;
+                        if (height == Float.MAX_VALUE) {
                             continue;
                         }
-                        if(heightBounds.x < height) {
+                        if (heightBounds.x < height) {
                             heightBounds.x = height;
                         }
-                        if(heightBounds.y > height) {
+                        if (heightBounds.y > height) {
                             heightBounds.y = height;
                         }
                     }
                 }
             }
-        } 
+        }
         return heightBounds;
     }
 
+    private Pane renderLiquid(Render2DType renderType) throws ModelRendererException, FileReaderException {
+        if (hasNoLiquid()) {
+            // Full grid is empty.            
+            Canvas canvas = new Canvas(MCLQ.LIQUID_FLAG_LENGTH, MCLQ.LIQUID_FLAG_LENGTH);
+
+            canvas.getGraphicsContext2D().setFill(MCLQ.COLOR_NONE);
+            canvas.getGraphicsContext2D().fillRect(0.0, 0.0, (double) MCLQ.LIQUID_FLAG_LENGTH, (double) MCLQ.LIQUID_FLAG_LENGTH);
+            return new Pane(canvas);
+        } else {
+            return this.listLiquids.get(0).render2D(renderType);
+        }
+    }
+
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Pane render2D(Render2DType renderType) throws ModelRendererException, FileReaderException {
+        switch (renderType) {
+            case RENDER_TILEMAP_LIQUID_TYPE:
+            case RENDER_TILEMAP_LIQUID_HEIGHTMAP:
+            case RENDER_TILEMAP_LIQUID_FISHABLE:
+            case RENDER_TILEMAP_LIQUID_ANIMATED:
+                return renderLiquid(renderType);
+            default:
+                throw new UnsupportedOperationException("These render types are not yet supported");
+        }
     }
 
     @Override
     public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean save2D(String path, FileType2D fileType, Render2DType renderType, int width, int height) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addTextures) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

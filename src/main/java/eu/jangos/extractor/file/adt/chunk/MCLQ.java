@@ -15,49 +15,43 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
-import eu.mangos.shared.flags.FlagUtils;
+import eu.jangos.extractor.file.ChunkLiquidRenderer;
+import eu.jangos.extractor.file.exception.FileReaderException;
+import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
+import eu.jangos.extractor.file.impl.M2;
+import eu.jangos.extractorfx.rendering.PolygonMesh;
+import eu.jangos.extractorfx.rendering.Render2DType;
+import eu.jangos.extractorfx.rendering.Render3DType;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import javafx.scene.layout.Pane;
 
 /**
  *
  * @author Warkdev
  */
-public class MCLQ {
-
-    public static final int LIQUID_DATA_LENGTH = 9;
-    public static final int LIQUID_FLAG_LENGTH = 8;
-
-    private static final int MASK_LIQUID = 0x03;
-    private static final int FLAG_IS_WATER = 0x00;
-    private static final int FLAG_IS_OCEAN = 0x01;
-    private static final int FLAG_IS_MAGMA = 0x02;
-    private static final int FLAG_IS_SLIME = 0x03;
-    private static final int FLAG_IS_ANIMATED = 0x04;
-    private static final int FLAG_E = 0x08;
-    private static final int MASK_NO_LIQUID = 0x0F;
-    private static final int FLAG_C = 0x10;
-    private static final int FLAG_D = 0x20;
-    private static final int FLAG_FISHABLE = 0x40;
-    private static final int FLAG_DARK = 0x80;
+public class MCLQ extends ChunkLiquidRenderer {
 
     private float minHeight;
     private float maxHeight;
     private List<Integer> light;
-    private List<Float> height;
-    private List<Short> flags;
+    private List<Float> height;    
     private int nFlowvs;
     private List<SWFlowv> flowvs;
 
     public MCLQ() {
         this.light = new ArrayList<>();
         this.height = new ArrayList<>();
-        this.flags = new ArrayList<>();
+        super.flags = new ArrayList<>();
         this.flowvs = new ArrayList<>();
     }
 
     public void read(ByteBuffer data) {
+        clear();
+        
         this.minHeight = data.getFloat();
         this.maxHeight = data.getFloat();
         for (int i = 0; i < LIQUID_DATA_LENGTH; i++) {
@@ -69,7 +63,7 @@ public class MCLQ {
 
         for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
             for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
-                this.flags.add((short) Byte.toUnsignedInt(data.get()));
+                super.flags.add((short) Byte.toUnsignedInt(data.get()));
             }
         }
 
@@ -98,14 +92,6 @@ public class MCLQ {
         this.maxHeight = maxHeight;
     }
 
-    public List<Short> getFlags() {
-        return flags;
-    }
-
-    public void setFlags(List<Short> flags) {
-        this.flags = flags;
-    }
-
     public List<Integer> getLight() {
         return light;
     }
@@ -122,57 +108,13 @@ public class MCLQ {
         this.height = height;
     }
 
-    public float getHeightAt(int row, int col) {
+/**    public float getHeightAt(int row, int col) {
         return this.height.get(getDataPosition(row, col));
     }
 
     public float getLightAt(int row, int col) {
         return this.light.get(getDataPosition(row, col));
-    }
-
-    public boolean hasNoLiquid(int row, int col) {
-        return hasFlag(row, col, MASK_NO_LIQUID);
-    }
-
-    public boolean isRiver(int row, int col) {
-        return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_WATER;
-    }
-
-    public boolean isOcean(int row, int col) {
-        return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_OCEAN;
-    }
-
-    public boolean isMagma(int row, int col) {
-        return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_MAGMA;
-    }
-
-    public boolean isSlime(int row, int col) {
-        return !hasNoLiquid(row, col) && (this.flags.get(getFlagPosition(row, col)) & MASK_LIQUID) == FLAG_IS_SLIME;
-    }
-
-    public boolean isFishable(int row, int col) {
-        return hasFlag(row, col, FLAG_FISHABLE);
-    }
-
-    public boolean isFlagC(int row, int col) {
-        return hasFlag(row, col, FLAG_C);
-    }
-
-    public boolean isFlagD(int row, int col) {
-        return hasFlag(row, col, FLAG_D);
-    }
-
-    public boolean isFlagE(int row, int col) {
-        return hasFlag(row, col, FLAG_E);
-    }
-
-    public boolean isAnimated(int row, int col) {
-        return hasFlag(row, col, FLAG_IS_ANIMATED);
-    }
-
-    public boolean isDark(int row, int col) {
-        return hasFlag(row, col, FLAG_DARK);
-    }
+    }    */
 
     public boolean hasNoSurroundingLiquid(int row, int col) {
         // Check bottom right tile.
@@ -206,21 +148,27 @@ public class MCLQ {
         return true;
     }
 
-    private boolean hasFlag(int row, int col, int flag) {
-        return FlagUtils.hasFlag(this.flags.get(getFlagPosition(row, col)), flag);
-    }
-
-    private int getFlagPosition(int row, int col) {
-        return row * LIQUID_FLAG_LENGTH + col;
-    }
-
-    private int getDataPosition(int row, int col) {
-        return row * LIQUID_DATA_LENGTH + col;
-    }
-
     private void clear() {
         this.light.clear();
         this.height.clear();
+    }
+    
+    @Override
+    public Pane render2D(Render2DType renderType) throws ModelRendererException, FileReaderException {
+        switch(renderType) {
+            case RENDER_TILEMAP_LIQUID_ANIMATED:
+            case RENDER_TILEMAP_LIQUID_FISHABLE:
+            case RENDER_TILEMAP_LIQUID_TYPE:
+            case RENDER_TILEMAP_LIQUID_HEIGHTMAP:
+                return renderLiquid(renderType);
+            default:
+                throw new UnsupportedOperationException("Render type are not supported.");
+        }
+    }
+
+    @Override
+    public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException, FileReaderException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

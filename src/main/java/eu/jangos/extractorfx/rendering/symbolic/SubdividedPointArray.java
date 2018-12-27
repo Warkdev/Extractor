@@ -15,8 +15,8 @@
  */
 package eu.jangos.extractorfx.rendering.symbolic;
 
-import java.util.Arrays;
 import eu.jangos.extractorfx.rendering.SubdivisionMesh;
+import java.util.Arrays;
 
 public class SubdividedPointArray extends SymbolicPointArray {
     private final float[] controlPoints; // points of the previous subdivision level

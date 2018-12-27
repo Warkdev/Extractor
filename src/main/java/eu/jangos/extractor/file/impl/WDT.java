@@ -16,15 +16,18 @@
 package eu.jangos.extractor.file.impl;
 
 import com.sun.javafx.geom.Vec2f;
+import eu.jangos.extractor.file.ChunkLiquidRenderer;
 import eu.jangos.extractor.file.FileReader;
+import eu.jangos.extractor.file.adt.chunk.MCLQ;
+import eu.jangos.extractor.file.adt.chunk.MCNK;
 import eu.jangos.extractor.file.adt.chunk.MODF;
 import eu.jangos.extractor.file.common.MapUnit;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractor.file.exception.WDTException;
 import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractor.file.wdt.AreaInfo;
-import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
@@ -36,10 +39,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javafx.scene.Group;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.image.PixelWriter;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import systems.crigges.jmpq3.JMpqException;
@@ -78,14 +84,15 @@ public class WDT extends FileReader {
     private List<AreaInfo> listAreas = new ArrayList<>();
     private String wmo;
     private MODF wmoPlacement = new MODF();
-    private ADT[][] adtArray = new ADT[MAP_TILE_SIZE][MAP_TILE_SIZE];
+    private ADT[][] adtArray;
     private float liquidMinHeight;
-    private float liquidMaxHeight;    
-    
+    private float liquidMaxHeight;
+
     @Override
     public void init(MPQManager manager, String filename, boolean loadChildren) throws FileReaderException, JMpqException, MPQException, IOException {
         super.init = false;
-        listAreas.clear();        
+        listAreas.clear();
+        this.adtArray = new ADT[MAP_TILE_SIZE][MAP_TILE_SIZE];
         
         for (int i = 0; i < MAP_TILE_SIZE; i++) {
             for (int j = 0; j < MAP_TILE_SIZE; j++) {
@@ -95,7 +102,7 @@ public class WDT extends FileReader {
 
         liquidMinHeight = Float.MAX_VALUE;
         liquidMaxHeight = -Float.MAX_VALUE;
-        
+
         super.filename = filename;
         super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
         super.data.order(ByteOrder.LITTLE_ENDIAN);
@@ -141,29 +148,49 @@ public class WDT extends FileReader {
             this.wmoPlacement = new MODF();
             this.wmoPlacement.read(super.data);
         }
-        
+
         if (loadChildren) {
             ADT adt;
             Vec2f liquidMapBounds;
-            String base = FilenameUtils.getPath(this.filename) + FilenameUtils.getBaseName(this.filename);
-            for (int x = 0; x < MAP_TILE_SIZE; x++) {
+            String base = FilenameUtils.getPath(this.filename) + FilenameUtils.getBaseName(this.filename);            
+            int minX = MAP_TILE_SIZE;
+            int minY = MAP_TILE_SIZE;
+            int maxX = 0;
+            int maxY = 0;
+            for (int x = 0; x < MAP_TILE_SIZE; x++) {                     
                 for (int y = 0; y < MAP_TILE_SIZE; y++) {
-                    if (hasTerrain(x, y)) {
+                    if (hasTerrain(x, y)) {                                                
                         adt = new ADT();
                         adt.init(manager, base + "_" + y + "_" + x + ".adt", false);
                         adtArray[x][y] = adt;
                         liquidMapBounds = adt.getLiquidMapBounds();
-                        if(liquidMapBounds.x > this.liquidMaxHeight) {
+                        if (liquidMapBounds.x > this.liquidMaxHeight) {
                             this.liquidMaxHeight = liquidMapBounds.x;
                         }
-                        if(liquidMapBounds.y < this.liquidMinHeight) {
+                        if (liquidMapBounds.y < this.liquidMinHeight) {
                             this.liquidMinHeight = liquidMapBounds.y;
                         }
+                        if (x < minX) {
+                            minX = x;
+                        } else if (x > maxX) {
+                            maxX = x;
+                        }
+                        if (y < minY) {
+                            minY = y;
+                        } else if (y > maxY) {
+                            maxY = y;
+                        }
                     }
-                }
+                }                
             }
-        }        
-
+            logger.debug("Boundaries: Min[x: "+minX+", y: "+minY+"], Max[x: "+maxX+", y: "+maxY+"]");
+            // Now can trim the adtArray.            
+            this.adtArray = ArrayUtils.subarray(this.adtArray, minX, maxX+1);
+            for (int x = 0; x < this.adtArray.length; x++) {                
+                    this.adtArray[x] = ArrayUtils.subarray(this.adtArray[x], minY, maxY+1);                
+            }            
+        }
+        
         super.init = true;
     }
 
@@ -179,58 +206,97 @@ public class WDT extends FileReader {
 
     private Pane renderTerrainTileMap() {
         Pane pane = new Pane();
-        Group tileGroup = new Group();
         
-        for (int i = 0; i < MAP_TILE_SIZE; i++) {
-            for (int j = 0; j < MAP_TILE_SIZE; j++) {
-                Rectangle tile = new Rectangle(i * MapUnit.TILE_SIZE,j * MapUnit.TILE_SIZE, i, i);
-                if(hasTerrain(i, j)) {
-                    tile.setFill(Color.DARKGOLDENROD);
+        // ADT array has been trimmed and is empty.
+        if(this.adtArray.length == 0 || this.adtArray[0].length == 0) {            
+            return pane;
+        }
+              
+        Canvas canvas = new Canvas(this.adtArray.length, this.adtArray[0].length);        
+        PixelWriter pixelWriter = canvas.getGraphicsContext2D().getPixelWriter();                
+                
+        pane.setPrefHeight(this.adtArray[0].length);
+        pane.setPrefWidth(this.adtArray.length);                
+
+        Color color;
+        for (int x = 0; x < this.adtArray.length; x++) {
+            for (int y = 0; y < this.adtArray[x].length; y++) {                
+                if (adtArray[x][y] != null) {
+                    color = Color.DARKGOLDENROD;                    
                 } else {
-                    tile.setFill(Color.BLACK);
-                }
-                tileGroup.getChildren().add(tile);
+                    color = Color.BLACK;
+                }                
+                pixelWriter.setColor(x, y, color);
             }
         }
-        
-        pane.getChildren().add(tileGroup);
+
+        pane.getChildren().add(canvas);
         return pane;
-    }    
+    }
 
     private Pane renderMergedTileMap(Render2DType renderType) throws ModelRendererException, FileReaderException {
-        Pane pane = new Pane();
-        Group adtGroup = new Group();
+        Pane pane = new Pane();        
         
-        ADT adt;
-        
-        for (int x = 0; x < MAP_TILE_SIZE; x++) {
-            for (int y = 0; y < MAP_TILE_SIZE; y++) {
-                adt = adtArray[x][y];
-                if (adt != null) {
-                    Pane renderedPane = adt.render2D(renderType, 0, 0);
-                    renderedPane.setLayoutX(x * MapUnit.TILE_SIZE);
-                    renderedPane.setLayoutY(y * MapUnit.TILE_SIZE);
-                    adtGroup.getChildren().add(renderedPane);
-                } 
-            }
+        // ADT array has been trimmed and is empty.
+        if(this.adtArray.length == 0 || this.adtArray[0].length == 0) {            
+            return pane;
         }
         
-        pane.getChildren().add(adtGroup);
+        int adtSize = ADT.SIZE_TILE_MAP * ChunkLiquidRenderer.LIQUID_FLAG_LENGTH;        
+        Canvas canvas = new Canvas(adtSize * this.adtArray.length, adtSize * this.adtArray[0].length);        
+        PixelWriter pixelWriter = canvas.getGraphicsContext2D().getPixelWriter();                
+                
+        pane.setPrefHeight(adtSize * this.adtArray[0].length);
+        pane.setPrefWidth(adtSize * this.adtArray.length);
+        
+        ADT adt;
+        List<MCNK> mapChunks;
+        MCNK chunk;
+        MCLQ liquid;
+        
+        for (int x = 0; x < adtArray.length; x++) {
+            for (int y = 0; y < adtArray[x].length; y++) {
+                adt = adtArray[x][y];
+                //logger.debug("Rendering ADT x: " + x + ", y: " + y);
+                if (adt != null) {                    
+                    mapChunks = adt.getMapChunks();
+                    for (int xx = 0; xx < ADT.SIZE_TILE_MAP; xx++) {
+                        for (int yy = 0; yy < ADT.SIZE_TILE_MAP; yy++) {
+                            chunk = mapChunks.get(xx * ADT.SIZE_TILE_MAP + yy);
+                            if (chunk.hasNoLiquid()) {
+                                canvas.getGraphicsContext2D().setFill(ChunkLiquidRenderer.COLOR_NONE);
+                                canvas.getGraphicsContext2D().fillRect((x * adtSize) + (xx * MCLQ.LIQUID_FLAG_LENGTH), (y * adtSize) + (yy * MCLQ.LIQUID_FLAG_LENGTH), MCLQ.LIQUID_FLAG_LENGTH, MCLQ.LIQUID_FLAG_LENGTH);
+                            } else {
+                                // Only the first layer (for now).
+                                liquid = chunk.getListLiquids().get(0);
+                                for (int i = 0; i < MCLQ.LIQUID_FLAG_LENGTH; i++) {
+                                    for (int j = 0; j < MCLQ.LIQUID_FLAG_LENGTH; j++) {                                        
+                                        pixelWriter.setColor((x * adtSize) + (xx * MCLQ.LIQUID_FLAG_LENGTH) + i, (y * adtSize) + (yy * MCLQ.LIQUID_FLAG_LENGTH) + j, liquid.getColorForLiquid(renderType, i, j));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }                    
+        }
+
+        pane.getChildren().add(canvas);
         return pane;
     }
-    
+
     private PolygonMesh renderTerrain(Map<String, M2> cache) {
         // todo.
-        
+
         return shapeMesh;
     }
-    
+
     private PolygonMesh renderLiquid() {
         // todo.
-        
+
         return liquidMesh;
     }
-    
+
     /**
      * Indicates whether the tile at the position row/col has a terrain
      * information (under the format of an ADT file) or not.
@@ -241,8 +307,8 @@ public class WDT extends FileReader {
      */
     public boolean hasTerrain(int row, int col) {
         return this.listAreas.get(row * MAP_TILE_SIZE + col).hasADT();
-    }       
-    
+    }
+
     // Getter & Setter.
     public int getVersion() {
         return version;
@@ -316,28 +382,32 @@ public class WDT extends FileReader {
      */
     private boolean hasFlag(int flag) {
         return FlagUtils.hasFlag(this.flags, flag);
-    }        
-    
+    }
+
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException, FileReaderException {
-        switch(renderType) {
-            case RENDER_TILEMAP_TERRAIN:
-                return renderTerrainTileMap();
-            case RENDER_TILEMAP_TERRAIN_HEIGHTMAP:
-            case RENDER_TILEMAP_TERRAIN_HOLEMAP:                                                                      
-            case RENDER_TILEMAP_LIQUID_TYPE:
-            case RENDER_TILEMAP_LIQUID_HEIGHTMAP:
-            case RENDER_TILEMAP_LIQUID_FISHABLE:
-            case RENDER_TILEMAP_LIQUID_ANIMATED:
-                return renderMergedTileMap(renderType);  
-            default:
-                throw new UnsupportedOperationException("This render type is not supported.");
+    public Pane render2D(Render2DType renderType) throws ModelRendererException, FileReaderException {
+        if(super.init) {
+            switch (renderType) {
+                case RENDER_TILEMAP_TERRAIN:
+                    return renderTerrainTileMap();
+                case RENDER_TILEMAP_TERRAIN_HEIGHTMAP:
+                case RENDER_TILEMAP_TERRAIN_HOLEMAP:
+                case RENDER_TILEMAP_LIQUID_TYPE:
+                case RENDER_TILEMAP_LIQUID_HEIGHTMAP:
+                case RENDER_TILEMAP_LIQUID_FISHABLE:
+                case RENDER_TILEMAP_LIQUID_ANIMATED:
+                    return renderMergedTileMap(renderType);
+                default:
+                    throw new UnsupportedOperationException("This render type is not supported.");
+            }
+        } else {
+            throw new FileReaderException("This WDT has not been initialized yet.");
         }
     }
 
     @Override
     public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException, FileReaderException {
-        switch(renderType) {
+        switch (renderType) {
             case LIQUID:
                 return renderLiquid();
             case TERRAIN:

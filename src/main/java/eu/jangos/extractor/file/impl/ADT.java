@@ -16,10 +16,10 @@
 package eu.jangos.extractor.file.impl;
 
 import com.sun.javafx.geom.Vec2f;
+import eu.jangos.extractor.file.ChunkLiquidRenderer;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.adt.chunk.MCIN;
 import eu.jangos.extractor.file.adt.chunk.MCLQ;
-import static eu.jangos.extractor.file.adt.chunk.MCLQ.LIQUID_FLAG_LENGTH;
 import eu.jangos.extractor.file.adt.chunk.MCNK;
 import eu.jangos.extractor.file.adt.chunk.MDDF;
 import eu.jangos.extractor.file.adt.chunk.MODF;
@@ -27,10 +27,9 @@ import eu.jangos.extractor.file.common.MapUnit;
 import eu.jangos.extractor.file.exception.ADTException;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
-import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractor.file.exception.ModelRendererException;
+import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
-import eu.jangos.extractorfx.rendering.PolygonMeshView;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
 import java.io.IOException;
@@ -42,6 +41,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.image.PixelWriter;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -80,7 +81,10 @@ public class ADT extends FileReader {
     // Size as from which the offset calculation is made.
     private static final int GLOBAL_OFFSET = 0x14;
 
-    public static final int SIZE_TILE_MAP = 128;
+    /**
+     * Amount of MCNK per line/row in the ADT.
+     */
+    public static final int SIZE_TILE_MAP = 16;
     public static final int SIZE_TILE_HEIGHTMAP = 144;
     private static final int CHUNK_TILE_MAP_LENGTH = 8;
     private static final int CHUNK_TILE_HEIGHTMAP_LENGTH = 9;
@@ -378,7 +382,7 @@ public class ADT extends FileReader {
     }
 
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException, FileReaderException {
+    public Pane render2D(Render2DType renderType) throws ModelRendererException, FileReaderException {
         if (this.init == false) {
             logger.error("This ADT has not been initialized !");
             throw new ModelRendererException("This ADT has not been initialized !");
@@ -687,51 +691,39 @@ public class ADT extends FileReader {
         return shapeMesh;
     }
 
-    private Pane renderLiquidTileMap(Render2DType renderType) throws FileReaderException {
+    private Pane renderLiquidTileMap(Render2DType renderType) throws FileReaderException, ModelRendererException {
         Pane pane = new Pane();
-
-        int idx = 0;
-        int idy = 0;
-        Group liquidGroup = new Group();
+        int mapSize = ADT.SIZE_TILE_MAP * ChunkLiquidRenderer.LIQUID_FLAG_LENGTH;        
+        Canvas canvas = new Canvas(mapSize, mapSize);
+        PixelWriter pixelWriter = canvas.getGraphicsContext2D().getPixelWriter();
+        pane.getChildren().add(canvas);
+        pane.setPrefHeight(128);
+        pane.setPrefWidth(128);
+        
         List<MCNK> mapChunks = getMapChunks();
-        for (MCNK chunk : mapChunks) {
-            if (chunk.hasNoLiquid()) {
-                for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
-                    for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
-                        Rectangle tile = new Rectangle((i * MapUnit.UNIT_SIZE) + (idx * MapUnit.CHUNK_SIZE), (j * MapUnit.UNIT_SIZE) + (idy * MapUnit.CHUNK_SIZE), MapUnit.UNIT_SIZE, MapUnit.UNIT_SIZE);
-                        tile.setFill(Color.BLACK);
-                        liquidGroup.getChildren().add(tile);
-                    }
-                }
-            } else {
-                int layer = 0;
-                for (MCLQ liquid : chunk.getListLiquids()) {
-                    for (int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
-                        for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
-                            Rectangle tile = new Rectangle((i * MapUnit.UNIT_SIZE) + (idx * MapUnit.CHUNK_SIZE), (j * MapUnit.UNIT_SIZE) + (idy * MapUnit.CHUNK_SIZE), MapUnit.UNIT_SIZE, MapUnit.UNIT_SIZE);
-                            if (liquid.hasNoLiquid(i, j)) {
-                                // Don't render.                                
-                                tile.setFill(Color.BLACK);
-                            } else {
-                                tile.setFill(getColorForLiquid(renderType, chunk, layer, i, j));
-                            }
-                            liquidGroup.getChildren().add(tile);
+        MCNK chunk;
+        MCLQ liquid;
+
+        // Merging all chunks.
+        for (int x = 0; x < ADT.SIZE_TILE_MAP; x++) {
+            for (int y = 0; y < ADT.SIZE_TILE_MAP; y++) {
+                chunk = mapChunks.get(x * ADT.SIZE_TILE_MAP + y);
+                if (chunk.hasNoLiquid()) {
+                    canvas.getGraphicsContext2D().setFill(ChunkLiquidRenderer.COLOR_NONE);
+                    canvas.getGraphicsContext2D().fillRect(x * MCLQ.LIQUID_FLAG_LENGTH, y * MCLQ.LIQUID_FLAG_LENGTH, MCLQ.LIQUID_FLAG_LENGTH, MCLQ.LIQUID_FLAG_LENGTH);
+                } else {
+                    // Only the first layer (for now).
+                    int chunkOffsetX = x * MCLQ.LIQUID_FLAG_LENGTH;
+                    int chunkOffsetY = y * MCLQ.LIQUID_FLAG_LENGTH;
+                    liquid = chunk.getListLiquids().get(0);                    
+                    for (int xx = 0; xx < MCLQ.LIQUID_FLAG_LENGTH; xx++) {
+                        for (int yy = 0; yy < MCLQ.LIQUID_FLAG_LENGTH; yy++) {
+                            pixelWriter.setColor(chunkOffsetX + xx, chunkOffsetY + yy, liquid.getColorForLiquid(renderType, xx, yy));
                         }
                     }
-
-                    layer++;
                 }
-
-            }
-
-            idx++;
-            if (idx % 16 == 0) {
-                idx = 0;
-                idy++;
             }
         }
-
-        pane.getChildren().add(liquidGroup);
 
         return pane;
     }
@@ -796,7 +788,8 @@ public class ADT extends FileReader {
                     return Color.RED;
                 }
             case RENDER_TILEMAP_LIQUID_HEIGHTMAP:
-                return getColorForHeight(chunk.getListLiquids().get(layer).getHeightAt(x, y));
+                //return getColorForHeight(chunk.getListLiquids().get(layer).getHeightAt(x, y));
+                throw new UnsupportedOperationException("Unsupported");
         }
         return Color.BLACK;
     }

@@ -23,6 +23,7 @@ import eu.jangos.extractor.file.common.CArgb;
 import eu.jangos.extractor.file.common.MapUnit;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractor.file.exception.WMOException;
 import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractor.file.wmo.WMOBlock;
@@ -34,10 +35,8 @@ import eu.jangos.extractor.file.wmo.WMOLight;
 import eu.jangos.extractor.file.wmo.WMOMaterials;
 import eu.jangos.extractor.file.wmo.WMOPortal;
 import eu.jangos.extractor.file.wmo.WMOPortalRef;
-import eu.jangos.extractor.file.exception.ModelRendererException;
-import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
-import eu.jangos.extractorfx.rendering.PolygonMeshView;
+import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
 import eu.mangos.shared.flags.FlagUtils;
 import java.io.IOException;
@@ -758,7 +757,7 @@ public class WMO extends FileReader {
      * @param renderType Indicates which type of rendering is requested.
      * @return A Pane containing the liquid tile map.
      */
-    private Pane renderLiquidTileMap(int viewportWidth, int viewportHeight, Render2DType renderType) {
+    private Pane renderLiquidTileMap(Render2DType renderType) {
         Pane pane = new AnchorPane();        
         
         Group liquid = new Group();
@@ -825,10 +824,8 @@ public class WMO extends FileReader {
                     StackPane.setAlignment(label, Pos.TOP_LEFT);
                 }
             }
-            pane.getChildren().add(stackPane);
-            stackPane.getTransforms().addAll(new Translate(viewportWidth / 2, viewportHeight / 2));
-        }
-        liquid.getTransforms().addAll(new Translate(viewportWidth / 2, viewportHeight / 2));
+            pane.getChildren().add(stackPane);            
+        }        
         pane.getChildren().add(liquid);
 
         return pane;
@@ -866,12 +863,12 @@ public class WMO extends FileReader {
     }
 
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException {
+    public Pane render2D(Render2DType renderType) throws ModelRendererException {
         switch(renderType) {
             case RENDER_TILEMAP_LIQUID_TYPE:
             case RENDER_TILEMAP_LIQUID_FISHABLE:
             case RENDER_TILEMAP_LIQUID_ANIMATED:
-                return renderLiquidTileMap(width, height, renderType);                                        
+                return renderLiquidTileMap(renderType);                                        
             case RENDER_TILEMAP_LIQUID_HEIGHTMAP:
             case RENDER_TILEMAP_TERRAIN_HEIGHTMAP:
             default:

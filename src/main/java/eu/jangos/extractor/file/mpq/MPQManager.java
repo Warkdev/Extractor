@@ -26,9 +26,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.lang3.StringUtils;
-import systems.crigges.jmpq3.MPQOpenOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import systems.crigges.jmpq3.MPQOpenOption;
 
 /**
  * MPQManager is a class that must provide an unified view of several MPQ contained in a directory.

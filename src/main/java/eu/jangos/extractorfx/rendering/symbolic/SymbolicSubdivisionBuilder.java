@@ -15,6 +15,9 @@
  */
 package eu.jangos.extractorfx.rendering.symbolic;
 
+import eu.jangos.extractorfx.rendering.SubdivisionMesh.*;
+import eu.jangos.extractorfx.rendering.SubdivisionMesh.BoundaryMode;
+import eu.jangos.extractorfx.rendering.SubdivisionMesh.MapBorderMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javafx.geometry.Point2D;
-
-import eu.jangos.extractorfx.rendering.SubdivisionMesh.*;
 
 /**
  *

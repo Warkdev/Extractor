@@ -19,8 +19,10 @@ package eu.jangos.extractorfx.rendering;
  *
  * @author Warkdev
  */
+import eu.jangos.extractorfx.rendering.SubdivisionMesh.*;
+import eu.jangos.extractorfx.rendering.SubdivisionMesh.BoundaryMode;
+import eu.jangos.extractorfx.rendering.SubdivisionMesh.MapBorderMode;
 import java.util.Arrays;
-
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -32,7 +34,6 @@ import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
-import eu.jangos.extractorfx.rendering.SubdivisionMesh.*;
 
 /**
  * A MeshView node for Polygon Meshes

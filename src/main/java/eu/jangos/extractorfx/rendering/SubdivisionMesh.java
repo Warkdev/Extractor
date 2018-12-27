@@ -17,7 +17,6 @@ package eu.jangos.extractorfx.rendering;
 
 import eu.jangos.extractorfx.rendering.symbolic.SymbolicPolygonMesh;
 import eu.jangos.extractorfx.rendering.symbolic.SymbolicSubdivisionBuilder;
-
 import java.util.ArrayList;
 import java.util.List;
 

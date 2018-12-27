@@ -15,41 +15,33 @@
  */
 package eu.jangos.extractorfx;
 
+import eu.jangos.extractor.file.exception.FileReaderException;
+import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractor.file.impl.ADT;
 import eu.jangos.extractor.file.impl.M2;
 import eu.jangos.extractor.file.impl.WDT;
 import eu.jangos.extractor.file.impl.WMO;
-import eu.jangos.extractor.file.exception.FileReaderException;
-import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.mpq.MPQManager;
-import eu.jangos.extractor.file.ModelRenderer;
-import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.PolygonMeshView;
+import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Camera;
 import javafx.scene.Group;
-import javafx.scene.PerspectiveCamera;
+import javafx.scene.ParallelCamera;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.CullFace;
-import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Line;
-import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
-import javax.imageio.ImageIO;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,8 +52,8 @@ public class MainApp extends Application {
 
     private static final String ROOT = "D:\\Downloads\\Test\\";
     private static final String DATA = "D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK\\Data\\";
-    private static final String wdt1 = "world\\maps\\azeroth\\azeroth.wdt";
-    private static final String wdt2 = "world\\maps\\kalimdor\\kalimdor.wdt";
+    private static final String azeroth = "world\\maps\\azeroth\\azeroth.wdt";
+    private static final String kalimdor = "world\\maps\\kalimdor\\kalimdor.wdt";
     private static final String map = "World\\Maps\\emeralddream\\emeralddream_33_27.adt";
     //private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
     //private static final String map = "world\\maps\\kalimdor\\kalimdor_32_18.adt";
@@ -116,11 +108,11 @@ public class MainApp extends Application {
             logger.error(ex.getMessage());
         }
 
-        camera = new PerspectiveCamera(false);
+        /**camera = new PerspectiveCamera(false);
         camera.setNearClip(0.1);
         camera.setFarClip(100000.0);
-        camera.getTransforms().addAll(new Translate(-1000, -300, 0));
-        //camera = new ParallelCamera();
+        camera.getTransforms().addAll(new Translate(-1000, -300, 0));*/
+        camera = new ParallelCamera();
         camera.setScaleX(SCALE);
         camera.setScaleY(SCALE);
         Line xLine = new Line(VIEWPORT_W / 2, 0, VIEWPORT_W / 2, VIEWPORT_H);
@@ -128,15 +120,16 @@ public class MainApp extends Application {
         Line yLine = new Line(0, VIEWPORT_H / 2, VIEWPORT_W, VIEWPORT_H / 2);
         yLine.setStroke(Color.GREEN);
         Group root = new Group();
-        view = new PolygonMeshView();
-        view.setCullFace(CullFace.BACK);
+        //view = new PolygonMeshView();
+        /**view.setCullFace(CullFace.BACK);
         view.setDrawMode(DrawMode.FILL);
-        view.setMaterial(new PhongMaterial(Color.RED));        
+        view.setMaterial(new PhongMaterial(Color.RED));        */
         
-        //root.getChildren().addAll(xLine, yLine);
-        root.getChildren().add(view);
-        extractWmo(ironforge, false, false);                   
+        root.getChildren().addAll(xLine, yLine);
+        //root.getChildren().add(view);
+        //extractWmo(ironforge, false, false);                   
         //extractAllWMO(false, root, true);
+        extractWdt(azeroth, root);
         
         Scene scene = new Scene(root, VIEWPORT_W, VIEWPORT_H, true, SceneAntialiasing.BALANCED);
         scene.setCamera(camera);
@@ -298,12 +291,12 @@ public class MainApp extends Application {
 
     private static void extractAllWdt() {
         for (String path : manager.getListWDT()) {
-            extractWdt(path);
+            extractWdt(path, null);
         }
 
     }
 
-    private static void extractWdt(String wdtFile) {
+    private static void extractWdt(String wdtFile, Group root) {
 
         try {
             logger.info("Extracting WDT... " + wdtFile);
@@ -317,8 +310,11 @@ public class MainApp extends Application {
                     }
                 }
             }
+            root.getChildren().add(wdt.render2D(Render2DType.RENDER_TILEMAP_LIQUID_TYPE));
         } catch (IOException | FileReaderException | MPQException ex) {
             logger.error(ex.getMessage());
+        } catch (ModelRendererException ex) {
+            java.util.logging.Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }

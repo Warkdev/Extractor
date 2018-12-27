@@ -15,19 +15,24 @@
  */
 package eu.jangos.extractorfx;
 
+import eu.jangos.extractor.file.exception.FileReaderException;
+import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractor.file.impl.ADT;
 import eu.jangos.extractor.file.impl.M2;
 import eu.jangos.extractor.file.impl.WDT;
 import eu.jangos.extractor.file.impl.WMO;
-import eu.jangos.extractor.file.exception.FileReaderException;
-import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.mpq.MPQManager;
-import eu.jangos.extractor.file.exception.ModelRendererException;
+import eu.jangos.extractorfx.rendering.FileType2D;
 import eu.jangos.extractorfx.rendering.FileType3D;
+import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.stage.Stage;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +41,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Warkdev
  */
-public class Extractor {
+public class Extractor extends Application {
 
     private static final Logger logger = LoggerFactory.getLogger(Extractor.class);
 
@@ -45,8 +50,9 @@ public class Extractor {
     private static final String azeroth = "world\\maps\\azeroth\\azeroth.wdt";
     private static final String kalimdor = "world\\maps\\kalimdor\\kalimdor.wdt";
     //private static final String map = "World\\Maps\\emeralddream\\emeralddream_33_27.adt";
-    private static final String map = "World\\Maps\\deadminesinstance\\deadminesinstance_33_31.adt";
-    //private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
+    //private static final String map = "World\\Maps\\deadminesinstance\\deadminesinstance_33_31.adt";
+    private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
+    //private static final String map = "World\\Maps\\Azeroth\\Azeroth_35_20.adt";
     //private static final String map = "world\\maps\\kalimdor\\kalimdor_44_34.adt";
     private static MPQManager manager;
     //private static final String wmoExample = "world\\wmo\\dungeon\\kl_orgrimmarlavadungeon\\lavadungeon.wmo";
@@ -75,28 +81,55 @@ public class Extractor {
     //private static final String m2Example = "world\\azeroth\\burningsteppes\\passivedoodads\\fallingembers\\fallingembers.m2";
     private static final String m2Example = "world\\azeroth\\burningsteppes\\passivedoodads\\smoke\\ashtreesmoke01.m2";
     private static final WDT wdt = new WDT();
-    private static final ADT adt = new ADT();        
+    private static final ADT adt = new ADT();
     private static final WMO wmo = new WMO();
     private static final Map<String, M2> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private static final int MAX_HEIGHT = Integer.MAX_VALUE;
 
-    public static void main(String[] args) throws IOException {
+    @Override
+    public void start(Stage primaryStage) throws Exception {
         try {
             manager = new MPQManager(DATA);
         } catch (MPQException ex) {
             logger.error(ex.getMessage());
         }
         //extractModel(m2Example, true);
-        extractAllModels(false);
+        //extractAllModels(false);
         //extractWmo(wmoExample, true, true);
         //extractAllWMO(true, false);        
         //extractMap(map, true, true, true, MAX_HEIGHT, true, MAX_HEIGHT, true);
         //extractAllMaps(true, true, true, true, true);
         //extractAllWdt();
-        //extractAllTerrains();
-        //extractWdt(azeroth);
-        //extractWdt(kalimdor);
-        //extractMap();
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    adt.init(manager, map);
+                    if (adt.save2D("D:\\Downloads\\Test\\liquid.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_TYPE)) {
+                        logger.info("File saved!");
+                    } else {
+                        logger.info("Error!");
+                    }
+
+                    //extractWdt(azeroth);
+                    //extractWdt(kalimdor);
+                    //extractWdt("world\\maps\\uldaman\\uldaman.wdt");
+                    extractAllWdt();
+                    //extractAllTerrains();
+                    System.out.println("done");
+                } catch (Exception e) {
+                    logger.error("Exception " + e.getMessage());
+                    e.printStackTrace();
+                }
+
+                primaryStage.close();
+                Platform.exit();
+            }
+        });
+    }
+
+    public static void main(String[] args) throws IOException {
+        launch(args);
     }
 
     private static void extractAllWMO(boolean addModels, boolean saveToFile) {
@@ -112,7 +145,7 @@ public class Extractor {
 
     private static void extractWmo(String path, boolean addModels, boolean saveToFile) {
         try {
-            String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";                            
+            String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
             wmo.init(manager, path);
             wmo.setAddModels(addModels);
             wmo.setModelCache(cache);
@@ -148,7 +181,7 @@ public class Extractor {
             model.render3D(Render3DType.MODEL, null);
             cache.put(path, model);
             if (saveToFile) {
-                if(model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, false)) {
+                if (model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, false)) {
                     logger.info("Model file saved succesfully !");
                 } else {
                     logger.error("Model file couldn't be saved.");
@@ -165,23 +198,26 @@ public class Extractor {
         int done = 0;
         for (String wdtFile : manager.getListWDT()) {
             done++;
-            if (wdtFile.endsWith(".wdt")) {
-                try {
-                    logger.info("Extracting WDT... " + wdtFile);
-                    String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);                    
-                    wdt.init(manager, wdtFile, true);
-                    for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
-                        for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
-                            if (wdt.hasTerrain(x, y)) {
-                                extractMap(base + "_" + y + "_" + x + ".adt", true, true, true, MAX_HEIGHT, true, MAX_HEIGHT, true);
-                            }
+            try {
+                logger.info("Extracting WDT... " + wdtFile);
+                String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
+                String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile);
+                wdt.init(manager, wdtFile, true);
+                for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
+                    for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
+                        if (wdt.hasTerrain(x, y)) {
+                            //extractMap(base + "_" + y + "_" + x + ".adt", true, true, true, MAX_HEIGHT, true, MAX_HEIGHT, false);
                         }
                     }
-                } catch (IOException | FileReaderException | MPQException ex) {
-                    logger.error(ex.getMessage());
                 }
-                logger.info("Done: " + done + " / Total: " + total);
+                //wdt.save2D(outputFile + "_terrain.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_TERRAIN, 1920, 1080);                
+                wdt.save2D(outputFile + "_liquid_animated.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_ANIMATED);
+            } catch (IOException | FileReaderException | MPQException ex) {
+                logger.error(ex.getMessage());
+            } catch (ModelRendererException ex) {
+                logger.error(ex.getMessage());
             }
+            logger.info("Done: " + done + " / Total: " + total);
         }
     }
 
@@ -198,10 +234,10 @@ public class Extractor {
             adt.init(manager, path);
             adt.setyUp(yUp);
             adt.setAddWMO(addWMO);
-            adt.setAddModels(addModels);         
+            adt.setAddModels(addModels);
             adt.setModelCache(cache);
             if (saveToFile) {
-                if(adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false)) {
+                if (adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false)) {
                     logger.info("Terrain file saved succesfully !");
                 } else {
                     logger.error("Terrain file couldn't be saved.");
@@ -224,16 +260,24 @@ public class Extractor {
         try {
             logger.info("Extracting WDT... " + wdtFile);
             String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
-            String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + ".png";
+            String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile);
             wdt.init(manager, wdtFile, true);
+            logger.debug("WDT file initialized.");
             for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
                 for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
                     if (wdt.hasTerrain(x, y)) {
-                        extractMap(base + "_" + y + "_" + x + ".adt", false, false, false, MAX_HEIGHT, false, MAX_HEIGHT, false);
+                        //extractMap(base + "_" + y + "_" + x + ".adt", false, false, false, MAX_HEIGHT, false, MAX_HEIGHT, false);
                     }
                 }
-            }
+            }            
+            logger.debug("Rendering & saving WDT file.");
+            wdt.save2D(outputFile + "_terrain.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_TERRAIN);
+            wdt.save2D(outputFile + "_liquid_animated.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_ANIMATED);
+            wdt.save2D(outputFile + "_liquid_fishable.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_FISHABLE);
+            wdt.save2D(outputFile + "_liquid_type.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_TYPE);
         } catch (IOException | FileReaderException | MPQException ex) {
+            logger.error(ex.getMessage());
+        } catch (ModelRendererException ex) {
             logger.error(ex.getMessage());
         }
 

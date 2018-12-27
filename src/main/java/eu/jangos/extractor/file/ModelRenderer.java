@@ -15,11 +15,11 @@
  */
 package eu.jangos.extractor.file;
 
-import eu.jangos.extractor.file.impl.M2;
 import eu.jangos.extractor.file.common.Quaternion;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.exception.ModelRendererException;
+import eu.jangos.extractor.file.impl.M2;
 import eu.jangos.extractorfx.rendering.FileType2D;
 import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
@@ -37,6 +37,7 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Transform;
 import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,12 +47,12 @@ import org.slf4j.LoggerFactory;
  * @author Warkdev
  */
 public abstract class ModelRenderer {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ModelRenderer.class);
-    
+
     protected PolygonMeshView view;
     protected PolygonMesh shapeMesh;
-    protected PolygonMesh liquidMesh;    
+    protected PolygonMesh liquidMesh;
     protected Map<String, M2> modelCache;
 
     public ModelRenderer() {
@@ -61,74 +62,86 @@ public abstract class ModelRenderer {
     }
 
     /**
-     * Render2D provides a Pane object containing a 2D representation of the requested render type.
-     * @param renderType The type of render.     
-     * @param width The width of the pane to be displayed.
-     * @param height The height of the pane to be displayed.
+     * Render2D provides a Pane object containing a 2D representation of the
+     * requested render type.
+     *
+     * @param renderType The type of render.
      * @return A Pane object representing the object to be rendered.
-     * @throws ModelRendererException This method can throw a converter exception if an error occured during the rendering.
-     * @throws FileReaderException This method can throw a file reader exception if an error occured during the reading of the file.
+     * @throws ModelRendererException This method can throw a converter
+     * exception if an error occured during the rendering.
+     * @throws FileReaderException This method can throw a file reader exception
+     * if an error occured during the reading of the file.
      */
-    public abstract Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException, FileReaderException;
-    
+    public abstract Pane render2D(Render2DType renderType) throws ModelRendererException, FileReaderException;
+
     /**
-     * Render3D provides a PolygonMesh object containing a 3D representation of the requested render type.
-     * @param renderType     
+     * Render3D provides a PolygonMesh object containing a 3D representation of
+     * the requested render type.
+     *
+     * @param renderType
      * @param cache
      * @return A PolygonMesh object representing the object to be rendered.
-     * @throws ModelRendererException This method can throw a converter exception if an error occured during the rendering.
-     * @throws MPQException This method can throw a MPQ exception if a file to be extracted from the MPQ doesn't exist in the MPQ libraries.
-     * @throws FileReaderException This method can throw a File Reader Exception if an extracted file is malformed.
+     * @throws ModelRendererException This method can throw a converter
+     * exception if an error occured during the rendering.
+     * @throws MPQException This method can throw a MPQ exception if a file to
+     * be extracted from the MPQ doesn't exist in the MPQ libraries.
+     * @throws FileReaderException This method can throw a File Reader Exception
+     * if an extracted file is malformed.
      */
     public abstract PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException, FileReaderException;
-    
+
     /**
      * Save2D saves an image of a rendered object using the method render2D.
+     *
      * @param path The path where the file needs to be stored.
      * @param fileType The file type extension to be saved.
      * @param renderType The render type.
-     * @param width
-     * @param height
-     * @throws ModelRendererException This method throws a converter exception if an error occured during the rendering.
-     * @throws FileReaderException This method throws a file reader exception if an error occured during the reading of the file.
+     * @throws ModelRendererException This method throws a converter exception
+     * if an error occured during the rendering.
+     * @throws FileReaderException This method throws a file reader exception if
+     * an error occured during the reading of the file.
      * @return True if the file has been saved, false otherwise.
      */
-    public boolean save2D(String path, FileType2D fileType, Render2DType renderType, int width, int height) throws ModelRendererException, FileReaderException {        
-        render2D(renderType, width, height);
-        
-        switch(fileType) {
+    public boolean save2D(String path, FileType2D fileType, Render2DType renderType) throws ModelRendererException, FileReaderException {
+        switch (fileType) {
             case PNG:
-                return savePNG(path, renderType, width, height);
+                return savePNG(path, renderType);
             default:
                 throw new UnsupportedOperationException("This file type is not supported.");
         }
     }
-    
+
     /**
      * Save3D saves an image of a rendered object using the method render3D.
+     *
      * @param path The path where the file needs to be stored.
      * @param fileType The file type extension to be saved.
      * @param renderType The render type to be used.
-     * @param addTextures Indicates whether texture informations must be added to the saved file.
-     * @throws ModelRendererException This method can throw a converter exception in case of some conversion went wront.
+     * @param addTextures Indicates whether texture informations must be added
+     * to the saved file.
+     * @throws ModelRendererException This method can throw a converter
+     * exception in case of some conversion went wront.
      * @return True if the file has been saved, false otherwise.
      */
-    public  boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addTextures) throws ModelRendererException, MPQException, FileReaderException {        
-        render3D(renderType, modelCache);    
-        
-        switch(fileType) {
+    public boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addTextures) throws ModelRendererException, MPQException, FileReaderException {
+        render3D(renderType, modelCache);
+
+        switch (fileType) {
             case OBJ:
                 return saveWavefront(path, renderType, addTextures);
             default:
                 throw new UnsupportedOperationException("This file type is not supported.");
         }
-    }      
-            
+    }
+
     /**
-     * Return the provided mesh under the form of a String representing a WAvefront OBJ format.
-     * This method assumes that the provided mesh is complete and that it can be rendered.
+     * Return the provided mesh under the form of a String representing a
+     * WAvefront OBJ format. This method assumes that the provided mesh is
+     * complete and that it can be rendered.
+     *
      * @param mesh The mesh to convert to Wavefront OBJ format.
-     * @param addTextures Specify whether texture coordinates must be added to the OBJ format or not.
+     * @param addTextures Specify whether texture coordinates must be added to
+     * the OBJ format or not.
      * @return A String containing the content of the Wavefront OBJ format.
      */
     private String getMeshAsOBJ(PolygonMesh mesh, boolean addTextures) {
@@ -166,8 +179,8 @@ public abstract class ModelRenderer {
      * @param file The OBJ file (including path) where the structure needs to be
      * saved.
      * @param renderType
-     * @param  addTextures
-     * @throws ModelRendererException     
+     * @param addTextures
+     * @throws ModelRendererException
      */
     private boolean saveWavefront(String file, Render3DType renderType, boolean addTextures) throws ModelRendererException {
         if (file == null || file.isEmpty()) {
@@ -175,8 +188,8 @@ public abstract class ModelRenderer {
         }
 
         String content;
-        
-        switch(renderType) {
+
+        switch (renderType) {
             case MODEL:
             case TERRAIN:
                 content = getMeshAsOBJ(this.shapeMesh, addTextures);
@@ -186,7 +199,7 @@ public abstract class ModelRenderer {
                 break;
             default:
                 throw new ModelRendererException("This render type is not supported");
-        }        
+        }
 
         File objFile = new File(file);
         if (objFile.exists()) {
@@ -203,31 +216,51 @@ public abstract class ModelRenderer {
             logger.error(ex.getMessage());
             return false;
         }
-        
+
         return true;
     }
 
     /**
      * Save a JavaFX Pane object to PNG file.
+     *
      * @param path The file where this image must be saved.
-     * @param renderType The desired render type that will be used to render this object.     
+     * @param renderType The desired render type that will be used to render
+     * this object.
      * @return True if the file has been saved, false otherwise.
-     * @throws ModelRendererException 
+     * @throws ModelRendererException
      */
-    private boolean savePNG(String path, Render2DType renderType, int width, int height) throws ModelRendererException, FileReaderException {
+    private boolean savePNG(String path, Render2DType renderType) throws ModelRendererException, FileReaderException {
         if (path == null || path.isEmpty()) {
             throw new ModelRendererException("Provided file is null or empty.");
-        }       
-                
-        Pane pane = render2D(renderType, width, height);             
+        }
         
-        WritableImage image = new WritableImage(width, height);
-        SnapshotParameters params = new SnapshotParameters();                                
-        pane.snapshot(params, image);                                
+        Pane pane = render2D(renderType);   
+        double scale = 1;
+        int maxSize = 5000;
+        
+        if(pane.getPrefHeight() <= 0) {
+            pane.setPrefHeight(1);
+        } 
+        
+        if(pane.getPrefWidth() <= 0) {
+            pane.setPrefWidth(1);
+        }                
+        
+        if (pane.getPrefWidth() >= maxSize) {
+            scale = maxSize / pane.getPrefWidth();
+        } else if (pane.getPrefHeight() >= maxSize) {
+            scale = maxSize / pane.getPrefHeight();
+        }
+        
+        logger.debug("Pane size: "+pane.getPrefHeight() + ", "+pane.getPrefWidth());
+        WritableImage image = new WritableImage((int) (pane.getPrefWidth() * scale), (int) (pane.getPrefHeight() * scale));        
+        SnapshotParameters params = new SnapshotParameters();                    
+        params.setTransform(Transform.scale(scale, scale));
+        pane.snapshot(params, image);
         
         File file = new File(path);
-        if(file.exists()) {
-            file.delete();            
+        if (file.exists()) {
+            file.delete();
         } else {
             file.getParentFile().mkdirs();
         }
@@ -237,10 +270,10 @@ public abstract class ModelRenderer {
             logger.error(ex.getMessage());
             return false;
         }
-        
+
         return true;
     }
-    
+
     protected Rotate getAngleAndAxis(Quaternion q) {
         Rotate rotate = new Rotate();
 
@@ -318,16 +351,16 @@ public abstract class ModelRenderer {
         clearShapeMesh();
         clearView();
     }
-    
+
     protected void clearLiquidMesh() {
-        this.liquidMesh.getPoints().clear();        
-        this.liquidMesh.getFaceSmoothingGroups().clear();        
-        this.liquidMesh.getTexCoords().clear();        
+        this.liquidMesh.getPoints().clear();
+        this.liquidMesh.getFaceSmoothingGroups().clear();
+        this.liquidMesh.getTexCoords().clear();
         this.liquidMesh.faces = null;
     }
 
-    protected void clearShapeMesh() {        
-        this.shapeMesh.getPoints().clear();        
+    protected void clearShapeMesh() {
+        this.shapeMesh.getPoints().clear();
         this.shapeMesh.getFaceSmoothingGroups().clear();
         this.shapeMesh.getTexCoords().clear();
         this.shapeMesh.faces = null;
@@ -336,7 +369,7 @@ public abstract class ModelRenderer {
     protected void clearView() {
         this.view.getTransforms().clear();
     }
-    
+
     public PolygonMesh getShapeMesh() {
         return shapeMesh;
     }
@@ -359,5 +392,5 @@ public abstract class ModelRenderer {
 
     public void setModelCache(Map<String, M2> modelCache) {
         this.modelCache = modelCache;
-    }   
+    }
 }

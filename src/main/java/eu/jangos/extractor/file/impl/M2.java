@@ -21,6 +21,7 @@ import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractor.file.m2.M2Array;
 import eu.jangos.extractor.file.m2.M2Attachment;
 import eu.jangos.extractor.file.m2.M2Camera;
@@ -40,7 +41,6 @@ import eu.jangos.extractor.file.m2.M2TextureTransform;
 import eu.jangos.extractor.file.m2.M2TextureWeight;
 import eu.jangos.extractor.file.m2.M2Vertex;
 import eu.jangos.extractor.file.mpq.MPQManager;
-import eu.jangos.extractor.file.exception.ModelRendererException;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
@@ -292,7 +292,7 @@ public class M2 extends FileReader {
     }
 
     @Override
-    public Pane render2D(Render2DType renderType, int width, int height) throws ModelRendererException, FileReaderException {
+    public Pane render2D(Render2DType renderType) throws ModelRendererException, FileReaderException {
         throw new UnsupportedOperationException("This render is not supported for models");
     }
 
