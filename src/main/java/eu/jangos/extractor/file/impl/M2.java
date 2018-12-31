@@ -50,6 +50,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javafx.geometry.Point3D;
 import javafx.scene.layout.Pane;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -110,6 +111,8 @@ public class M2 extends FileReader {
     private M2Array<Short> textureCombinerCombos;
     private List<M2Vertex> listVertices;
     private List<M2SkinProfile> listSkinProfiles;
+    private List<Point3D> listCollisionVertices;
+    private List<Short> listCollisionTriangles;
 
     // Render variables.
     private boolean cut = false;
@@ -158,6 +161,8 @@ public class M2 extends FileReader {
         // Caching objects.
         this.listVertices = new ArrayList<>();
         this.listSkinProfiles = new ArrayList<>();
+        this.listCollisionVertices = new ArrayList<>();
+        this.listCollisionTriangles = new ArrayList<>();
     }
 
     public void init(MPQManager manager, String filename) throws IOException, FileReaderException, MPQException {
@@ -253,6 +258,42 @@ public class M2 extends FileReader {
         return this.listVertices;
     }
 
+    public List<Point3D> getCollisionVertices() throws M2Exception {
+        if (!init) {
+            throw new M2Exception("M2 file has not been initialized, please use init(data) function to initialize your M2 file !");
+        }
+
+        // Prefer to use cached objects as they will be re-used many times.
+        if (this.listCollisionVertices.size() > 0) {
+            return this.listCollisionVertices;
+        }        
+
+        super.data.position(this.collisionVertices.getOffset());
+        for (int i = 0; i < this.collisionVertices.getSize(); i++) {
+            this.listCollisionVertices.add(new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
+        }
+
+        return this.listCollisionVertices;
+    }
+    
+    public List<Short> getCollisionTriangles() throws M2Exception {
+        if (!init) {
+            throw new M2Exception("M2 file has not been initialized, please use init(data) function to initialize your M2 file !");
+        }
+
+        // Prefer to use cached objects as they will be re-used many times.
+        if (this.listCollisionTriangles.size() > 0) {
+            return this.listCollisionTriangles;
+        }        
+
+        super.data.position(this.collisionTriangles.getOffset());
+        for (int i = 0; i < this.collisionTriangles.getSize(); i++) {
+            this.listCollisionTriangles.add(super.data.getShort());
+        }
+
+        return this.listCollisionTriangles;
+    }
+    
     public List<M2SkinProfile> getSkins() throws M2Exception {
         if (!init) {
             throw new M2Exception("M2 file has not been initialized, please use init(data) function to initialize your M2 file !");
@@ -289,6 +330,8 @@ public class M2 extends FileReader {
     private void clear() {
         this.listVertices.clear();
         this.listSkinProfiles.clear();
+        this.listCollisionVertices.clear();
+        this.listCollisionTriangles.clear();
     }
 
     @Override
@@ -300,12 +343,56 @@ public class M2 extends FileReader {
     public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException, FileReaderException {
         switch (renderType) {
             case MODEL:
-                return renderModel();
+                return renderCollisionModel();
             default:
                 throw new UnsupportedOperationException("This render type is not supported for models");
         }
     }
 
+    private PolygonMesh renderCollisionModel() throws ModelRendererException {
+        if (init == false) {
+            throw new ModelRendererException("M2FileReader is null");
+        }
+        
+        clearShapeMesh();
+
+        try {
+            // The model doesn't have any vertice.
+            if (getCollisionVertices().isEmpty()) {                
+                logger.debug("[Model: "+this.filename+" cannot be rendered, it doesn't have vertex.");
+                return this.shapeMesh;
+            }            
+
+            for (Point3D point : getCollisionVertices()) {
+                shapeMesh.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
+                //mesh.getNormals().addAll(v.getNormal().x, v.getNormal().y, v.getNormal().z);
+                //shapeMesh.getTexCoords().addAll(v.getTexCoords()[0].x, v.getTexCoords()[0].y);
+            }
+            
+            List<Short> listIndices = getCollisionTriangles();
+            int faces[][] = new int[this.listCollisionTriangles.size() / 3][6];
+            int idx = 0;
+            for (int face = 0; face < listIndices.size(); face += 3) {
+                faces[idx][0] = listIndices.get(face + 2);
+                faces[idx][1] = listIndices.get(face + 2);
+                faces[idx][2] = listIndices.get(face + 1);
+                faces[idx][3] = listIndices.get(face + 1);
+                faces[idx][4] = listIndices.get(face);
+                faces[idx][5] = listIndices.get(face);
+                idx++;
+                
+                shapeMesh.getFaceSmoothingGroups().addAll(0);
+            }
+            
+            shapeMesh.faces = faces;                        
+        } catch (M2Exception ex) {
+            logger.error("Error while reading the M2 content " + ex.getMessage());
+            throw new ModelRendererException("Error while reading the M2 content " + ex.getMessage());
+        }
+
+        return shapeMesh;
+    }
+    
     private PolygonMesh renderModel() throws ModelRendererException {
         if (init == false) {
             throw new ModelRendererException("M2FileReader is null");

@@ -17,6 +17,7 @@ package eu.jangos.extractor.file.wmo;
 
 import eu.jangos.extractor.file.common.C4Plane;
 import java.nio.ByteBuffer;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -30,7 +31,7 @@ public class WMOPortal {
     public void read(ByteBuffer data) {
         this.startVertex = data.getShort();
         this.count = data.getShort();
-        this.plane.getNormal().set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.plane.setNormal(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
         this.plane.setDistance(data.getFloat());
     }
     

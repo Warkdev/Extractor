@@ -18,6 +18,7 @@ package eu.jangos.extractor.file.wmo;
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.CAaBox;
 import java.nio.ByteBuffer;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -30,8 +31,8 @@ public class WMOGroupInfo {
 
     public void read(ByteBuffer data) {
         this.flags = data.getInt();
-        this.boundingBox.setMin(new Vec3f(data.getFloat(), data.getFloat(), data.getFloat()));
-        this.boundingBox.setMax(new Vec3f(data.getFloat(), data.getFloat(), data.getFloat()));
+        this.boundingBox.setMin(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
+        this.boundingBox.setMax(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
         this.nameOffset = data.getInt();
     }
     

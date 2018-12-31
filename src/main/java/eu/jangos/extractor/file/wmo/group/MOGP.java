@@ -19,6 +19,7 @@ import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.CAaBox;
 import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -45,8 +46,8 @@ public class MOGP {
         this.groupName = data.getInt();
         this.descriptiveGroupName = data.getInt();
         this.flags = data.getInt();
-        this.boundingBox.setMin(new Vec3f(data.getFloat(), data.getFloat(), data.getFloat()));
-        this.boundingBox.setMax(new Vec3f(data.getFloat(), data.getFloat(), data.getFloat()));
+        this.boundingBox.setMin(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
+        this.boundingBox.setMax(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
         this.portalStart = data.getShort();
         this.portalCount = data.getShort();
         this.transBatchCount = data.getShort();

@@ -77,9 +77,9 @@ public class Extractor extends Application {
     //private static final String wmoExample = "World\\wmo\\Dungeon\\AZ_Blackrock\\Blackrock.wmo";
     //private static final String wmoExample = "World\\wmo\\Lorderon\\Buildings\\EasternPlaguelands\\UndeadZiggurat\\UndeadZiggurat.wmo";
     //private static final String wmoExample = "World\\wmo\\Dungeon\\AZ_Blackrock\\Blackrock_lower_guild.wmo";
-    //private static final String m2Example = "world\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy04.M2";
+    private static final String m2Example = "world\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy04.M2";
     //private static final String m2Example = "world\\azeroth\\burningsteppes\\passivedoodads\\fallingembers\\fallingembers.m2";
-    private static final String m2Example = "world\\azeroth\\burningsteppes\\passivedoodads\\smoke\\ashtreesmoke01.m2";
+    //private static final String m2Example = "world\\azeroth\\burningsteppes\\passivedoodads\\smoke\\ashtreesmoke01.m2";
     private static final WDT wdt = new WDT();
     private static final ADT adt = new ADT();
     private static final WMO wmo = new WMO();
@@ -92,7 +92,7 @@ public class Extractor extends Application {
             manager = new MPQManager(DATA);
         } catch (MPQException ex) {
             logger.error(ex.getMessage());
-        }
+        }                
         //extractModel(m2Example, true);
         //extractAllModels(false);
         //extractWmo(wmoExample, true, true);
@@ -105,17 +105,21 @@ public class Extractor extends Application {
             public void run() {
                 try {
                     adt.init(manager, map);
-                    if (adt.save2D("D:\\Downloads\\Test\\liquid.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_TYPE)) {
+                    adt.setAddModels(true);
+                    adt.setAddWMO(true);
+                    if (adt.save3D("D:\\Downloads\\Test\\terrain.obj", FileType3D.OBJ, Render3DType.TERRAIN, false)) {
                         logger.info("File saved!");
                     } else {
                         logger.info("Error!");
                     }
 
+                    //extractModel(m2Example, true);
                     //extractWdt(azeroth);
                     //extractWdt(kalimdor);
                     //extractWdt("world\\maps\\uldaman\\uldaman.wdt");
-                    extractAllWdt();
+                    //extractAllWdt();
                     //extractAllTerrains();
+                    
                     System.out.println("done");
                 } catch (Exception e) {
                     logger.error("Exception " + e.getMessage());

@@ -15,8 +15,8 @@
  */
 package eu.jangos.extractor.file.common;
 
-import com.sun.javafx.geom.Vec3f;
 import java.nio.ByteBuffer;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -24,21 +24,19 @@ import java.nio.ByteBuffer;
  */
 public class CAaSphere {
     
-    private Vec3f position = new Vec3f();
+    private Point3D position;
     private float radius;
 
     public void read(ByteBuffer data) {
-        this.position.x = data.getFloat();
-        this.position.y = data.getFloat();
-        this.position.z = data.getFloat();
+        this.position = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());       
         this.radius = data.getFloat();
     }
     
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 

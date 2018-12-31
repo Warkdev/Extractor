@@ -238,8 +238,8 @@ public class WMO extends FileReader {
         this.ambColor.setB(super.data.get());
         this.ambColor.setA(super.data.get());
         this.wmoAreaTableID = super.data.getInt();
-        this.boundingBox.setMin(new Vec3f(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
-        this.boundingBox.setMax(new Vec3f(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
+        this.boundingBox.setMin(new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
+        this.boundingBox.setMax(new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
         this.flags = super.data.getShort();
         this.numLod = super.data.getShort();
 
@@ -374,7 +374,7 @@ public class WMO extends FileReader {
             C4Plane convexVolume;
             for (int i = 0; i < chunkSize; i++) {
                 convexVolume = new C4Plane();
-                convexVolume.getNormal().set(super.data.getFloat(), super.data.getFloat(), super.data.getFloat());
+                convexVolume.setNormal(new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
                 convexVolume.setDistance(super.data.getFloat());
                 this.convexVolumePlanesList.add(convexVolume);
             }
@@ -762,10 +762,10 @@ public class WMO extends FileReader {
         
         Group liquid = new Group();
         Rectangle rect = new Rectangle();
-        double heightRoot = this.boundingBox.getMax().y - this.boundingBox.getMin().y;
-        double widthRoot = this.boundingBox.getMax().x - this.boundingBox.getMin().x;
-        rect.setX(this.boundingBox.getMin().x);
-        rect.setY(-this.boundingBox.getMin().y - heightRoot);
+        double heightRoot = this.boundingBox.getMax().getY() - this.boundingBox.getMin().getY();
+        double widthRoot = this.boundingBox.getMax().getX() - this.boundingBox.getMin().getX();
+        rect.setX(this.boundingBox.getMin().getX());
+        rect.setY(-this.boundingBox.getMin().getY() - heightRoot);
         rect.setWidth(widthRoot);
         rect.setHeight(heightRoot);
         rect.setFill(Color.TRANSPARENT);
@@ -778,11 +778,11 @@ public class WMO extends FileReader {
         for (WMOGroup group : this.wmoGroupList) {
             StackPane stackPane = new StackPane();
             Rectangle r = new Rectangle();
-            double height = group.getGroup().getBoundingBox().getMax().y - group.getGroup().getBoundingBox().getMin().y;
-            double width = group.getGroup().getBoundingBox().getMax().x - group.getGroup().getBoundingBox().getMin().x;
+            double height = group.getGroup().getBoundingBox().getMax().getY() - group.getGroup().getBoundingBox().getMin().getY();
+            double width = group.getGroup().getBoundingBox().getMax().getX() - group.getGroup().getBoundingBox().getMin().getX();
 
-            r.setX(group.getGroup().getBoundingBox().getMin().x);
-            r.setY(-group.getGroup().getBoundingBox().getMin().y - height);
+            r.setX(group.getGroup().getBoundingBox().getMin().getX());
+            r.setY(-group.getGroup().getBoundingBox().getMin().getY() - height);
             r.setWidth(width);
             r.setHeight(height);
             r.setFill(Color.TRANSPARENT);

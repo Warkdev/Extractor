@@ -437,8 +437,8 @@ public class ADT extends FileReader {
             throw new ModelRendererException(exception.getMessage());
         }
 
-        float initialChunkX = mapChunks.get(0).getPosition().x;
-        float initialChunkY = mapChunks.get(0).getPosition().y;
+        float initialChunkX = (float) mapChunks.get(0).getPosition().getX();
+        float initialChunkY = (float) mapChunks.get(0).getPosition().getY();
 
         for (MCNK chunk : mapChunks) {
             int offset = shapeMesh.getPoints().size() / 3;
@@ -449,16 +449,16 @@ public class ADT extends FileReader {
                     //this.mesh.getNormals().addAll(chunk.getNormals().getPoints()[idx].getX() / 127.0f, chunk.getNormals().getPoints()[idx].getY() / 127.0f, chunk.getNormals().getPoints()[idx].getZ() / 127.0f);
                     float x, y, z;
                     // Calculating Positions.                    
-                    x = chunk.getPosition().x - (i * MapUnit.UNIT_SIZE * 0.5f);
-                    y = chunk.getPosition().y - (j * MapUnit.UNIT_SIZE);
-                    z = chunk.getVertices().getPoints()[idx] + chunk.getPosition().z;
+                    x = (float) chunk.getPosition().getX() - (i * MapUnit.UNIT_SIZE * 0.5f);
+                    y = (float) chunk.getPosition().getY() - (j * MapUnit.UNIT_SIZE);
+                    z = (float) (chunk.getVertices().getPoints()[idx] + chunk.getPosition().getZ());
                     if ((i % 2) != 0) {
                         y -= 0.5f * MapUnit.UNIT_SIZE;
                     }
                     this.shapeMesh.getPoints().addAll(x, y, z);
                     // Calculating TexCoord in high resolution.
-                    x = ((chunk.getPosition().x - initialChunkX) * (-1)) / MapUnit.CHUNK_SIZE;
-                    y = (chunk.getPosition().y - initialChunkY) * (-1) / MapUnit.CHUNK_SIZE;
+                    x = (float) ((chunk.getPosition().getX() - initialChunkX) * (-1)) / MapUnit.CHUNK_SIZE;
+                    y = (float) (chunk.getPosition().getY() - initialChunkY) * (-1) / MapUnit.CHUNK_SIZE;
                     this.shapeMesh.getTexCoords().addAll(x, y);
                 }
             }
@@ -562,12 +562,12 @@ public class ADT extends FileReader {
                     clearView();
 
                     // We translate the object location.                
-                    Translate translate = new Translate(17066 - modelPlacement.getPosition().z, 17066 - modelPlacement.getPosition().x, modelPlacement.getPosition().y);
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
 
                     // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                
-                    Rotate rx = new Rotate(modelPlacement.getOrientation().y, Rotate.Z_AXIS);
-                    Rotate ry = new Rotate(modelPlacement.getOrientation().z, Rotate.X_AXIS);
-                    Rotate rz = new Rotate(modelPlacement.getOrientation().x - 180, Rotate.Z_AXIS);
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
 
                     // We scale.
                     double scaleFactor = modelPlacement.getScale() / 1024d;
@@ -629,12 +629,12 @@ public class ADT extends FileReader {
                     clearView();
 
                     // We translate the object location.                
-                    Translate translate = new Translate(17066 - modelPlacement.getPosition().z, 17066 - modelPlacement.getPosition().x, modelPlacement.getPosition().y);
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
 
                     // We convert the euler angles to a Rotate object with euler angle and rotation ZXZ.                
-                    Rotate rx = new Rotate(modelPlacement.getOrientation().y, Rotate.Z_AXIS);
-                    Rotate ry = new Rotate(modelPlacement.getOrientation().z, Rotate.X_AXIS);
-                    Rotate rz = new Rotate(modelPlacement.getOrientation().x - 180, Rotate.Z_AXIS);
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
 
                     // We add all transformations to the view and we get back the transformation matrix.
                     view.getTransforms().addAll(translate, rx, ry, rz);

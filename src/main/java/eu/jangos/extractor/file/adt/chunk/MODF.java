@@ -18,6 +18,7 @@ package eu.jangos.extractor.file.adt.chunk;
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.CAaBox;
 import java.nio.ByteBuffer;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -27,8 +28,8 @@ public class MODF {
     
     private int mwidEntry;
     private int uniqueId;
-    private Vec3f position = new Vec3f();
-    private Vec3f orientation = new Vec3f();
+    private Point3D position;
+    private Point3D orientation;
     private CAaBox boundingBox = new CAaBox();        
     private short flags;
     private short doodadSet;
@@ -38,12 +39,8 @@ public class MODF {
     public void read(ByteBuffer in) {
         this.mwidEntry = in.getInt();
         this.uniqueId = in.getInt();
-        this.position.x = in.getFloat();
-        this.position.y = in.getFloat();
-        this.position.z = in.getFloat();
-        this.orientation.x = in.getFloat();
-        this.orientation.y = in.getFloat();
-        this.orientation.z = in.getFloat();
+        this.position = new Point3D(in.getFloat(), in.getFloat(), in.getFloat());        
+        this.orientation = new Point3D(in.getFloat(), in.getFloat(), in.getFloat());                
         this.boundingBox.read(in);
         this.flags = in.getShort();
         this.doodadSet = in.getShort();
@@ -67,19 +64,19 @@ public class MODF {
         this.uniqueId = uniqueId;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 
-    public Vec3f getOrientation() {
+    public Point3D getOrientation() {
         return orientation;
     }
 
-    public void setOrientation(Vec3f orientation) {
+    public void setOrientation(Point3D orientation) {
         this.orientation = orientation;
     }
 

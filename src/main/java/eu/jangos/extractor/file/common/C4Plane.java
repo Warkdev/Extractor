@@ -15,25 +15,25 @@
  */
 package eu.jangos.extractor.file.common;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
+
 
 /**
  *
  * @author Warkdev
  */
 public class C4Plane {
-    private Vec3f normal;
+    private Point3D normal;
     private float distance;
 
-    public C4Plane() {
-        this.normal = new Vec3f();
+    public C4Plane() {        
     }
 
-    public Vec3f getNormal() {
+    public Point3D getNormal() {
         return normal;
     }
 
-    public void setNormal(Vec3f normal) {
+    public void setNormal(Point3D normal) {
         this.normal = normal;
     }
 

@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javafx.geometry.Point3D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.layout.Pane;
 
@@ -108,7 +109,7 @@ public class MCNK extends FileReader {
     private int nSndEmitters;
     private int offsetMCLQ;
     private int sizeLiquid;
-    private Vec3f position = new Vec3f();
+    private Point3D position;
     private int offsetMCCV;
     private int offsetMCLV;
     private MCVT vertices = new MCVT();
@@ -162,9 +163,7 @@ public class MCNK extends FileReader {
         this.nSndEmitters = super.data.getInt();
         this.offsetMCLQ = super.data.getInt();
         this.sizeLiquid = super.data.getInt();
-        this.position.x = super.data.getFloat();
-        this.position.y = super.data.getFloat();
-        this.position.z = super.data.getFloat();
+        this.position = new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat());        
         this.offsetMCCV = super.data.getInt();
         this.offsetMCLV = super.data.getInt();
 
@@ -446,11 +445,11 @@ public class MCNK extends FileReader {
         this.sizeLiquid = sizeLiquid;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 

@@ -18,6 +18,7 @@ package eu.jangos.extractor.file.adt.chunk;
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.CAaSphere;
 import java.nio.ByteBuffer;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -25,16 +26,14 @@ import java.nio.ByteBuffer;
  */
 public class SWFlowv {
     private CAaSphere sphere = new CAaSphere();
-    private Vec3f direction = new Vec3f();
+    private Point3D direction;
     private float velocity;
     private float amplitude;
     private float frequency;
 
     public void read(ByteBuffer data) {
         this.sphere.read(data);
-        this.direction.x = data.getFloat();
-        this.direction.y = data.getFloat();
-        this.direction.z = data.getFloat();
+        this.direction = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());        
         this.velocity = data.getFloat();
         this.amplitude = data.getFloat();
         this.frequency = data.getFloat();
@@ -48,11 +47,11 @@ public class SWFlowv {
         this.sphere = sphere;
     }
 
-    public Vec3f getDirection() {
+    public Point3D getDirection() {
         return direction;
     }
 
-    public void setDirection(Vec3f direction) {
+    public void setDirection(Point3D direction) {
         this.direction = direction;
     }
 

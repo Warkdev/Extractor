@@ -15,40 +15,39 @@
  */
 package eu.jangos.extractor.file.common;
 
-import com.sun.javafx.geom.Vec3f;
 import java.nio.ByteBuffer;
+import javafx.geometry.Point3D;
 
 /**
  * An axis aligned box described by the minimum and maximum point.
  * @author Warkdev
  */
 public class CAaBox {
-    private Vec3f min;
-    private Vec3f max;
+    private Point3D min;
+    private Point3D max;
 
     public CAaBox() {
-        this.min = new Vec3f();
-        this.max = new Vec3f();
+        
     }
 
-    public Vec3f getMin() {
+    public Point3D getMin() {
         return min;
     }
 
-    public void setMin(Vec3f min) {
+    public void setMin(Point3D min) {
         this.min = min;
     }
 
-    public Vec3f getMax() {
+    public Point3D getMax() {
         return max;
     }
 
-    public void setMax(Vec3f max) {
+    public void setMax(Point3D max) {
         this.max = max;
     }        
     
     public void read(ByteBuffer data) {
-        this.min.set(data.getFloat(), data.getFloat(), data.getFloat());
-        this.max.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
+        this.max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
     }
 }
