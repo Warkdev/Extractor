@@ -15,9 +15,8 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
-import com.sun.javafx.geom.Vec3f;
-import eu.jangos.extractor.file.common.CAaBox;
 import java.nio.ByteBuffer;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Point3D;
 
 /**
@@ -30,22 +29,24 @@ public class MODF {
     private int uniqueId;
     private Point3D position;
     private Point3D orientation;
-    private CAaBox boundingBox = new CAaBox();        
+    private BoundingBox boundingBox; 
     private short flags;
     private short doodadSet;
     private short nameSet;
     private short padding;
 
-    public void read(ByteBuffer in) {
-        this.mwidEntry = in.getInt();
-        this.uniqueId = in.getInt();
-        this.position = new Point3D(in.getFloat(), in.getFloat(), in.getFloat());        
-        this.orientation = new Point3D(in.getFloat(), in.getFloat(), in.getFloat());                
-        this.boundingBox.read(in);
-        this.flags = in.getShort();
-        this.doodadSet = in.getShort();
-        this.nameSet = in.getShort();
-        this.padding = in.getShort();
+    public void read(ByteBuffer data) {
+        this.mwidEntry = data.getInt();
+        this.uniqueId = data.getInt();
+        this.position = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());        
+        this.orientation = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());                
+        Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
+        Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
+        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
+        this.flags = data.getShort();
+        this.doodadSet = data.getShort();
+        this.nameSet = data.getShort();
+        this.padding = data.getShort();
     }
     
     public int getMwidEntry() {
@@ -80,13 +81,13 @@ public class MODF {
         this.orientation = orientation;
     }
 
-    public CAaBox getBoundingBox() {
+    public BoundingBox getBoundingBox() {
         return boundingBox;
     }
 
-    public void setBoundingBox(CAaBox boundingBox) {
+    public void setBoundingBox(BoundingBox boundingBox) {
         this.boundingBox = boundingBox;
-    }
+    }    
     
     public short getFlags() {
         return flags;

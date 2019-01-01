@@ -17,7 +17,6 @@ package eu.jangos.extractor.file.impl;
 
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.FileReader;
-import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.M2Exception;
 import eu.jangos.extractor.file.exception.MPQException;
@@ -50,6 +49,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Point3D;
 import javafx.scene.layout.Pane;
 import org.apache.commons.lang3.ArrayUtils;
@@ -93,9 +93,9 @@ public class M2 extends FileReader {
     private M2Array<Short> texUnitLookupTable;
     private M2Array<Short> transparencyLookupTable;
     private M2Array<Short> textureTransformsLookupTable;
-    private CAaBox boundingBox;
+    private BoundingBox boundingBox;
     private float boundingSphereRadius;
-    private CAaBox collisionBox;
+    private BoundingBox collisionBox;
     private float collisionSphereRadius;
     private M2Array<Short> collisionTriangles;
     private M2Array<Vec3f> collisionVertices;
@@ -140,10 +140,8 @@ public class M2 extends FileReader {
         this.textureLookupTable = new M2Array<>();
         this.texUnitLookupTable = new M2Array<>();
         this.transparencyLookupTable = new M2Array<>();
-        this.textureTransformsLookupTable = new M2Array<>();
-        this.boundingBox = new CAaBox();
-        this.boundingSphereRadius = 0;
-        this.collisionBox = new CAaBox();
+        this.textureTransformsLookupTable = new M2Array<>();        
+        this.boundingSphereRadius = 0;        
         this.collisionSphereRadius = 0;
         this.collisionTriangles = new M2Array<>();
         this.collisionVertices = new M2Array<>();
@@ -218,9 +216,13 @@ public class M2 extends FileReader {
         this.texUnitLookupTable.read(super.data);
         this.transparencyLookupTable.read(super.data);
         this.textureTransformsLookupTable.read(super.data);
-        this.boundingBox.read(super.data);
+        Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
+        Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
+        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.boundingSphereRadius = super.data.getFloat();
-        this.collisionBox.read(super.data);
+        min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
+        max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
+        this.collisionBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.collisionSphereRadius = super.data.getFloat();
         this.collisionTriangles.read(super.data);
         this.collisionVertices.read(super.data);
@@ -327,6 +329,22 @@ public class M2 extends FileReader {
         return listTextureLookup;
     }
 
+    public BoundingBox getBoundingBox() {
+        return boundingBox;
+    }
+
+    public void setBoundingBox(BoundingBox boundingBox) {
+        this.boundingBox = boundingBox;
+    }
+
+    public BoundingBox getCollisionBox() {
+        return collisionBox;
+    }
+
+    public void setCollisionBox(BoundingBox collisionBox) {
+        this.collisionBox = collisionBox;
+    }
+        
     private void clear() {
         this.listVertices.clear();
         this.listSkinProfiles.clear();
@@ -343,6 +361,8 @@ public class M2 extends FileReader {
     public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException, FileReaderException {
         switch (renderType) {
             case MODEL:
+                return renderModel();
+            case COLLISION_MODEL:
                 return renderCollisionModel();
             default:
                 throw new UnsupportedOperationException("This render type is not supported for models");
@@ -409,30 +429,7 @@ public class M2 extends FileReader {
             if (getVertices().isEmpty()) {
                 logger.debug("[Model: "+this.filename+" cannot be rendered, it doesn't have vertex.");
                 throw new ModelRendererException("The model cannot be rendered as it doesn't have any vertex");
-            }
-
-            float minX = 0;
-            float maxX = 0;
-            float minY = 0;
-            float maxY = 0;
-            if (cut) {
-                for (M2Vertex v : getVertices()) {
-                    if (v.getPosition().z <= maxHeight && v.getPosition().z > maxHeight / 3 * 2) {
-                        if (v.getPosition().x > maxX) {
-                            maxX = v.getPosition().x;
-                        }
-                        if (v.getPosition().x < minX) {
-                            minX = v.getPosition().x;
-                        }
-                        if (v.getPosition().y > maxY) {
-                            maxY = v.getPosition().y;
-                        }
-                        if (v.getPosition().y < minY) {
-                            minY = v.getPosition().y;
-                        }
-                    }
-                }
-            }
+            }            
 
             for (M2Vertex v : getVertices()) {
                 shapeMesh.getPoints().addAll(v.getPosition().x, v.getPosition().y, v.getPosition().z);

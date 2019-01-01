@@ -15,24 +15,24 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import eu.jangos.extractor.file.common.CAaBox;
+import javafx.geometry.BoundingBox;
 
 /**
  *
  * @author Warkdev
  */
 public class M2Bounds {
-    private CAaBox extend;
+    private BoundingBox extend;
     private float radius;
 
     public M2Bounds() {
     }
 
-    public CAaBox getExtend() {
+    public BoundingBox getExtend() {
         return extend;
     }
 
-    public void setExtend(CAaBox extend) {
+    public void setExtend(BoundingBox extend) {
         this.extend = extend;
     }
 

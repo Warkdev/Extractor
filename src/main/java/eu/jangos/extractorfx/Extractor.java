@@ -106,7 +106,9 @@ public class Extractor extends Application {
                 try {
                     adt.init(manager, map);
                     adt.setAddModels(true);
+                    adt.setyUp(true);
                     adt.setAddWMO(true);
+                    adt.setNavigationOptimized(true);
                     if (adt.save3D("D:\\Downloads\\Test\\terrain.obj", FileType3D.OBJ, Render3DType.TERRAIN, false)) {
                         logger.info("File saved!");
                     } else {

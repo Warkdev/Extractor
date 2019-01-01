@@ -18,7 +18,6 @@ package eu.jangos.extractor.file.impl;
 import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.common.C4Plane;
-import eu.jangos.extractor.file.common.CAaBox;
 import eu.jangos.extractor.file.common.CArgb;
 import eu.jangos.extractor.file.common.MapUnit;
 import eu.jangos.extractor.file.exception.FileReaderException;
@@ -49,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -131,7 +131,7 @@ public class WMO extends FileReader {
      * Foreign key to WMOAreaTAble.dbc.
      */
     private int wmoAreaTableID;
-    private CAaBox boundingBox = new CAaBox();
+    private BoundingBox boundingBox;
     private short flags;
     private short numLod;
 
@@ -238,8 +238,9 @@ public class WMO extends FileReader {
         this.ambColor.setB(super.data.get());
         this.ambColor.setA(super.data.get());
         this.wmoAreaTableID = super.data.getInt();
-        this.boundingBox.setMin(new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
-        this.boundingBox.setMax(new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
+        Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
+        Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
+        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.flags = super.data.getShort();
         this.numLod = super.data.getShort();
 
@@ -536,11 +537,11 @@ public class WMO extends FileReader {
         this.wmoAreaTableID = wmoAreaTableID;
     }
 
-    public CAaBox getBoundingBox() {
+    public BoundingBox getBoundingBox() {
         return boundingBox;
     }
 
-    public void setBoundingBox(CAaBox boundingBox) {
+    public void setBoundingBox(BoundingBox boundingBox) {
         this.boundingBox = boundingBox;
     }
 
@@ -762,10 +763,10 @@ public class WMO extends FileReader {
         
         Group liquid = new Group();
         Rectangle rect = new Rectangle();
-        double heightRoot = this.boundingBox.getMax().getY() - this.boundingBox.getMin().getY();
-        double widthRoot = this.boundingBox.getMax().getX() - this.boundingBox.getMin().getX();
-        rect.setX(this.boundingBox.getMin().getX());
-        rect.setY(-this.boundingBox.getMin().getY() - heightRoot);
+        double heightRoot = this.boundingBox.getHeight();
+        double widthRoot = this.boundingBox.getWidth();
+        rect.setX(this.boundingBox.getMinX());
+        rect.setY(-this.boundingBox.getMinY() - heightRoot);
         rect.setWidth(widthRoot);
         rect.setHeight(heightRoot);
         rect.setFill(Color.TRANSPARENT);
@@ -778,11 +779,11 @@ public class WMO extends FileReader {
         for (WMOGroup group : this.wmoGroupList) {
             StackPane stackPane = new StackPane();
             Rectangle r = new Rectangle();
-            double height = group.getGroup().getBoundingBox().getMax().getY() - group.getGroup().getBoundingBox().getMin().getY();
-            double width = group.getGroup().getBoundingBox().getMax().getX() - group.getGroup().getBoundingBox().getMin().getX();
+            double height = group.getGroup().getBoundingBox().getHeight();
+            double width = group.getGroup().getBoundingBox().getWidth();
 
-            r.setX(group.getGroup().getBoundingBox().getMin().getX());
-            r.setY(-group.getGroup().getBoundingBox().getMin().getY() - height);
+            r.setX(group.getGroup().getBoundingBox().getMinX());
+            r.setY(-group.getGroup().getBoundingBox().getMinY() - height);
             r.setWidth(width);
             r.setHeight(height);
             r.setFill(Color.TRANSPARENT);
@@ -882,7 +883,8 @@ public class WMO extends FileReader {
             case LIQUID:
                 return renderLiquid();
             case MODEL:
-                return renderModel(cache);
+            case COLLISION_MODEL:
+                return renderModel(type, cache);            
             default:
                 throw new UnsupportedOperationException("The type method is not supported on this object.");
         }
@@ -936,7 +938,7 @@ public class WMO extends FileReader {
         return this.liquidMesh;
     }
     
-    private PolygonMesh renderModel(Map<String, M2> cache) throws ModelRendererException, MPQException {
+    private PolygonMesh renderModel(Render3DType type, Map<String, M2> cache) throws ModelRendererException, MPQException {
         if (this.init == false) {
             logger.error("This WMO has not been initialized !");
             throw new ModelRendererException("This WMO has not been initialized !");
@@ -1002,7 +1004,7 @@ public class WMO extends FileReader {
                         } else {
                             model = new M2();                            
                             model.init(manager, modelFile);
-                            model.render3D(Render3DType.MODEL, null);
+                            model.render3D(type, null);
                             cache.put(modelFile, model);
                         }
 

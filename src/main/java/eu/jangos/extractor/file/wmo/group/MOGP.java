@@ -15,10 +15,9 @@
  */
 package eu.jangos.extractor.file.wmo.group;
 
-import com.sun.javafx.geom.Vec3f;
-import eu.jangos.extractor.file.common.CAaBox;
 import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Point3D;
 
 /**
@@ -30,8 +29,8 @@ public class MOGP {
     
     private int groupName;
     private int descriptiveGroupName;
-    private int flags;
-    private CAaBox boundingBox = new CAaBox();
+    private int flags;    
+    private BoundingBox boundingBox;
     private short portalStart;
     private short portalCount;
     private short transBatchCount;
@@ -46,8 +45,9 @@ public class MOGP {
         this.groupName = data.getInt();
         this.descriptiveGroupName = data.getInt();
         this.flags = data.getInt();
-        this.boundingBox.setMin(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
-        this.boundingBox.setMax(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
+        Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
+        Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
+        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.portalStart = data.getShort();
         this.portalCount = data.getShort();
         this.transBatchCount = data.getShort();
@@ -86,8 +86,12 @@ public class MOGP {
         this.flags = flags;
     }
 
-    public CAaBox getBoundingBox() {
+    public BoundingBox getBoundingBox() {
         return boundingBox;
+    }
+
+    public void setBoundingBox(BoundingBox boundingBox) {
+        this.boundingBox = boundingBox;
     }
 
     public short getPortalStart() {
@@ -104,11 +108,7 @@ public class MOGP {
 
     public void setPortalCount(short portalCount) {
         this.portalCount = portalCount;
-    }
-        
-    public void setBoundingBox(CAaBox boundingBox) {
-        this.boundingBox = boundingBox;
-    }
+    }       
 
     public short getTransBatchCount() {
         return transBatchCount;

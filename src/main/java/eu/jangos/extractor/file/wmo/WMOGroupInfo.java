@@ -15,9 +15,8 @@
  */
 package eu.jangos.extractor.file.wmo;
 
-import com.sun.javafx.geom.Vec3f;
-import eu.jangos.extractor.file.common.CAaBox;
 import java.nio.ByteBuffer;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Point3D;
 
 /**
@@ -26,13 +25,14 @@ import javafx.geometry.Point3D;
  */
 public class WMOGroupInfo {
     private int flags;
-    private CAaBox boundingBox = new CAaBox();
+    private BoundingBox boundingBox;    
     private int nameOffset;
 
     public void read(ByteBuffer data) {
         this.flags = data.getInt();
-        this.boundingBox.setMin(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
-        this.boundingBox.setMax(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
+        Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
+        Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
+        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.nameOffset = data.getInt();
     }
     
@@ -44,13 +44,13 @@ public class WMOGroupInfo {
         this.flags = flags;
     }
 
-    public CAaBox getBoundingBox() {
+    public BoundingBox getBoundingBox() {
         return boundingBox;
     }
 
-    public void setBoundingBox(CAaBox boundingBox) {
+    public void setBoundingBox(BoundingBox boundingBox) {
         this.boundingBox = boundingBox;
-    }
+    }    
 
     public int getNameOffset() {
         return nameOffset;
