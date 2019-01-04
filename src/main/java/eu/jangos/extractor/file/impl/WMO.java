@@ -240,7 +240,7 @@ public class WMO extends FileReader {
         this.wmoAreaTableID = super.data.getInt();
         Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
-        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
+        this.boundingBox = new BoundingBox(max.getX(), max.getY(), max.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.flags = super.data.getShort();
         this.numLod = super.data.getShort();
 
@@ -963,11 +963,11 @@ public class WMO extends FileReader {
                 int[][] faces = new int[wmoGroup.getIndexList().size()/3][6];                       
                 for (int face = 0, idx = 0; face < wmoGroup.getIndexList().size(); face += 3, idx++) {                    
                     faces[idx][0] = wmoGroup.getIndexList().get(face) + offsetVertices;                    
-                    faces[idx][1] = wmoGroup.getIndexList().get(face) + offsetVertices;                                        
-                    faces[idx][2] = wmoGroup.getIndexList().get(face + 2) + offsetVertices;
-                    faces[idx][3] = wmoGroup.getIndexList().get(face + 2) + offsetVertices;                    
-                    faces[idx][4] = wmoGroup.getIndexList().get(face + 1) + offsetVertices;                    
-                    faces[idx][5] = wmoGroup.getIndexList().get(face + 1) + offsetVertices;                                    
+                    faces[idx][1] = wmoGroup.getIndexList().get(face) + offsetVertices;                                                            
+                    faces[idx][2] = wmoGroup.getIndexList().get(face + 1) + offsetVertices;                    
+                    faces[idx][3] = wmoGroup.getIndexList().get(face + 1) + offsetVertices;                                    
+                    faces[idx][4] = wmoGroup.getIndexList().get(face + 2) + offsetVertices;
+                    faces[idx][5] = wmoGroup.getIndexList().get(face + 2) + offsetVertices;                    
                     shapeMesh.getFaceSmoothingGroups().addAll(0);                    
                 }                        
                 shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);                
@@ -975,7 +975,7 @@ public class WMO extends FileReader {
                 int idx = 0;
                 for (Vec3f v : wmoGroup.getVertexList()) {
                     shapeMesh.getPoints().addAll(v.x, v.y, v.z);
-                    //shapeMesh.getNormals().addAll(wmoGroup.getNormalList().get(idx).x, wmoGroup.getNormalList().get(idx).y, wmoGroup.getNormalList().get(idx).z);
+                    shapeMesh.getNormals().addAll(wmoGroup.getNormalList().get(idx).x, wmoGroup.getNormalList().get(idx).y, wmoGroup.getNormalList().get(idx).z);
                     shapeMesh.getTexCoords().addAll(wmoGroup.getTextureVertexList().get(idx).x, wmoGroup.getTextureVertexList().get(idx).y);
                     idx++;
                     offsetVertices++;
@@ -1001,6 +1001,7 @@ public class WMO extends FileReader {
                         // First, check if the M2 is in cache. Must be much faster than parsing it again and again.
                         if (cache.containsKey(modelFile)) {
                             model = cache.get(modelFile);
+                            model.render3D(type, null);
                         } else {
                             model = new M2();                            
                             model.init(manager, modelFile);
@@ -1008,6 +1009,11 @@ public class WMO extends FileReader {
                             cache.put(modelFile, model);
                         }
 
+                        if (model.getShapeMesh().faces == null) {
+                            // Empty collision mesh. It can happen.
+                            continue;
+                        }
+                        
                         // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
                         // First, we create a view to apply these transformations.
                         clearView();
@@ -1022,7 +1028,7 @@ public class WMO extends FileReader {
                         Scale scale = new Scale(modelInstance.getScale(), modelInstance.getScale(), modelInstance.getScale());
 
                         // We add all transformations to the view and we get back the transformation matrix.
-                        view.getTransforms().addAll(translate, rotate, scale);
+                        view.getTransforms().addAll(translate, rotate, scale);                        
                         Transform concat = view.getLocalToSceneTransform();
 
                         // We apply the transformation matrix to all points of the mesh.
@@ -1033,11 +1039,17 @@ public class WMO extends FileReader {
                             temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
                         }
 
+                        for (int i = 0; i < model.getShapeMesh().getNormals().size(); i += 3) {
+                            Point3D normal = new Point3D(model.getShapeMesh().getNormals().get(i), model.getShapeMesh().getNormals().get(i + 1), model.getShapeMesh().getNormals().get(i + 2));
+                            normal = concat.transform(normal);
+                            temp.getNormals().addAll((float) normal.getX(), (float) normal.getY(), (float) normal.getZ());
+                        }
+                        
                         int offset = shapeMesh.getPoints().size() / 3;
 
                         // Then, we add the converted model mesh to the WMO mesh.
                         this.shapeMesh.getPoints().addAll(temp.getPoints());
-                        //this.mesh.getNormals().addAll(converter.mesh.getNormals());
+                        this.shapeMesh.getNormals().addAll(temp.getNormals());
                         this.shapeMesh.getTexCoords().addAll(model.getShapeMesh().getTexCoords());
                         this.shapeMesh.getFaceSmoothingGroups().addAll(model.getShapeMesh().getFaceSmoothingGroups());
 

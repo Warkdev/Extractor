@@ -112,7 +112,8 @@ public class M2 extends FileReader {
     private List<M2Vertex> listVertices;
     private List<M2SkinProfile> listSkinProfiles;
     private List<Point3D> listCollisionVertices;
-    private List<Short> listCollisionTriangles;
+    private List<Point3D> listCollisionNormals;
+    private List<Short> listCollisionTriangles;    
 
     // Render variables.
     private boolean cut = false;
@@ -161,6 +162,7 @@ public class M2 extends FileReader {
         this.listSkinProfiles = new ArrayList<>();
         this.listCollisionVertices = new ArrayList<>();
         this.listCollisionTriangles = new ArrayList<>();
+        this.listCollisionNormals = new ArrayList<>();
     }
 
     public void init(MPQManager manager, String filename) throws IOException, FileReaderException, MPQException {
@@ -218,10 +220,10 @@ public class M2 extends FileReader {
         this.textureTransformsLookupTable.read(super.data);
         Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
-        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
+        this.boundingBox = new BoundingBox(max.getX(), max.getY(), max.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.boundingSphereRadius = super.data.getFloat();
-        min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
-        max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
+        max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
+        min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
         this.collisionBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.collisionSphereRadius = super.data.getFloat();
         this.collisionTriangles.read(super.data);
@@ -276,6 +278,24 @@ public class M2 extends FileReader {
         }
 
         return this.listCollisionVertices;
+    }
+    
+    public List<Point3D> getCollisionNormals() throws M2Exception {
+        if (!init) {
+            throw new M2Exception("M2 file has not been initialized, please use init(data) function to initialize your M2 file !");
+        }
+
+        // Prefer to use cached objects as they will be re-used many times.
+        if (this.listCollisionNormals.size() > 0) {
+            return this.listCollisionNormals;
+        }        
+
+        super.data.position(this.collisionNormals.getOffset());
+        for (int i = 0; i < this.collisionNormals.getSize(); i++) {
+            this.listCollisionNormals.add(new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat()));
+        }
+
+        return this.listCollisionNormals;
     }
     
     public List<Short> getCollisionTriangles() throws M2Exception {
@@ -349,6 +369,7 @@ public class M2 extends FileReader {
         this.listVertices.clear();
         this.listSkinProfiles.clear();
         this.listCollisionVertices.clear();
+        this.listCollisionNormals.clear();
         this.listCollisionTriangles.clear();
     }
 
@@ -378,27 +399,29 @@ public class M2 extends FileReader {
 
         try {
             // The model doesn't have any vertice.
-            if (getCollisionVertices().isEmpty()) {                
-                logger.debug("[Model: "+this.filename+" cannot be rendered, it doesn't have vertex.");
+            if (getCollisionVertices().isEmpty()) {                                
                 return this.shapeMesh;
             }            
 
             for (Point3D point : getCollisionVertices()) {
-                shapeMesh.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
-                //mesh.getNormals().addAll(v.getNormal().x, v.getNormal().y, v.getNormal().z);
+                shapeMesh.getPoints().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());                
                 //shapeMesh.getTexCoords().addAll(v.getTexCoords()[0].x, v.getTexCoords()[0].y);
+            }
+            
+            for (Point3D point : getCollisionNormals()) {
+                shapeMesh.getNormals().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());
             }
             
             List<Short> listIndices = getCollisionTriangles();
             int faces[][] = new int[this.listCollisionTriangles.size() / 3][6];
             int idx = 0;
             for (int face = 0; face < listIndices.size(); face += 3) {
-                faces[idx][0] = listIndices.get(face + 2);
-                faces[idx][1] = listIndices.get(face + 2);
-                faces[idx][2] = listIndices.get(face + 1);
+                faces[idx][5] = listIndices.get(face + 2);
+                faces[idx][4] = listIndices.get(face + 2);
                 faces[idx][3] = listIndices.get(face + 1);
-                faces[idx][4] = listIndices.get(face);
-                faces[idx][5] = listIndices.get(face);
+                faces[idx][2] = listIndices.get(face + 1);
+                faces[idx][1] = listIndices.get(face);
+                faces[idx][0] = listIndices.get(face);
                 idx++;
                 
                 shapeMesh.getFaceSmoothingGroups().addAll(0);
@@ -432,8 +455,8 @@ public class M2 extends FileReader {
             }            
 
             for (M2Vertex v : getVertices()) {
-                shapeMesh.getPoints().addAll(v.getPosition().x, v.getPosition().y, v.getPosition().z);
-                //mesh.getNormals().addAll(v.getNormal().x, v.getNormal().y, v.getNormal().z);
+                shapeMesh.getPoints().addAll(v.getPosition().y, v.getPosition().z, v.getPosition().x);
+                shapeMesh.getNormals().addAll(v.getNormal().y, v.getNormal().z, v.getNormal().x);
                 shapeMesh.getTexCoords().addAll(v.getTexCoords()[0].x, v.getTexCoords()[0].y);
             }
 
@@ -445,12 +468,12 @@ public class M2 extends FileReader {
                 // Adding the faces counter clock-wise.
                 int[][] faces = new int[listSkinSections.get(i).getIndexCount() / 3][6];
                 for (int face = listSkinSections.get(i).getIndexStart(), idx = 0; face < listSkinSections.get(i).getIndexStart() + listSkinSections.get(i).getIndexCount(); face += 3, idx++) {
-                    faces[idx][0] = listIndices.get(face + 2);
-                    faces[idx][1] = listIndices.get(face + 2);
-                    faces[idx][2] = listIndices.get(face + 1);
+                    faces[idx][5] = listIndices.get(face + 2);
+                    faces[idx][4] = listIndices.get(face + 2);
                     faces[idx][3] = listIndices.get(face + 1);
-                    faces[idx][4] = listIndices.get(face);
-                    faces[idx][5] = listIndices.get(face);
+                    faces[idx][2] = listIndices.get(face + 1);
+                    faces[idx][1] = listIndices.get(face);
+                    faces[idx][0] = listIndices.get(face);
 
                     shapeMesh.getFaceSmoothingGroups().addAll(0);
                 }

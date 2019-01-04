@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import javafx.geometry.BoundingBox;
+import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
@@ -105,13 +106,10 @@ public class ADT extends FileReader {
     private int offsetMH2O;
     private int offsetMTFX;
 
-    private BoundingBox boundingBox;
-    
     // Conditions & parameters for rendering.
     private boolean addModels = false;
     private boolean addWMO = false;
-    private boolean yUp = false;
-    private boolean navigationOptimized = false;
+    private boolean yUp = false;    
 
     private float maxHeight;
     private float minHeight;
@@ -358,14 +356,6 @@ public class ADT extends FileReader {
         this.minHeight = minHeight;
     }
 
-    public boolean isNavigationOptimized() {
-        return navigationOptimized;
-    }
-
-    public void setNavigationOptimized(boolean navigationOptimized) {
-        this.navigationOptimized = navigationOptimized;
-    }
-
     public Vec2f getLiquidMapBounds() throws FileReaderException {
         Vec2f heightBounds = new Vec2f(-Float.MAX_VALUE, Float.MAX_VALUE);
         Vec2f heightChunkBounds;
@@ -425,17 +415,20 @@ public class ADT extends FileReader {
                 return renderLiquid();
             case TERRAIN:
                 return renderTerrain(cache);
+            case COLLISION_TERRAIN:
+                return renderCollisionTerrain(cache);
             default:
                 throw new UnsupportedOperationException("The type method is not supported on this object.");
         }
     }
 
     private PolygonMesh renderLiquid() {
+        clearLiquidMesh();
         return liquidMesh;
     }
 
-    private PolygonMesh renderTerrain(Map<String, M2> cache) throws FileReaderException, ModelRendererException, MPQException {
-        clearMesh();
+    private PolygonMesh renderCollisionTerrain(Map<String, M2> cache) throws FileReaderException, ModelRendererException, MPQException {
+        clearShapeMesh();
 
         if (cache == null) {
             logger.info("Cache entry is null, creating a temporary empty cache.");
@@ -453,35 +446,347 @@ public class ADT extends FileReader {
 
         float initialChunkX = (float) mapChunks.get(0).getPosition().getX();
         float initialChunkY = (float) mapChunks.get(0).getPosition().getY();
+        float minX = Float.MAX_VALUE;
+        float minY = Float.MAX_VALUE;
+        float minZ = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE;
+        float maxY = -Float.MAX_VALUE;
+        float maxZ = -Float.MAX_VALUE;
+        BoundingBox boundingBox = null;
 
         for (MCNK chunk : mapChunks) {
             int offset = shapeMesh.getPoints().size() / 3;
 
-            if (navigationOptimized) {
-
-                // Adding doodad indices.
-                if (addModels) {
-                    for (int i = 0; i < chunk.getnDoodadRefs(); i++) {
-                        if (!collisionDoodadList.contains(chunk.getMcrfList().get(i))) {
-                            collisionDoodadList.add(chunk.getMcrfList().get(i));
-                        }
+            for (int i = 0, idx = 0; i < 17; i++) {
+                for (int j = 0; j < (((i % 2) != 0) ? 8 : 9); j++, idx++) {
+                    // Calculating Normals.                    
+                    this.shapeMesh.getNormals().addAll((float) chunk.getNormals().getPoints()[idx].getX() / 127.0f, (float) chunk.getNormals().getPoints()[idx].getY() / 127.0f, (float) chunk.getNormals().getPoints()[idx].getZ() / 127.0f);
+                    float x, y, z;
+                    // Calculating Positions.                    
+                    x = (float) chunk.getPosition().getX() - (i * MapUnit.UNIT_SIZE * 0.5f);
+                    y = (float) chunk.getPosition().getY() - (j * MapUnit.UNIT_SIZE);
+                    z = (float) (chunk.getVertices().getPoints()[idx] + chunk.getPosition().getZ());
+                    if ((i % 2) != 0) {
+                        y -= 0.5f * MapUnit.UNIT_SIZE;
                     }
+                    this.shapeMesh.getPoints().addAll(y, z, x);
+
+                    if (x < minX) {
+                        minX = x;
+                    } else if (x > maxX) {
+                        maxX = x;
+                    }
+
+                    if (y < minY) {
+                        minY = y;
+                    } else if (y > maxY) {
+                        maxY = y;
+                    }
+
+                    if (z < minZ) {
+                        minZ = z;
+                    } else if (z > maxZ) {
+                        maxZ = z;
+                    }
+
+                    // Calculating TexCoord in high resolution.
+                    x = (float) ((chunk.getPosition().getX() - initialChunkX) * (-1)) / MapUnit.CHUNK_SIZE;
+                    y = (float) (chunk.getPosition().getY() - initialChunkY) * (-1) / MapUnit.CHUNK_SIZE;
+                    this.shapeMesh.getTexCoords().addAll(x, y);
+                }
+            }
+
+            // We allocate the maximum amount of faces.
+            int[][] faces = new int[256][6];
+            int idx = 0;
+            for (int j = 9, x = 0, y = 0; j < 145; j++, x++) {
+                if (x >= 8) {
+                    x = 0;
+                    y++;
                 }
 
-                // Adding WMO indices.
-                if (addWMO) {
-                    for (int i = 0; i < chunk.getnMapObjRefs(); i++) {
-                        if (!collisionWMOList.contains(chunk.getMcrfList().get(chunk.getnDoodadRefs() + i))) {
-                            collisionWMOList.add(chunk.getMcrfList().get(chunk.getnDoodadRefs() + i));
-                        }
+                if (!chunk.isHole(x, y)) {
+                    // Adding triangles                                        
+                    // Face 1.
+                    faces[idx][5] = offset + j + 8;
+                    faces[idx][4] = offset + j + 8;
+                    faces[idx][3] = offset + j - 9;
+                    faces[idx][2] = offset + j - 9;
+                    faces[idx][1] = offset + j;
+                    faces[idx][0] = offset + j;
+
+                    idx++;
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);                                                                                
+
+                    // Face 2.
+                    faces[idx][5] = offset + j - 9;
+                    faces[idx][4] = offset + j - 9;
+                    faces[idx][3] = offset + j - 8;
+                    faces[idx][2] = offset + j - 8;
+                    faces[idx][1] = offset + j;
+                    faces[idx][0] = offset + j;
+
+                    idx++;
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);
+                    
+                    // Face 3.                    
+                    faces[idx][5] = offset + j - 8;
+                    faces[idx][4] = offset + j - 8;
+                    faces[idx][3] = offset + j + 9;
+                    faces[idx][2] = offset + j + 9;
+                    faces[idx][1] = offset + j;
+                    faces[idx][0] = offset + j;
+
+                    idx++;
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);                    
+                    
+                    //Face 4.
+                    faces[idx][5] = offset + j + 9;
+                    faces[idx][4] = offset + j + 9;
+                    faces[idx][3] = offset + j + 8;
+                    faces[idx][2] = offset + j + 8;
+                    faces[idx][1] = offset + j;
+                    faces[idx][0] = offset + j;
+
+                    idx++;
+                    shapeMesh.getFaceSmoothingGroups().addAll(0);
+                }
+
+                if ((j + 1) % (9 + 8) == 0) {
+                    j += 9;
+                }
+            }
+
+            // We include only faces for which we had record. Holes are not included in here.
+            shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, ArrayUtils.subarray(faces, 0, idx));
+
+            // Adding doodad indices.
+            if (addModels) {
+                for (int i = 0; i < chunk.getnDoodadRefs(); i++) {
+                    if (!collisionDoodadList.contains(chunk.getMcrfList().get(i))) {
+                        collisionDoodadList.add(chunk.getMcrfList().get(i));
                     }
                 }
             }
 
+            // Adding WMO indices.
+            if (addWMO) {
+                for (int i = 0; i < chunk.getnMapObjRefs(); i++) {
+                    if (!collisionWMOList.contains(chunk.getMcrfList().get(chunk.getnDoodadRefs() + i))) {
+                        collisionWMOList.add(chunk.getMcrfList().get(chunk.getnDoodadRefs() + i));
+                    }
+                }
+            }
+        }
+
+        boundingBox = new BoundingBox(minY, minZ, minX, maxY - minY, maxZ - minZ, maxX - minX);
+
+        if (addModels) {
+            M2 model;
+            // Now we add models.
+
+            List<MDDF> modelPlacementList = this.getDoodadPlacement();
+            MDDF modelPlacement;
+            for (int index : collisionDoodadList) {
+                modelPlacement = modelPlacementList.get(index);
+                // MDX model files are stored as M2 in the MPQ. God knows why.
+                String modelFile = FilenameUtils.removeExtension(getModels().get(modelPlacement.getMmidEntry())) + ".M2";
+                if (!manager.getMPQForFile(modelFile).hasFile(modelFile)) {
+                    logger.debug("Oooops, no MPQ found for this file: " + modelFile);
+                    continue;
+                }
+
+                try {
+                    // First, check if the M2 is in cache. Must be much faster than parsing it again and again.
+                    if (cache.containsKey(modelFile)) {
+                        model = cache.get(modelFile);
+                        model.render3D(Render3DType.COLLISION_MODEL, null);
+                    } else {
+                        model = new M2();
+                        model.init(manager, modelFile);
+                        model.render3D(Render3DType.COLLISION_MODEL, null);
+                        cache.put(modelFile, model);
+                    }
+
+                    if (model.getShapeMesh().faces == null) {
+                        // Empty collision mesh. It can happen.
+                        continue;
+                    }
+
+                    // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
+                    // First, we create a view to apply these transformations.
+                    clearView();
+
+                    // We translate the object location.                
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
+
+                    // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
+
+                    // We scale.
+                    double scaleFactor = modelPlacement.getScale() / 1024d;
+                    Scale scale = new Scale(scaleFactor, scaleFactor, scaleFactor);
+
+                    // We add all transformations to the view and we get back the transformation matrix.
+                    view.getTransforms().addAll(translate, rx, ry, rz, scale);
+                    Transform concat = view.getLocalToSceneTransform();
+
+                    Point3D upperLeft = new Point3D(model.getCollisionBox().getMinY(), model.getCollisionBox().getMinZ(), model.getCollisionBox().getMinX());
+                    upperLeft = concat.transform(upperLeft);
+                    BoundingBox modelBBox = new BoundingBox(upperLeft.getY(), upperLeft.getZ(), upperLeft.getX(), model.getCollisionBox().getWidth(), model.getCollisionBox().getHeight(), model.getCollisionBox().getDepth());
+                    if (!boundingBox.intersects(modelBBox) && !boundingBox.contains(modelBBox)) {
+                        continue;
+                    }
+
+                    // We apply the transformation matrix to all points of the mesh.
+                    PolygonMesh temp = new PolygonMesh();
+                    for (int i = 0; i < model.getShapeMesh().getPoints().size(); i += 3) {
+                        Point3D point = new Point3D(model.getShapeMesh().getPoints().get(i), model.getShapeMesh().getPoints().get(i + 1), model.getShapeMesh().getPoints().get(i + 2));                        
+                        point = concat.transform(point);                        
+                        temp.getPoints().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());                        
+                    }
+
+                    for (int i = 0; i < model.getShapeMesh().getNormals().size(); i += 3) {                        
+                        Point3D normal = new Point3D(model.getShapeMesh().getNormals().get(i), model.getShapeMesh().getNormals().get(i + 1), model.getShapeMesh().getNormals().get(i + 2));                        
+                        normal = concat.transform(normal);                        
+                        temp.getNormals().addAll((float) normal.getY(), (float) normal.getZ(), (float) normal.getX());
+                    }
+                    
+                    int offset = shapeMesh.getPoints().size() / 3;
+
+                    // Then, we add the converted model mesh to the WMO mesh.
+                    shapeMesh.getPoints().addAll(temp.getPoints());
+                    shapeMesh.getNormals().addAll(temp.getNormals());
+                    shapeMesh.getTexCoords().addAll(model.getShapeMesh().getTexCoords());
+                    shapeMesh.getFaceSmoothingGroups().addAll(model.getShapeMesh().getFaceSmoothingGroups());
+
+                    // And we recalculate the faces of the model mesh.
+                    int[][] faces = new int[model.getShapeMesh().faces.length][6];
+                    for (int i = 0; i < model.getShapeMesh().faces.length; i++) {
+                        for (int j = 0; j < model.getShapeMesh().faces[i].length; j++) {
+                            faces[i][j] = model.getShapeMesh().faces[i][j] + offset;
+                        }
+                    }
+                    shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
+                } catch (JMpqException | FileReaderException ex) {
+                    logger.error("An error occured while reading the MPQ when importing Models.");
+                } catch (IOException ex) {
+                    logger.error("An error occured while reading the MPQ when importing Models.");
+                }
+            }
+        }
+        if (addWMO) {
+            WMO wmo;
+            // Now we add wmo.        
+
+            List<MODF> modelPlacementList = this.getWorldObjectsPlacement();
+            MODF modelPlacement;
+            for (int index : collisionWMOList) {
+                modelPlacement = modelPlacementList.get(index);
+                String wmoFile = FilenameUtils.removeExtension(getWorldObjects().get(modelPlacement.getMwidEntry())) + ".WMO";
+                if (!manager.getMPQForFile(wmoFile).hasFile(wmoFile)) {
+                    logger.debug("Oooops, no MPQ found for this file: " + wmoFile);
+                    continue;
+                }
+
+                try {
+                    wmo = new WMO();
+                    wmo.init(manager, wmoFile);                    
+
+                    // Now, we have the vertices of this WMO, we need to rotate & position.                                                                                
+                    // First, we create a view to apply these transformations.
+                    clearView();
+
+                    // We translate the object location.                
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
+
+                    // We convert the euler angles to a Rotate object with euler angle and rotation ZXZ.                
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
+
+                    // We add all transformations to the view and we get back the transformation matrix.
+                    view.getTransforms().addAll(translate, rx, ry, rz);
+                    Transform concat = view.getLocalToSceneTransform();
+
+                    Point3D upperLeft = new Point3D(wmo.getBoundingBox().getMinY(), wmo.getBoundingBox().getMinZ(), wmo.getBoundingBox().getMinX());
+                    upperLeft = concat.transform(upperLeft);
+                    BoundingBox wmoBBox = new BoundingBox(upperLeft.getY(), upperLeft.getZ(), upperLeft.getX(), wmo.getBoundingBox().getWidth(), wmo.getBoundingBox().getHeight(), wmo.getBoundingBox().getDepth());                    
+                    if (!boundingBox.intersects(wmoBBox) && !boundingBox.contains(wmoBBox)) {
+                        continue;
+                    }
+
+                    // We add collidable models in WMO.
+                    wmo.setAddModels(true);
+                    wmo.render3D(Render3DType.COLLISION_MODEL, cache);
+
+                    // We apply the transformation matrix to all points of the mesh.
+                    TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
+                    for (int i = 0; i < wmo.getShapeMesh().getPoints().size(); i += 3) {
+                        Point3D point = new Point3D(wmo.getShapeMesh().getPoints().get(i), wmo.getShapeMesh().getPoints().get(i + 1), wmo.getShapeMesh().getPoints().get(i + 2));                        
+                        point = concat.transform(point);                        
+                        temp.getPoints().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());                        
+                    }
+
+                    for (int i = 0; i < wmo.getShapeMesh().getNormals().size(); i += 3) {                        
+                        Point3D normal = new Point3D(wmo.getShapeMesh().getNormals().get(i), wmo.getShapeMesh().getNormals().get(i + 1), wmo.getShapeMesh().getNormals().get(i + 2));                        
+                        normal = concat.transform(normal);                        
+                        temp.getNormals().addAll((float) normal.getY(), (float) normal.getZ(), (float) normal.getX());
+                    }
+                    
+                    int offset = shapeMesh.getPoints().size() / 3;
+
+                    // Then, we add the converted model mesh to the WMO mesh.
+                    shapeMesh.getPoints().addAll(temp.getPoints());
+                    shapeMesh.getNormals().addAll(temp.getNormals());
+                    shapeMesh.getTexCoords().addAll(wmo.getShapeMesh().getTexCoords());
+                    shapeMesh.getFaceSmoothingGroups().addAll(wmo.getShapeMesh().getFaceSmoothingGroups());
+
+                    // And we recalculate the faces of the model mesh.
+                    int[][] faces = new int[wmo.getShapeMesh().faces.length][6];
+                    for (int i = 0; i < wmo.getShapeMesh().faces.length; i++) {
+                        for (int j = 0; j < wmo.getShapeMesh().faces[i].length; j++) {
+                            faces[i][j] = wmo.getShapeMesh().faces[i][j] + offset;
+                        }
+                    }
+                    shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
+
+                } catch (JMpqException | FileReaderException ex) {
+                    logger.error("Error while reading MPQ to add WMO");
+                }
+            }
+        }        
+
+        return shapeMesh;
+    }
+
+    private PolygonMesh renderTerrain(Map<String, M2> cache) throws FileReaderException, ModelRendererException, MPQException {
+        clearMesh();
+
+        if (cache == null) {
+            logger.info("Cache entry is null, creating a temporary empty cache.");
+            cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        }
+
+        List<MCNK> mapChunks;
+        try {
+            mapChunks = getMapChunks();
+        } catch (ADTException exception) {
+            throw new ModelRendererException(exception.getMessage());
+        }
+
+        float initialChunkX = (float) mapChunks.get(0).getPosition().getX();
+        float initialChunkY = (float) mapChunks.get(0).getPosition().getY();
+
+        for (MCNK chunk : mapChunks) {
+            int offset = shapeMesh.getPoints().size() / 3;
+
             for (int i = 0, idx = 0; i < 17; i++) {
                 for (int j = 0; j < (((i % 2) != 0) ? 8 : 9); j++, idx++) {
                     // Calculating Normals.                    
-                    //this.mesh.getNormals().addAll(chunk.getNormals().getPoints()[idx].getX() / 127.0f, chunk.getNormals().getPoints()[idx].getY() / 127.0f, chunk.getNormals().getPoints()[idx].getZ() / 127.0f);
+                    this.shapeMesh.getNormals().addAll((float) chunk.getNormals().getPoints()[idx].getX() / 127.0f, (float) chunk.getNormals().getPoints()[idx].getY() / 127.0f, (float) chunk.getNormals().getPoints()[idx].getZ() / 127.0f);
                     float x, y, z;
                     // Calculating Positions.                    
                     x = (float) chunk.getPosition().getX() - (i * MapUnit.UNIT_SIZE * 0.5f);
@@ -491,6 +796,7 @@ public class ADT extends FileReader {
                         y -= 0.5f * MapUnit.UNIT_SIZE;
                     }
                     this.shapeMesh.getPoints().addAll(x, y, z);
+
                     // Calculating TexCoord in high resolution.
                     x = (float) ((chunk.getPosition().getX() - initialChunkX) * (-1)) / MapUnit.CHUNK_SIZE;
                     y = (float) (chunk.getPosition().getY() - initialChunkY) * (-1) / MapUnit.CHUNK_SIZE;
@@ -566,306 +872,144 @@ public class ADT extends FileReader {
         if (addModels) {
             M2 model;
             // Now we add models.
-            if (navigationOptimized) {
-                List<MDDF> modelPlacementList = this.getDoodadPlacement();
-                MDDF modelPlacement;
-                for (int index : collisionDoodadList) {
-                    modelPlacement = modelPlacementList.get(index);
-                    // MDX model files are stored as M2 in the MPQ. God knows why.
-                    String modelFile = FilenameUtils.removeExtension(getModels().get(modelPlacement.getMmidEntry())) + ".M2";
-                    if (!manager.getMPQForFile(modelFile).hasFile(modelFile)) {
-                        logger.debug("Oooops, no MPQ found for this file: " + modelFile);
-                        continue;
-                    }
 
-                    try {
-                        // First, check if the M2 is in cache. Must be much faster than parsing it again and again.
-                        if (cache.containsKey(modelFile)) {
-                            model = cache.get(modelFile);
-                            model.render3D(Render3DType.COLLISION_MODEL, null);
-                        } else {
-                            model = new M2();
-                            model.init(manager, modelFile);
-                            model.render3D(Render3DType.COLLISION_MODEL, null);
-                            cache.put(modelFile, model);
-                        }
-
-                        if (model.getShapeMesh().faces == null) {
-                            // Empty collision mesh. It can happen.
-                            continue;
-                        }
-
-                        // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
-                        // First, we create a view to apply these transformations.
-                        clearView();
-
-                        // We translate the object location.                
-                        Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
-
-                        // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                
-                        Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
-                        Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
-                        Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
-
-                        // We scale.
-                        double scaleFactor = modelPlacement.getScale() / 1024d;
-                        Scale scale = new Scale(scaleFactor, scaleFactor, scaleFactor);
-
-                        // We add all transformations to the view and we get back the transformation matrix.
-                        view.getTransforms().addAll(translate, rx, ry, rz, scale);
-                        Transform concat = view.getLocalToSceneTransform();
-
-                        // We apply the transformation matrix to all points of the mesh.
-                        PolygonMesh temp = new PolygonMesh();
-                        for (int i = 0; i < model.getShapeMesh().getPoints().size(); i += 3) {
-                            Point3D point = new Point3D(model.getShapeMesh().getPoints().get(i), model.getShapeMesh().getPoints().get(i + 1), model.getShapeMesh().getPoints().get(i + 2));
-                            point = concat.transform(point);
-                            temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
-                        }
-
-                        int offset = shapeMesh.getPoints().size() / 3;
-
-                        // Then, we add the converted model mesh to the WMO mesh.
-                        shapeMesh.getPoints().addAll(temp.getPoints());
-                        //this.mesh.getNormals().addAll(converter.mesh.getNormals());
-                        shapeMesh.getTexCoords().addAll(model.getShapeMesh().getTexCoords());
-                        shapeMesh.getFaceSmoothingGroups().addAll(model.getShapeMesh().getFaceSmoothingGroups());
-
-                        // And we recalculate the faces of the model mesh.
-                        int[][] faces = new int[model.getShapeMesh().faces.length][6];
-                        for (int i = 0; i < model.getShapeMesh().faces.length; i++) {
-                            for (int j = 0; j < model.getShapeMesh().faces[i].length; j++) {
-                                faces[i][j] = model.getShapeMesh().faces[i][j] + offset;
-                            }
-                        }
-                        shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
-                    } catch (JMpqException | FileReaderException ex) {
-                        logger.error("An error occured while reading the MPQ when importing Models.");
-                    } catch (IOException ex) {
-                        logger.error("An error occured while reading the MPQ when importing Models.");
-                    }
+            for (MDDF modelPlacement : this.getDoodadPlacement()) {
+                // MDX model files are stored as M2 in the MPQ. God knows why.
+                String modelFile = FilenameUtils.removeExtension(getModels().get(modelPlacement.getMmidEntry())) + ".M2";
+                if (!manager.getMPQForFile(modelFile).hasFile(modelFile)) {
+                    logger.debug("Oooops, no MPQ found for this file: " + modelFile);
+                    continue;
                 }
-            } else {
-                for (MDDF modelPlacement : this.getDoodadPlacement()) {
-                    // MDX model files are stored as M2 in the MPQ. God knows why.
-                    String modelFile = FilenameUtils.removeExtension(getModels().get(modelPlacement.getMmidEntry())) + ".M2";
-                    if (!manager.getMPQForFile(modelFile).hasFile(modelFile)) {
-                        logger.debug("Oooops, no MPQ found for this file: " + modelFile);
+
+                try {
+                    // First, check if the M2 is in cache. Must be much faster than parsing it again and again.
+                    if (cache.containsKey(modelFile)) {
+                        model = cache.get(modelFile);
+                        model.render3D(Render3DType.MODEL, null);
+                    } else {
+                        model = new M2();
+                        model.init(manager, modelFile);
+                        model.render3D(Render3DType.MODEL, null);
+                        cache.put(modelFile, model);
+                    }
+
+                    if (model.getShapeMesh().faces == null) {
+                        // Malformed or empty model.
+                        logger.error("Error with the rendering of the model.");
+                        logger.debug("[ADT: " + this.filename + " - [Model: " + model.getFilename() + "]]");
                         continue;
                     }
 
-                    try {
-                        // First, check if the M2 is in cache. Must be much faster than parsing it again and again.
-                        if (cache.containsKey(modelFile)) {
-                            model = cache.get(modelFile);
-                            model.render3D(Render3DType.MODEL, null);
-                        } else {
-                            model = new M2();
-                            model.init(manager, modelFile);
-                            model.render3D(Render3DType.MODEL, null);
-                            cache.put(modelFile, model);
-                        }
+                    // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
+                    // First, we create a view to apply these transformations.
+                    clearView();
 
-                        if (model.getShapeMesh().faces == null) {
-                            // Malformed or empty model.
-                            logger.error("Error with the rendering of the model.");
-                            logger.debug("[ADT: " + this.filename + " - [Model: " + model.getFilename() + "]]");
-                            continue;
-                        }
+                    // We translate the object location.                
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
 
-                        // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
-                        // First, we create a view to apply these transformations.
-                        clearView();
+                    // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
 
-                        // We translate the object location.                
-                        Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
+                    // We scale.
+                    double scaleFactor = modelPlacement.getScale() / 1024d;
+                    Scale scale = new Scale(scaleFactor, scaleFactor, scaleFactor);
 
-                        // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                
-                        Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
-                        Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
-                        Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
+                    // We add all transformations to the view and we get back the transformation matrix.
+                    view.getTransforms().addAll(translate, rx, ry, rz, scale);
+                    Transform concat = view.getLocalToSceneTransform();
 
-                        // We scale.
-                        double scaleFactor = modelPlacement.getScale() / 1024d;
-                        Scale scale = new Scale(scaleFactor, scaleFactor, scaleFactor);
-
-                        // We add all transformations to the view and we get back the transformation matrix.
-                        view.getTransforms().addAll(translate, rx, ry, rz, scale);
-                        Transform concat = view.getLocalToSceneTransform();
-
-                        // We apply the transformation matrix to all points of the mesh.
-                        PolygonMesh temp = new PolygonMesh();
-                        for (int i = 0; i < model.getShapeMesh().getPoints().size(); i += 3) {
-                            Point3D point = new Point3D(model.getShapeMesh().getPoints().get(i), model.getShapeMesh().getPoints().get(i + 1), model.getShapeMesh().getPoints().get(i + 2));
-                            point = concat.transform(point);
-                            temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
-                        }
-
-                        int offset = shapeMesh.getPoints().size() / 3;
-
-                        // Then, we add the converted model mesh to the WMO mesh.
-                        shapeMesh.getPoints().addAll(temp.getPoints());
-                        //this.mesh.getNormals().addAll(converter.mesh.getNormals());
-                        shapeMesh.getTexCoords().addAll(model.getShapeMesh().getTexCoords());
-                        shapeMesh.getFaceSmoothingGroups().addAll(model.getShapeMesh().getFaceSmoothingGroups());
-
-                        // And we recalculate the faces of the model mesh.
-                        int[][] faces = new int[model.getShapeMesh().faces.length][6];
-                        for (int i = 0; i < model.getShapeMesh().faces.length; i++) {
-                            for (int j = 0; j < model.getShapeMesh().faces[i].length; j++) {
-                                faces[i][j] = model.getShapeMesh().faces[i][j] + offset;
-                            }
-                        }
-                        shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
-                    } catch (JMpqException | FileReaderException ex) {
-                        logger.error("An error occured while reading the MPQ when importing Models.");
-                    } catch (IOException ex) {
-                        logger.error("An error occured while reading the MPQ when importing Models.");
+                    // We apply the transformation matrix to all points of the mesh.
+                    PolygonMesh temp = new PolygonMesh();
+                    for (int i = 0; i < model.getShapeMesh().getPoints().size(); i += 3) {
+                        Point3D point = new Point3D(model.getShapeMesh().getPoints().get(i), model.getShapeMesh().getPoints().get(i + 1), model.getShapeMesh().getPoints().get(i + 2));
+                        point = concat.transform(point);
+                        temp.getPoints().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());
                     }
+
+                    int offset = shapeMesh.getPoints().size() / 3;
+
+                    // Then, we add the converted model mesh to the WMO mesh.
+                    shapeMesh.getPoints().addAll(temp.getPoints());
+                    shapeMesh.getNormals().addAll(temp.getNormals());
+                    shapeMesh.getTexCoords().addAll(model.getShapeMesh().getTexCoords());
+                    shapeMesh.getFaceSmoothingGroups().addAll(model.getShapeMesh().getFaceSmoothingGroups());
+
+                    // And we recalculate the faces of the model mesh.
+                    int[][] faces = new int[model.getShapeMesh().faces.length][6];
+                    for (int i = 0; i < model.getShapeMesh().faces.length; i++) {
+                        for (int j = 0; j < model.getShapeMesh().faces[i].length; j++) {
+                            faces[i][j] = model.getShapeMesh().faces[i][j] + offset;
+                        }
+                    }
+                    shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
+                } catch (JMpqException | FileReaderException ex) {
+                    logger.error("An error occured while reading the MPQ when importing Models.");
+                } catch (IOException ex) {
+                    logger.error("An error occured while reading the MPQ when importing Models.");
                 }
             }
         }
         if (addWMO) {
             WMO wmo;
-            // Now we add wmo.        
-            if (navigationOptimized) {
-                List<MODF> modelPlacementList = this.getWorldObjectsPlacement();
-                MODF modelPlacement;
-                for (int index : collisionWMOList) {
-                    modelPlacement = modelPlacementList.get(index);
-                    String wmoFile = FilenameUtils.removeExtension(getWorldObjects().get(modelPlacement.getMwidEntry())) + ".WMO";
-                    if (!manager.getMPQForFile(wmoFile).hasFile(wmoFile)) {
-                        logger.debug("Oooops, no MPQ found for this file: " + wmoFile);
-                        continue;
-                    }                    
-                    
-                    try {
-                        wmo = new WMO();
-                        wmo.init(manager, wmoFile);
-                        wmo.render3D(Render3DType.COLLISION_MODEL, cache);                        
-                        
-                        // We add collidable models in WMO.
-                        wmo.setAddModels(true);
-                        
-                        // Now, we have the vertices of this WMO, we need to rotate & position.                                                                                
-                        // First, we create a view to apply these transformations.
-                        clearView();
-
-                        // We translate the object location.                
-                        Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
-
-                        // We convert the euler angles to a Rotate object with euler angle and rotation ZXZ.                
-                        Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
-                        Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
-                        Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
-
-                        // We add all transformations to the view and we get back the transformation matrix.
-                        view.getTransforms().addAll(translate, rx, ry, rz);
-                        Transform concat = view.getLocalToSceneTransform();
-
-                        // We apply the transformation matrix to all points of the mesh.
-                        TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
-                        for (int i = 0; i < wmo.getShapeMesh().getPoints().size(); i += 3) {
-                            Point3D point = new Point3D(wmo.getShapeMesh().getPoints().get(i), wmo.getShapeMesh().getPoints().get(i + 1), wmo.getShapeMesh().getPoints().get(i + 2));
-                            point = concat.transform(point);
-                            temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
-                        }
-
-                        int offset = shapeMesh.getPoints().size() / 3;
-
-                        // Then, we add the converted model mesh to the WMO mesh.
-                        shapeMesh.getPoints().addAll(temp.getPoints());
-                        //this.mesh.getNormals().addAll(converter.mesh.getNormals());
-                        shapeMesh.getTexCoords().addAll(wmo.getShapeMesh().getTexCoords());
-                        shapeMesh.getFaceSmoothingGroups().addAll(wmo.getShapeMesh().getFaceSmoothingGroups());
-
-                        // And we recalculate the faces of the model mesh.
-                        int[][] faces = new int[wmo.getShapeMesh().faces.length][6];
-                        for (int i = 0; i < wmo.getShapeMesh().faces.length; i++) {
-                            for (int j = 0; j < wmo.getShapeMesh().faces[i].length; j++) {
-                                faces[i][j] = wmo.getShapeMesh().faces[i][j] + offset;
-                            }
-                        }
-                        shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
-
-                    } catch (JMpqException | FileReaderException ex) {
-                        logger.error("Error while reading MPQ to add WMO");
-                    }
+            // Now we add wmo.                    
+            for (MODF modelPlacement : getWorldObjectsPlacement()) {
+                String wmoFile = FilenameUtils.removeExtension(getWorldObjects().get(modelPlacement.getMwidEntry())) + ".WMO";
+                if (!manager.getMPQForFile(wmoFile).hasFile(wmoFile)) {
+                    logger.debug("Oooops, no MPQ found for this file: " + wmoFile);
+                    continue;
                 }
-            } else {
-                for (MODF modelPlacement : getWorldObjectsPlacement()) {
-                    String wmoFile = FilenameUtils.removeExtension(getWorldObjects().get(modelPlacement.getMwidEntry())) + ".WMO";
-                    if (!manager.getMPQForFile(wmoFile).hasFile(wmoFile)) {
-                        logger.debug("Oooops, no MPQ found for this file: " + wmoFile);
-                        continue;
+
+                try {
+                    wmo = new WMO();
+                    wmo.init(manager, wmoFile);
+                    wmo.render3D(Render3DType.MODEL, cache);
+
+                    // Now, we have the vertices of this WMO, we need to rotate & position.                                                                                
+                    // First, we create a view to apply these transformations.
+                    clearView();
+
+                    // We translate the object location.                
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
+
+                    // We convert the euler angles to a Rotate object with euler angle and rotation ZXZ.                
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
+
+                    // We add all transformations to the view and we get back the transformation matrix.
+                    view.getTransforms().addAll(translate, rx, ry, rz);
+                    Transform concat = view.getLocalToSceneTransform();
+
+                    // We apply the transformation matrix to all points of the mesh.
+                    TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
+                    for (int i = 0; i < wmo.getShapeMesh().getPoints().size(); i += 3) {
+                        Point3D point = new Point3D(wmo.getShapeMesh().getPoints().get(i), wmo.getShapeMesh().getPoints().get(i + 1), wmo.getShapeMesh().getPoints().get(i + 2));
+                        point = concat.transform(point);
+                        temp.getPoints().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());
                     }
 
-                    try {
-                        wmo = new WMO();
-                        wmo.init(manager, wmoFile);
-                        wmo.render3D(Render3DType.MODEL, cache);
+                    int offset = shapeMesh.getPoints().size() / 3;
 
-                        // Now, we have the vertices of this WMO, we need to rotate & position.                                                                                
-                        // First, we create a view to apply these transformations.
-                        clearView();
+                    // Then, we add the converted model mesh to the WMO mesh.
+                    shapeMesh.getPoints().addAll(temp.getPoints());
+                    shapeMesh.getNormals().addAll(temp.getNormals());
+                    shapeMesh.getTexCoords().addAll(wmo.getShapeMesh().getTexCoords());
+                    shapeMesh.getFaceSmoothingGroups().addAll(wmo.getShapeMesh().getFaceSmoothingGroups());
 
-                        // We translate the object location.                
-                        Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
-
-                        // We convert the euler angles to a Rotate object with euler angle and rotation ZXZ.                
-                        Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
-                        Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
-                        Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
-
-                        // We add all transformations to the view and we get back the transformation matrix.
-                        view.getTransforms().addAll(translate, rx, ry, rz);
-                        Transform concat = view.getLocalToSceneTransform();
-
-                        // We apply the transformation matrix to all points of the mesh.
-                        TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
-                        for (int i = 0; i < wmo.getShapeMesh().getPoints().size(); i += 3) {
-                            Point3D point = new Point3D(wmo.getShapeMesh().getPoints().get(i), wmo.getShapeMesh().getPoints().get(i + 1), wmo.getShapeMesh().getPoints().get(i + 2));
-                            point = concat.transform(point);
-                            temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
+                    // And we recalculate the faces of the model mesh.
+                    int[][] faces = new int[wmo.getShapeMesh().faces.length][6];
+                    for (int i = 0; i < wmo.getShapeMesh().faces.length; i++) {
+                        for (int j = 0; j < wmo.getShapeMesh().faces[i].length; j++) {
+                            faces[i][j] = wmo.getShapeMesh().faces[i][j] + offset;
                         }
-
-                        int offset = shapeMesh.getPoints().size() / 3;
-
-                        // Then, we add the converted model mesh to the WMO mesh.
-                        shapeMesh.getPoints().addAll(temp.getPoints());
-                        //this.mesh.getNormals().addAll(converter.mesh.getNormals());
-                        shapeMesh.getTexCoords().addAll(wmo.getShapeMesh().getTexCoords());
-                        shapeMesh.getFaceSmoothingGroups().addAll(wmo.getShapeMesh().getFaceSmoothingGroups());
-
-                        // And we recalculate the faces of the model mesh.
-                        int[][] faces = new int[wmo.getShapeMesh().faces.length][6];
-                        for (int i = 0; i < wmo.getShapeMesh().faces.length; i++) {
-                            for (int j = 0; j < wmo.getShapeMesh().faces[i].length; j++) {
-                                faces[i][j] = wmo.getShapeMesh().faces[i][j] + offset;
-                            }
-                        }
-                        shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
-
-                    } catch (JMpqException | FileReaderException ex) {
-                        logger.error("Error while reading MPQ to add WMO");
                     }
+                    shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
+
+                } catch (JMpqException | FileReaderException ex) {
+                    logger.error("Error while reading MPQ to add WMO");
                 }
-            }
-        }
-        // Finally, we rotate if that's the desired output.
-        if (yUp) {
-            Rotate rx = new Rotate(-90, Rotate.X_AXIS);
-
-            clearView();
-            view.getTransforms().addAll(rx);
-            Transform concat = view.getLocalToSceneTransform();
-
-            for (int i = 0; i < shapeMesh.getPoints().size(); i += 3) {
-                Point3D point = new Point3D(shapeMesh.getPoints().get(i), shapeMesh.getPoints().get(i + 1), shapeMesh.getPoints().get(i + 2));
-                point = concat.transform(point);
-                shapeMesh.getPoints().set(i, (float) point.getX());
-                shapeMesh.getPoints().set(i + 1, (float) point.getY());
-                shapeMesh.getPoints().set(i + 2, (float) point.getZ());
             }
         }
 

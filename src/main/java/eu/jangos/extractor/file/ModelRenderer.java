@@ -117,6 +117,7 @@ public abstract class ModelRenderer {
      * @param path The path where the file needs to be stored.
      * @param fileType The file type extension to be saved.
      * @param renderType The render type to be used.
+     * @param addNormals Indicates whether normals information must be added
      * @param addTextures Indicates whether texture informations must be added
      * to the saved file.
      * @throws ModelRendererException This method can throw a converter
@@ -125,12 +126,12 @@ public abstract class ModelRenderer {
      * @throws eu.jangos.extractor.file.exception.MPQException MPQ Exception can be raised in case there's an error to find the requested file.
      * @throws eu.jangos.extractor.file.exception.FileReaderException File Reader exception can be raised in case there's an error while reading the requested file.
      */
-    public boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addTextures) throws ModelRendererException, MPQException, FileReaderException {
+    public boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addNormals, boolean addTextures) throws ModelRendererException, MPQException, FileReaderException {
         render3D(renderType, modelCache);
 
         switch (fileType) {
             case OBJ:
-                return saveWavefront(path, renderType, addTextures);
+                return saveWavefront(path, renderType, addNormals, addTextures);
             default:
                 throw new UnsupportedOperationException("This file type is not supported.");
         }
@@ -142,17 +143,24 @@ public abstract class ModelRenderer {
      * complete and that it can be rendered.
      *
      * @param mesh The mesh to convert to Wavefront OBJ format.
+     * @param addNormals Specify whether normals must be added to the OBJ format or not.
      * @param addTextures Specify whether texture coordinates must be added to
      * the OBJ format or not.
      * @return A String containing the content of the Wavefront OBJ format.
      */
-    private String getMeshAsOBJ(PolygonMesh mesh, boolean addTextures) {
+    private String getMeshAsOBJ(PolygonMesh mesh, boolean addNormals, boolean addTextures) {
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < mesh.getPoints().size(); i += 3) {
             sb.append("v ").append(mesh.getPoints().get(i)).append(" ").append(mesh.getPoints().get(i + 1)).append(" ").append(mesh.getPoints().get(i + 2)).append("\n");
         }
 
+        if (addNormals) {
+            for (int i = 0; i < mesh.getNormals().size(); i += 3) {
+                sb.append("vn ").append(mesh.getNormals().get(i)).append(" ").append(mesh.getNormals().get(i + 1)).append(" ").append(mesh.getNormals().get(i + 2)).append("\n");
+            }
+        }
+        
         if (addTextures) {
             for (int i = 0; i < mesh.getTexCoords().size(); i += 2) {
                 sb.append("vt ").append(mesh.getTexCoords().get(i)).append(" ").append(mesh.getTexCoords().get(i + 1)).append("\n");
@@ -163,6 +171,9 @@ public abstract class ModelRenderer {
             sb.append("f ");
             for (int j = 0; j < mesh.faces[i].length; j += 2) {
                 sb.append(mesh.faces[i][j] + 1);
+                if (addNormals) {
+                    sb.append("/").append(mesh.faces[i][j] + 1);
+                }
                 if (addTextures) {
                     sb.append("/").append(mesh.faces[i][j + 1]);
                 }
@@ -181,10 +192,11 @@ public abstract class ModelRenderer {
      * @param file The OBJ file (including path) where the structure needs to be
      * saved.
      * @param renderType
+     * @param addNormals
      * @param addTextures
      * @throws ModelRendererException
      */
-    private boolean saveWavefront(String file, Render3DType renderType, boolean addTextures) throws ModelRendererException {
+    private boolean saveWavefront(String file, Render3DType renderType, boolean addNormals, boolean addTextures) throws ModelRendererException {
         if (file == null || file.isEmpty()) {
             throw new ModelRendererException("Provided file is null or empty.");
         }
@@ -194,10 +206,12 @@ public abstract class ModelRenderer {
         switch (renderType) {
             case MODEL:
             case TERRAIN:
-                content = getMeshAsOBJ(this.shapeMesh, addTextures);
+            case COLLISION_TERRAIN:
+            case COLLISION_MODEL:
+                content = getMeshAsOBJ(this.shapeMesh, addNormals, addTextures);
                 break;
             case LIQUID:
-                content = getMeshAsOBJ(this.liquidMesh, addTextures);
+                content = getMeshAsOBJ(this.liquidMesh, addNormals, addTextures);
                 break;
             default:
                 throw new ModelRendererException("This render type is not supported");
@@ -356,6 +370,7 @@ public abstract class ModelRenderer {
 
     protected void clearLiquidMesh() {
         this.liquidMesh.getPoints().clear();
+        this.liquidMesh.getNormals().clear();
         this.liquidMesh.getFaceSmoothingGroups().clear();
         this.liquidMesh.getTexCoords().clear();
         this.liquidMesh.faces = null;
@@ -363,6 +378,7 @@ public abstract class ModelRenderer {
 
     protected void clearShapeMesh() {
         this.shapeMesh.getPoints().clear();
+        this.shapeMesh.getNormals().clear();
         this.shapeMesh.getFaceSmoothingGroups().clear();
         this.shapeMesh.getTexCoords().clear();
         this.shapeMesh.faces = null;

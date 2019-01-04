@@ -27,6 +27,7 @@ import javafx.collections.ObservableIntegerArray;
  */
 public class PolygonMesh {
     private final ObservableFloatArray points = FXCollections.observableFloatArray();
+    private final ObservableFloatArray normals = FXCollections.observableFloatArray();
     private final ObservableFloatArray texCoords = FXCollections.observableFloatArray();
     public int[][] faces = new int[0][0];
     private final ObservableIntegerArray faceSmoothingGroups = FXCollections.observableIntegerArray();
@@ -34,8 +35,9 @@ public class PolygonMesh {
 
     public PolygonMesh() {}
 
-    public PolygonMesh(float[] points, float[] texCoords, int[][] faces) {
+    public PolygonMesh(float[] points, float[] normals, float[] texCoords, int[][] faces) {
         this.points.addAll(points);
+        this.normals.addAll(normals);
         this.texCoords.addAll(texCoords);
         this.faces = faces;
     }
@@ -44,6 +46,10 @@ public class PolygonMesh {
         return points;
     }
 
+    public ObservableFloatArray getNormals() {
+        return normals;
+    }
+    
     public ObservableFloatArray getTexCoords() {
         return texCoords;
     }
@@ -65,13 +71,18 @@ public class PolygonMesh {
 
     // TODO: Hardcode to constants for FX 8 (only one vertex format)
     private static final int NUM_COMPONENTS_PER_POINT = 3;
+    private static final int NUM_COMPONENTS_PER_NORMAL = 3;
     private static final int NUM_COMPONENTS_PER_TEXCOORD = 2;
-    private static final int NUM_COMPONENTS_PER_FACE = 6;
+    private static final int NUM_COMPONENTS_PER_FACE = 6;    
 
     public int getPointElementSize() {
         return NUM_COMPONENTS_PER_POINT;
     }
 
+    public int getNormalElementSize() {
+        return NUM_COMPONENTS_PER_NORMAL;
+    }
+    
     public int getTexCoordElementSize() {
         return NUM_COMPONENTS_PER_TEXCOORD;
     }

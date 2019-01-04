@@ -28,12 +28,17 @@ import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import org.apache.commons.io.FilenameUtils;
+import org.recast4j.detour.MeshData;
+import org.recast4j.recast.geom.InputGeomProvider;
+import org.recast4j.recast.geom.SimpleInputGeomProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +58,7 @@ public class Extractor extends Application {
     //private static final String map = "World\\Maps\\deadminesinstance\\deadminesinstance_33_31.adt";
     private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
     //private static final String map = "World\\Maps\\Azeroth\\Azeroth_35_20.adt";
-    //private static final String map = "world\\maps\\kalimdor\\kalimdor_44_34.adt";
+    //private static final String map = "world\\maps\\kalimdor\\kalimdor_30_11.adt";
     private static MPQManager manager;
     //private static final String wmoExample = "world\\wmo\\dungeon\\kl_orgrimmarlavadungeon\\lavadungeon.wmo";
     //private static final String wmoExample = "world\\wmo\\azeroth\\buildings\\stormwind\\stormwind.wmo";
@@ -85,6 +90,20 @@ public class Extractor extends Application {
     private static final WMO wmo = new WMO();
     private static final Map<String, M2> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private static final int MAX_HEIGHT = Integer.MAX_VALUE;
+    private static MeshData meshData;
+    private final static float m_cellSize = 0.3f;
+    private final static float m_cellHeight = 0.2f;
+    private final static float m_agentHeight = 2.0f;
+    private final static float m_agentRadius = 0.6f;
+    private final static float m_agentMaxClimb = 0.9f;
+    private final static float m_agentMaxSlope = 45.0f;
+    private final static int m_regionMinSize = 8;
+    private final static int m_regionMergeSize = 20;
+    private final static float m_edgeMaxLen = 12.0f;
+    private final static float m_edgeMaxError = 1.3f;
+    private final static int m_vertsPerPoly = 6;
+    private final static float m_detailSampleDist = 6.0f;
+    private final static float m_detailSampleMaxError = 1.0f;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -92,7 +111,7 @@ public class Extractor extends Application {
             manager = new MPQManager(DATA);
         } catch (MPQException ex) {
             logger.error(ex.getMessage());
-        }                
+        }
         //extractModel(m2Example, true);
         //extractAllModels(false);
         //extractWmo(wmoExample, true, true);
@@ -106,22 +125,29 @@ public class Extractor extends Application {
                 try {
                     adt.init(manager, map);
                     adt.setAddModels(true);
-                    adt.setyUp(true);
+                    //adt.setyUp(true);
                     adt.setAddWMO(true);
-                    adt.setNavigationOptimized(true);
-                    if (adt.save3D("D:\\Downloads\\Test\\terrain.obj", FileType3D.OBJ, Render3DType.TERRAIN, false)) {
+                    if (adt.save3D("D:\\Mangos\\recastnavigation\\RecastDemo\\Bin\\Meshes\\terrain.obj", FileType3D.OBJ, Render3DType.COLLISION_TERRAIN, false, false)) {
                         logger.info("File saved!");
                     } else {
                         logger.info("Error!");
                     }
 
+                    //adt.render3D(Render3DType.COLLISION_TERRAIN, cache);                    
+                    /**int[] indices = new int[adt.getShapeMesh().faces.length * 3];
+                    for(int i = 0; i < adt.getShapeMesh().faces.length; i++) {
+                        for(int j = 0; j < adt.getShapeMesh().faces[i].length; j+= 2) {
+                            indices[i*3 + j] = adt.getShapeMesh().faces[i][j] + 1;
+                        }
+                    }                    
+                    InputGeomProvider geometry = new SimpleInputGeomProvider(adt.getShapeMesh().getPoints().toArray(null), indices);*/
+                    
                     //extractModel(m2Example, true);
                     //extractWdt(azeroth);
                     //extractWdt(kalimdor);
                     //extractWdt("world\\maps\\uldaman\\uldaman.wdt");
                     //extractAllWdt();
                     //extractAllTerrains();
-                    
                     System.out.println("done");
                 } catch (Exception e) {
                     logger.error("Exception " + e.getMessage());
@@ -156,7 +182,7 @@ public class Extractor extends Application {
             wmo.setAddModels(addModels);
             wmo.setModelCache(cache);
             if (saveToFile) {
-                if (wmo.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, false)) {
+                if (wmo.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, true, false)) {
                     logger.info("WMO file saved succesfully !");
                 } else {
                     logger.error("WMO file not saved !");
@@ -187,7 +213,7 @@ public class Extractor extends Application {
             model.render3D(Render3DType.MODEL, null);
             cache.put(path, model);
             if (saveToFile) {
-                if (model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, false)) {
+                if (model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, true, false)) {
                     logger.info("Model file saved succesfully !");
                 } else {
                     logger.error("Model file couldn't be saved.");
@@ -212,29 +238,27 @@ public class Extractor extends Application {
                 for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
                     for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
                         if (wdt.hasTerrain(x, y)) {
-                            //extractMap(base + "_" + y + "_" + x + ".adt", true, true, true, MAX_HEIGHT, true, MAX_HEIGHT, false);
+                            extractMap(base + "_" + y + "_" + x + ".adt", true, true, true, true);
                         }
                     }
                 }
                 //wdt.save2D(outputFile + "_terrain.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_TERRAIN, 1920, 1080);                
-                wdt.save2D(outputFile + "_liquid_animated.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_ANIMATED);
+                //wdt.save2D(outputFile + "_liquid_animated.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_ANIMATED);
             } catch (IOException | FileReaderException | MPQException ex) {
                 logger.error(ex.getMessage());
-            } catch (ModelRendererException ex) {
-                logger.error(ex.getMessage());
-            }
+            } 
             logger.info("Done: " + done + " / Total: " + total);
         }
     }
 
-    private static void extractAllMaps(boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO, boolean saveToFile) {
+    private static void extractAllMaps(boolean yUp, boolean addWMO, boolean addModels, boolean saveToFile) {
         for (String path : manager.getListADT()) {
-            extractMap(path, yUp, addWMO, addModels, MAX_HEIGHT, addModelsInWMO, MAX_HEIGHT, saveToFile);
+            extractMap(path, yUp, addWMO, addModels, saveToFile);
         }
 
     }
 
-    private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, int modelMaxHeight, boolean addModelsInWMO, int wmoModelMaxHeight, boolean saveToFile) {
+    private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, boolean saveToFile) {
         try {
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
             adt.init(manager, path);
@@ -243,7 +267,7 @@ public class Extractor extends Application {
             adt.setAddModels(addModels);
             adt.setModelCache(cache);
             if (saveToFile) {
-                if (adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false)) {
+                if (adt.save3D(outputFile, FileType3D.OBJ, Render3DType.COLLISION_TERRAIN, false, false)) {
                     logger.info("Terrain file saved succesfully !");
                 } else {
                     logger.error("Terrain file couldn't be saved.");
@@ -272,20 +296,17 @@ public class Extractor extends Application {
             for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
                 for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
                     if (wdt.hasTerrain(x, y)) {
-                        //extractMap(base + "_" + y + "_" + x + ".adt", false, false, false, MAX_HEIGHT, false, MAX_HEIGHT, false);
+                        extractMap(base + "_" + y + "_" + x + ".adt", true, true, true, true);
                     }
                 }
-            }            
-            logger.debug("Rendering & saving WDT file.");
-            wdt.save2D(outputFile + "_terrain.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_TERRAIN);
+            }
+            logger.debug("Rendering & saving WDT file.");            
+            /**wdt.save2D(outputFile + "_terrain.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_TERRAIN);
             wdt.save2D(outputFile + "_liquid_animated.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_ANIMATED);
             wdt.save2D(outputFile + "_liquid_fishable.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_FISHABLE);
-            wdt.save2D(outputFile + "_liquid_type.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_TYPE);
+            wdt.save2D(outputFile + "_liquid_type.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_TYPE);*/
         } catch (IOException | FileReaderException | MPQException ex) {
             logger.error(ex.getMessage());
-        } catch (ModelRendererException ex) {
-            logger.error(ex.getMessage());
-        }
-
+        } 
     }
 }

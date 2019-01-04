@@ -27,5 +27,7 @@ public enum Render3DType {
     // Render the model data.
     MODEL,
     // Render the collision model data.
-    COLLISION_MODEL;
+    COLLISION_MODEL,
+    // Render the collision terrain data.
+    COLLISION_TERRAIN;
 }
