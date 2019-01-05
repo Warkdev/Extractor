@@ -240,7 +240,7 @@ public class WMO extends FileReader {
         this.wmoAreaTableID = super.data.getInt();
         Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
-        this.boundingBox = new BoundingBox(max.getX(), max.getY(), max.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
+        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.flags = super.data.getShort();
         this.numLod = super.data.getShort();
 
@@ -926,7 +926,7 @@ public class WMO extends FileReader {
                 
                 int idx = 0;
                 for (Vec3f v : wmoGroup.getLiquidVerticesList()) {
-                    liquidMesh.getPoints().addAll(v.x, v.y, v.z);                    
+                    liquidMesh.getPoints().addAll(v.y, v.z, v.x);                    
                     liquidMesh.getTexCoords().addAll(wmoGroup.getTextureVertexList().get(idx).x, wmoGroup.getTextureVertexList().get(idx).y);
                     idx++;
                     offsetVertices++;
@@ -974,8 +974,8 @@ public class WMO extends FileReader {
 
                 int idx = 0;
                 for (Vec3f v : wmoGroup.getVertexList()) {
-                    shapeMesh.getPoints().addAll(v.x, v.y, v.z);
-                    shapeMesh.getNormals().addAll(wmoGroup.getNormalList().get(idx).x, wmoGroup.getNormalList().get(idx).y, wmoGroup.getNormalList().get(idx).z);
+                    shapeMesh.getPoints().addAll(v.y, v.z, v.x);
+                    shapeMesh.getNormals().addAll(wmoGroup.getNormalList().get(idx).y, wmoGroup.getNormalList().get(idx).z, wmoGroup.getNormalList().get(idx).x);
                     shapeMesh.getTexCoords().addAll(wmoGroup.getTextureVertexList().get(idx).x, wmoGroup.getTextureVertexList().get(idx).y);
                     idx++;
                     offsetVertices++;
@@ -1019,8 +1019,8 @@ public class WMO extends FileReader {
                         clearView();
 
                         // We translate the object location.
-                        Translate translate = new Translate(modelInstance.getPosition().x, modelInstance.getPosition().y, modelInstance.getPosition().z);
-
+                        Translate translate = new Translate(modelInstance.getPosition().x, modelInstance.getPosition().y, modelInstance.getPosition().z);                        
+                        
                         // We convert the quaternion to a Rotate object with angle (in degrees) & pivot point.
                         Rotate rotate = getAngleAndAxis(modelInstance.getOrientation());
 
@@ -1036,13 +1036,13 @@ public class WMO extends FileReader {
                         for (int i = 0; i < model.getShapeMesh().getPoints().size(); i += 3) {
                             Point3D point = new Point3D(model.getShapeMesh().getPoints().get(i), model.getShapeMesh().getPoints().get(i + 1), model.getShapeMesh().getPoints().get(i + 2));
                             point = concat.transform(point);
-                            temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());
+                            temp.getPoints().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());
                         }
 
                         for (int i = 0; i < model.getShapeMesh().getNormals().size(); i += 3) {
                             Point3D normal = new Point3D(model.getShapeMesh().getNormals().get(i), model.getShapeMesh().getNormals().get(i + 1), model.getShapeMesh().getNormals().get(i + 2));
                             normal = concat.transform(normal);
-                            temp.getNormals().addAll((float) normal.getX(), (float) normal.getY(), (float) normal.getZ());
+                            temp.getNormals().addAll((float) normal.getY(), (float) normal.getZ(), (float) normal.getX());
                         }
                         
                         int offset = shapeMesh.getPoints().size() / 3;

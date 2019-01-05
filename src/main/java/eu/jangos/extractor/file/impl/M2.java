@@ -220,7 +220,7 @@ public class M2 extends FileReader {
         this.textureTransformsLookupTable.read(super.data);
         Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
-        this.boundingBox = new BoundingBox(max.getX(), max.getY(), max.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
+        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
         this.boundingSphereRadius = super.data.getFloat();
         max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 

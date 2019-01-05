@@ -429,6 +429,7 @@ public class ADT extends FileReader {
 
     private PolygonMesh renderCollisionTerrain(Map<String, M2> cache) throws FileReaderException, ModelRendererException, MPQException {
         clearShapeMesh();
+        clearView();
 
         if (cache == null) {
             logger.info("Cache entry is null, creating a temporary empty cache.");
@@ -579,8 +580,8 @@ public class ADT extends FileReader {
             }
         }
 
-        boundingBox = new BoundingBox(minY, minZ, minX, maxY - minY, maxZ - minZ, maxX - minX);
-
+        boundingBox = new BoundingBox(minY, minZ, minX, maxY - minY, maxZ - minZ, maxX - minX);        
+        
         if (addModels) {
             M2 model;
             // Now we add models.
@@ -599,59 +600,59 @@ public class ADT extends FileReader {
                 try {
                     // First, check if the M2 is in cache. Must be much faster than parsing it again and again.
                     if (cache.containsKey(modelFile)) {
-                        model = cache.get(modelFile);
-                        model.render3D(Render3DType.COLLISION_MODEL, null);
+                        model = cache.get(modelFile);                        
                     } else {
                         model = new M2();
-                        model.init(manager, modelFile);
-                        model.render3D(Render3DType.COLLISION_MODEL, null);
+                        model.init(manager, modelFile);                        
                         cache.put(modelFile, model);
-                    }
-
-                    if (model.getShapeMesh().faces == null) {
-                        // Empty collision mesh. It can happen.
-                        continue;
-                    }
+                    }                    
 
                     // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
                     // First, we create a view to apply these transformations.
                     clearView();
 
                     // We translate the object location.                
-                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY(), 17066 - modelPlacement.getPosition().getZ());                                        
+                    
+                    // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                                    
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().getX(), Rotate.X_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().getY() - 180, Rotate.Y_AXIS);                    
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.Z_AXIS);
 
-                    // We convert the euler angles to a Rotate object with angle (in degrees) & pivot point.                
-                    Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
-                    Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
-                    Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
-
-                    // We scale.
+                    // We scale.                    
                     double scaleFactor = modelPlacement.getScale() / 1024d;
                     Scale scale = new Scale(scaleFactor, scaleFactor, scaleFactor);
 
                     // We add all transformations to the view and we get back the transformation matrix.
-                    view.getTransforms().addAll(translate, rx, ry, rz, scale);
+                    view.getTransforms().addAll(translate, rx, ry, rz, scale);                                                            
                     Transform concat = view.getLocalToSceneTransform();
-
-                    Point3D upperLeft = new Point3D(model.getCollisionBox().getMinY(), model.getCollisionBox().getMinZ(), model.getCollisionBox().getMinX());
-                    upperLeft = concat.transform(upperLeft);
-                    BoundingBox modelBBox = new BoundingBox(upperLeft.getY(), upperLeft.getZ(), upperLeft.getX(), model.getCollisionBox().getWidth(), model.getCollisionBox().getHeight(), model.getCollisionBox().getDepth());
-                    if (!boundingBox.intersects(modelBBox) && !boundingBox.contains(modelBBox)) {
+                         
+                    BoundingBox modelBBox = (BoundingBox) concat.transform(model.getCollisionBox());                    
+                    if (!boundingBox.intersects(modelBBox) && !boundingBox.contains(modelBBox)) {                        
+                        logger.debug(modelFile + " is skipped.");
                         continue;
                     }
 
+                    model.render3D(Render3DType.COLLISION_MODEL, null);
+                    
+                    if (model.getShapeMesh().faces == null || model.getShapeMesh().faces.length == 0) {
+                        // Empty collision mesh. It can happen.
+                        logger.debug(modelFile + " has empty collision mesh.");
+                        continue;
+                    }
+                    
                     // We apply the transformation matrix to all points of the mesh.
                     PolygonMesh temp = new PolygonMesh();
                     for (int i = 0; i < model.getShapeMesh().getPoints().size(); i += 3) {
                         Point3D point = new Point3D(model.getShapeMesh().getPoints().get(i), model.getShapeMesh().getPoints().get(i + 1), model.getShapeMesh().getPoints().get(i + 2));                        
                         point = concat.transform(point);                        
-                        temp.getPoints().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());                        
+                        temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());                        
                     }
 
                     for (int i = 0; i < model.getShapeMesh().getNormals().size(); i += 3) {                        
                         Point3D normal = new Point3D(model.getShapeMesh().getNormals().get(i), model.getShapeMesh().getNormals().get(i + 1), model.getShapeMesh().getNormals().get(i + 2));                        
                         normal = concat.transform(normal);                        
-                        temp.getNormals().addAll((float) normal.getY(), (float) normal.getZ(), (float) normal.getX());
+                        temp.getNormals().addAll((float) normal.getX(), (float) normal.getY(), (float) normal.getZ());
                     }
                     
                     int offset = shapeMesh.getPoints().size() / 3;
@@ -663,6 +664,7 @@ public class ADT extends FileReader {
                     shapeMesh.getFaceSmoothingGroups().addAll(model.getShapeMesh().getFaceSmoothingGroups());
 
                     // And we recalculate the faces of the model mesh.
+                    System.out.println(modelFile);
                     int[][] faces = new int[model.getShapeMesh().faces.length][6];
                     for (int i = 0; i < model.getShapeMesh().faces.length; i++) {
                         for (int j = 0; j < model.getShapeMesh().faces[i].length; j++) {
@@ -692,48 +694,47 @@ public class ADT extends FileReader {
                 }
 
                 try {
-                    wmo = new WMO();
-                    wmo.init(manager, wmoFile);                    
-
+                    wmo = new WMO();                    
+                    wmo.init(manager, wmoFile);                                        
+                    
                     // Now, we have the vertices of this WMO, we need to rotate & position.                                                                                
                     // First, we create a view to apply these transformations.
                     clearView();
 
                     // We translate the object location.                
-                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getZ(), 17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY());
-
-                    // We convert the euler angles to a Rotate object with euler angle and rotation ZXZ.                
-                    Rotate rx = new Rotate(modelPlacement.getOrientation().getY(), Rotate.Z_AXIS);
-                    Rotate ry = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.X_AXIS);
-                    Rotate rz = new Rotate(modelPlacement.getOrientation().getX() - 180, Rotate.Z_AXIS);
+                    Translate translate = new Translate(17066 - modelPlacement.getPosition().getX(), modelPlacement.getPosition().getY(), 17066 - modelPlacement.getPosition().getZ());                    
+                    
+                    // We convert the euler angles to a Rotate object with euler angle and rotation XYZ.                                    
+                    Rotate rx = new Rotate(modelPlacement.getOrientation().getX(), Rotate.X_AXIS);
+                    Rotate ry = new Rotate(modelPlacement.getOrientation().getY() - 180, Rotate.Y_AXIS);
+                    Rotate rz = new Rotate(modelPlacement.getOrientation().getZ(), Rotate.Z_AXIS);
 
                     // We add all transformations to the view and we get back the transformation matrix.
-                    view.getTransforms().addAll(translate, rx, ry, rz);
-                    Transform concat = view.getLocalToSceneTransform();
-
-                    Point3D upperLeft = new Point3D(wmo.getBoundingBox().getMinY(), wmo.getBoundingBox().getMinZ(), wmo.getBoundingBox().getMinX());
-                    upperLeft = concat.transform(upperLeft);
-                    BoundingBox wmoBBox = new BoundingBox(upperLeft.getY(), upperLeft.getZ(), upperLeft.getX(), wmo.getBoundingBox().getWidth(), wmo.getBoundingBox().getHeight(), wmo.getBoundingBox().getDepth());                    
+                    view.getTransforms().addAll(translate, rx, ry, rz);                    
+                    Transform concat = view.getLocalToSceneTransform();                    
+                    
+                    BoundingBox wmoBBox = (BoundingBox) concat.transform(wmo.getBoundingBox());                    
                     if (!boundingBox.intersects(wmoBBox) && !boundingBox.contains(wmoBBox)) {
+                        logger.debug(wmo.getFilename()+" is skipped");
                         continue;
                     }
-
+                    
                     // We add collidable models in WMO.
                     wmo.setAddModels(true);
                     wmo.render3D(Render3DType.COLLISION_MODEL, cache);
 
                     // We apply the transformation matrix to all points of the mesh.
-                    TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
+                    TriangleMesh temp = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);                    
                     for (int i = 0; i < wmo.getShapeMesh().getPoints().size(); i += 3) {
-                        Point3D point = new Point3D(wmo.getShapeMesh().getPoints().get(i), wmo.getShapeMesh().getPoints().get(i + 1), wmo.getShapeMesh().getPoints().get(i + 2));                        
-                        point = concat.transform(point);                        
-                        temp.getPoints().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());                        
+                        Point3D point = new Point3D(wmo.getShapeMesh().getPoints().get(i), wmo.getShapeMesh().getPoints().get(i + 1), wmo.getShapeMesh().getPoints().get(i + 2));                                                
+                        point = concat.transform(point);                             
+                        temp.getPoints().addAll((float) point.getX(), (float) point.getY(), (float) point.getZ());                        
                     }
-
+                    
                     for (int i = 0; i < wmo.getShapeMesh().getNormals().size(); i += 3) {                        
                         Point3D normal = new Point3D(wmo.getShapeMesh().getNormals().get(i), wmo.getShapeMesh().getNormals().get(i + 1), wmo.getShapeMesh().getNormals().get(i + 2));                        
                         normal = concat.transform(normal);                        
-                        temp.getNormals().addAll((float) normal.getY(), (float) normal.getZ(), (float) normal.getX());
+                        temp.getNormals().addAll((float) normal.getX(), (float) normal.getY(), (float) normal.getZ());
                     }
                     
                     int offset = shapeMesh.getPoints().size() / 3;

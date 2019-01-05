@@ -124,8 +124,7 @@ public class Extractor extends Application {
             public void run() {
                 try {
                     adt.init(manager, map);
-                    adt.setAddModels(true);
-                    //adt.setyUp(true);
+                    adt.setAddModels(true);                    
                     adt.setAddWMO(true);
                     if (adt.save3D("D:\\Mangos\\recastnavigation\\RecastDemo\\Bin\\Meshes\\terrain.obj", FileType3D.OBJ, Render3DType.COLLISION_TERRAIN, false, false)) {
                         logger.info("File saved!");
