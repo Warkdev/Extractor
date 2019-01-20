@@ -209,13 +209,13 @@ public class MainApp extends Application {
             String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
             wmo.init(manager, path);
             if (saveToFile) {
-                if (wmo.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, addModels)) {
+                /**if (wmo.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, addModels)) {
                     logger.info("WMO file saved succesfully !");
                 } else {
                     logger.error("WMO file not saved !");
-                }
+                }*/
             }
-        } catch (IOException | FileReaderException | MPQException | ModelRendererException ex) {
+        } catch (IOException | FileReaderException | MPQException ex) {
             logger.error(ex.getMessage());
         }
     }
@@ -236,9 +236,9 @@ public class MainApp extends Application {
             String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";
             model.init(manager, path);
             if (saveToFile) {
-                model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, saveToFile);
+                //model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, saveToFile);
             }
-        } catch (IOException | FileReaderException | MPQException | ModelRendererException ex) {
+        } catch (IOException | FileReaderException | MPQException ex) {
             logger.error(ex.getMessage());
         }
     }
@@ -282,9 +282,9 @@ public class MainApp extends Application {
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
             adt.init(manager, path);
             if (saveToFile) {
-                adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false);
+                //adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false);
             }
-        } catch (IOException | FileReaderException | MPQException | ModelRendererException ex) {
+        } catch (IOException | FileReaderException | MPQException ex) {
             logger.error(ex.getMessage());
         }
     }

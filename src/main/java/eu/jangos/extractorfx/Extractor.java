@@ -23,12 +23,18 @@ import eu.jangos.extractor.file.impl.M2;
 import eu.jangos.extractor.file.impl.WDT;
 import eu.jangos.extractor.file.impl.WMO;
 import eu.jangos.extractor.file.mpq.MPQManager;
+import eu.jangos.extractor.pathfinding.NavMeshHeader;
+import eu.jangos.extractor.pathfinding.RecastParameters;
 import eu.jangos.extractorfx.rendering.FileType2D;
 import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -36,7 +42,25 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import org.apache.commons.io.FilenameUtils;
+import org.recast4j.detour.DetourBuilder;
+import org.recast4j.detour.DetourCommon;
+import org.recast4j.detour.FindRandomPointResult;
 import org.recast4j.detour.MeshData;
+import org.recast4j.detour.NavMesh;
+import org.recast4j.detour.NavMeshBuilder;
+import org.recast4j.detour.NavMeshDataCreateParams;
+import org.recast4j.detour.NavMeshQuery;
+import org.recast4j.detour.QueryFilter;
+import org.recast4j.detour.io.MeshSetWriter;
+import org.recast4j.detour.io.NavMeshSetHeader;
+import org.recast4j.recast.AreaModification;
+import org.recast4j.recast.PolyMesh;
+import org.recast4j.recast.PolyMeshDetail;
+import org.recast4j.recast.Recast;
+import org.recast4j.recast.RecastBuilder;
+import org.recast4j.recast.RecastBuilderConfig;
+import org.recast4j.recast.RecastConfig;
+import org.recast4j.recast.RecastConstants;
 import org.recast4j.recast.geom.InputGeomProvider;
 import org.recast4j.recast.geom.SimpleInputGeomProvider;
 import org.slf4j.Logger;
@@ -57,7 +81,7 @@ public class Extractor extends Application {
     //private static final String map = "World\\Maps\\emeralddream\\emeralddream_33_27.adt";
     //private static final String map = "World\\Maps\\deadminesinstance\\deadminesinstance_33_31.adt";
     private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
-    //private static final String map = "World\\Maps\\Azeroth\\Azeroth_35_20.adt";
+    //private static final String map = "World\\Maps\\Azeroth\\Azeroth_30_47.adt";
     //private static final String map = "world\\maps\\kalimdor\\kalimdor_30_11.adt";
     private static MPQManager manager;
     //private static final String wmoExample = "world\\wmo\\dungeon\\kl_orgrimmarlavadungeon\\lavadungeon.wmo";
@@ -89,21 +113,7 @@ public class Extractor extends Application {
     private static final ADT adt = new ADT();
     private static final WMO wmo = new WMO();
     private static final Map<String, M2> cache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    private static final int MAX_HEIGHT = Integer.MAX_VALUE;
     private static MeshData meshData;
-    private final static float m_cellSize = 0.3f;
-    private final static float m_cellHeight = 0.2f;
-    private final static float m_agentHeight = 2.0f;
-    private final static float m_agentRadius = 0.6f;
-    private final static float m_agentMaxClimb = 0.9f;
-    private final static float m_agentMaxSlope = 45.0f;
-    private final static int m_regionMinSize = 8;
-    private final static int m_regionMergeSize = 20;
-    private final static float m_edgeMaxLen = 12.0f;
-    private final static float m_edgeMaxError = 1.3f;
-    private final static int m_vertsPerPoly = 6;
-    private final static float m_detailSampleDist = 6.0f;
-    private final static float m_detailSampleMaxError = 1.0f;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -123,36 +133,152 @@ public class Extractor extends Application {
             @Override
             public void run() {
                 try {
+                    //extractAllTerrains();
                     adt.init(manager, map);
-                    adt.setAddModels(true);                    
+                    adt.setAddModels(true);
                     adt.setAddWMO(true);
-                    if (adt.save3D("D:\\Mangos\\recastnavigation\\RecastDemo\\Bin\\Meshes\\terrain.obj", FileType3D.OBJ, Render3DType.COLLISION_TERRAIN, false, false)) {
-                        logger.info("File saved!");
-                    } else {
-                        logger.info("Error!");
-                    }
+                    /**
+                     * if
+                     * (adt.save3D("D:\\Mangos\\recastnavigation\\RecastDemo\\Bin\\Meshes\\terrain.obj",
+                     * FileType3D.OBJ, Render3DType.COLLISION_TERRAIN, false,
+                     * false)) { logger.info("File saved!"); } else {
+                     * logger.info("Error!"); }
+                     */
 
-                    //adt.render3D(Render3DType.COLLISION_TERRAIN, cache);                    
-                    /**int[] indices = new int[adt.getShapeMesh().faces.length * 3];
-                    for(int i = 0; i < adt.getShapeMesh().faces.length; i++) {
-                        for(int j = 0; j < adt.getShapeMesh().faces[i].length; j+= 2) {
-                            indices[i*3 + j] = adt.getShapeMesh().faces[i][j] + 1;
+                    String file = ROOT + FilenameUtils.getBaseName(map) + ".obj";
+                    System.out.println(file);
+                    //adt.save3D(file, FileType3D.OBJ, Render3DType.COLLISION_TERRAIN, false, false);
+                    adt.render3D(Render3DType.COLLISION_TERRAIN, cache);
+                    int[] indices = new int[adt.getShapeMesh().faces.length * 3];
+                    for (int i = 0; i < adt.getShapeMesh().faces.length; i++) {
+                        for (int j = 0; j < adt.getShapeMesh().faces[i].length; j += 2) {
+                            indices[i * 3 + (j / 2)] = adt.getShapeMesh().faces[i][j];
                         }
+                    }
+                    InputGeomProvider geometry = new SimpleInputGeomProvider(adt.getShapeMesh().getPoints().toArray(null), indices);
+                   
+                    System.out.println(RecastParameters.VERTEX_PER_MAP);
+                    System.out.println(RecastParameters.VERTEX_PER_TILE);                    
+                    RecastConfig cfg = new RecastConfig(RecastConstants.PartitionType.WATERSHED, RecastParameters.CELL_SIZE, RecastParameters.CELL_HEIGHT, 
+                            RecastParameters.AGENT_HEIGHT, RecastParameters.AGENT_RADIUS, RecastParameters.AGENT_CLIMB, RecastParameters.AGENT_MAX_SLOPE_ANGLE, 
+                            RecastParameters.REGION_MIN_AREA, RecastParameters.REGION_MERGE_AREA, RecastParameters.POLY_MAX_EDGE_LEN , RecastParameters.POLY_MAX_EDGE_ERROR, 
+                            RecastParameters.POLY_VERTS_PER_POLYGON, RecastParameters.DETAIL_SAMPLE_DIST, RecastParameters.DETAIL_SAMPLE_MAX_ERROR, RecastParameters.VERTEX_PER_TILE, new AreaModification(0x1, 0x7));
+                    RecastBuilderConfig bcfg = new RecastBuilderConfig(cfg, geometry.getMeshBoundsMin(), geometry.getMeshBoundsMax());
+                    RecastBuilder rcBuilder = new RecastBuilder();
+                    int[] twh = Recast.calcTileCount(geometry.getMeshBoundsMin(), geometry.getMeshBoundsMax(), cfg.cs, cfg.tileSize);                    
+                    System.out.println(Arrays.toString(twh));
+
+                    logger.info("Building RC Result.");
+                    RecastBuilder.RecastBuilderResult rcResult = rcBuilder.build(geometry, bcfg);
+                    logger.info("Build done.");
+                    PolyMesh pMesh = rcResult.getMesh();
+                    logger.info("Get Mesh done.");
+                    for (int i = 0; i < pMesh.npolys; ++i) {
+                        pMesh.flags[i] = 1;
+                    }
+                    PolyMeshDetail dMesh = rcResult.getMeshDetail();
+                    logger.info("Get Mesh Details done.");
+                    // Let's try to convert pMesh in OBJ file.                    
+                    int idx = 0;
+                    System.out.println(pMesh.nverts);
+                    for (int i = 0; i < pMesh.nverts; i++) {
+                        System.out.println("v " + pMesh.verts[i] + " " + pMesh.verts[i + 1] + " " + pMesh.verts[i + 2]);
+                    }
+                    for (int i = 0; i < pMesh.polys.length / (pMesh.nvp * 2); i+=pMesh.nvp*2) {
+                        indices = new int[pMesh.nvp];
+                        int j = 0;                        
+                        while (j < pMesh.nvp) {                            
+                            if(pMesh.polys[i * pMesh.nvp * 2 + j] == RecastConstants.RC_MESH_NULL_IDX) {
+                                // All faces are there, need to dump content.                                                                
+                                j = pMesh.nvp;
+                                continue;
+                            }                                  
+                            indices[j] = pMesh.polys[i * pMesh.nvp * 2 + j];                            
+                            j++;
+                        }         
+                        System.out.print("f ");
+                        for (int k = 0; k < j; k++) {
+                            System.out.print(indices[k] + " ");
+                        }
+                        System.out.println();
                     }                    
-                    InputGeomProvider geometry = new SimpleInputGeomProvider(adt.getShapeMesh().getPoints().toArray(null), indices);*/
+                    //System.out.println(dMesh.nverts);
+                    //System.out.println(dMesh.nmeshes);
+                    //System.out.println(dMesh.ntris);
+                    NavMeshDataCreateParams params = new NavMeshDataCreateParams();                    
+                    params.verts = pMesh.verts;
+                    params.vertCount = pMesh.nverts;
+                    params.polys = pMesh.polys;
+                    params.polyAreas = pMesh.areas;
+                    params.polyFlags = pMesh.flags;
+                    params.polyCount = pMesh.npolys;                    
+                    params.nvp = pMesh.nvp;
+                    params.detailMeshes = dMesh.meshes;
+                    params.detailVerts = dMesh.verts;
+                    params.detailVertsCount = dMesh.nverts;
+                    params.detailTris = dMesh.tris;
+                    params.detailTriCount = dMesh.ntris;
+                    params.walkableHeight = cfg.walkableHeight;
+                    params.walkableRadius = cfg.walkableRadius;
+                    params.walkableClimb = cfg.walkableClimb;
+                    params.bmin = pMesh.bmin;
+                    params.bmax = pMesh.bmax;
+                    params.cs = cfg.cs;
+                    params.ch = cfg.ch;
+                    params.buildBvTree = true;                    
                     
+                    params.offMeshConVerts = new float[0];                    
+                    /**params.offMeshConVerts[0] = 0.1f;
+                    params.offMeshConVerts[1] = 0.2f;
+                    params.offMeshConVerts[2] = 0.3f;
+                    params.offMeshConVerts[3] = 0.4f;
+                    params.offMeshConVerts[4] = 0.5f;
+                    params.offMeshConVerts[5] = 0.6f;
+                    params.offMeshConRad = new float[0];
+                    //params.offMeshConRad[0] = 0.1f;
+                    params.offMeshConDir = new int[0];
+                    //params.offMeshConDir[0] = 1;
+                    params.offMeshConAreas = new int[0];
+                    //params.offMeshConAreas[0] = 2;
+                    params.offMeshConFlags = new int[0];
+                    //params.offMeshConFlags[0] = 12;
+                    params.offMeshConUserID = new int[0];
+                    //params.offMeshConUserID[0] = 0x4567;
+                    params.offMeshConCount = 0;
+                    params.tileX = 12;
+                    params.tileY = 23;
+
+                    logger.info("Building Nav Mesh MeshData.");
+                    meshData = NavMeshBuilder.createNavMeshData(params);   
+                    logger.info("Building Done.");                    
+                    
+                    FileOutputStream fos = new FileOutputStream("D:\\Downloads\\Test\\all_tiles_navmesh.bin");
+                    MeshSetWriter writer = new MeshSetWriter();                               
+                    logger.info("Creating Nav Mesh.");
+                    NavMesh navMesh = new NavMesh(meshData, cfg.maxVertsPerPoly, 0);                                         
+                    logger.info("Saving Nav Mesh.");
+                    writer.write(fos, navMesh, ByteOrder.LITTLE_ENDIAN, true);
+                    logger.info("NavMesh saved.");
+                    fos.close();                    
+                    NavMeshQuery query = new NavMeshQuery(navMesh);
+                    QueryFilter filter = new QueryFilter();
+                    FindRandomPointResult frpr = query.findRandomPoint(filter, new NavMeshQuery.FRand());
+                    for (int i = 0; i < 1000; i++) {
+                        frpr = query.findRandomPoint(filter, new NavMeshQuery.FRand());
+                    }
+                    //System.out.println(Arrays.toString(frpr.getRandomPt()));                    
                     //extractModel(m2Example, true);
                     //extractWdt(azeroth);
                     //extractWdt(kalimdor);
                     //extractWdt("world\\maps\\uldaman\\uldaman.wdt");
                     //extractAllWdt();
                     //extractAllTerrains();
-                    System.out.println("done");
+                    System.out.println("done");*/
                 } catch (Exception e) {
                     logger.error("Exception " + e.getMessage());
                     e.printStackTrace();
-                }
-
+                }                
+                
                 primaryStage.close();
                 Platform.exit();
             }
@@ -245,7 +371,7 @@ public class Extractor extends Application {
                 //wdt.save2D(outputFile + "_liquid_animated.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_ANIMATED);
             } catch (IOException | FileReaderException | MPQException ex) {
                 logger.error(ex.getMessage());
-            } 
+            }
             logger.info("Done: " + done + " / Total: " + total);
         }
     }
@@ -299,13 +425,19 @@ public class Extractor extends Application {
                     }
                 }
             }
-            logger.debug("Rendering & saving WDT file.");            
-            /**wdt.save2D(outputFile + "_terrain.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_TERRAIN);
-            wdt.save2D(outputFile + "_liquid_animated.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_ANIMATED);
-            wdt.save2D(outputFile + "_liquid_fishable.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_FISHABLE);
-            wdt.save2D(outputFile + "_liquid_type.png", FileType2D.PNG, Render2DType.RENDER_TILEMAP_LIQUID_TYPE);*/
+            logger.debug("Rendering & saving WDT file.");
+            /**
+             * wdt.save2D(outputFile + "_terrain.png", FileType2D.PNG,
+             * Render2DType.RENDER_TILEMAP_TERRAIN); wdt.save2D(outputFile +
+             * "_liquid_animated.png", FileType2D.PNG,
+             * Render2DType.RENDER_TILEMAP_LIQUID_ANIMATED);
+             * wdt.save2D(outputFile + "_liquid_fishable.png", FileType2D.PNG,
+             * Render2DType.RENDER_TILEMAP_LIQUID_FISHABLE);
+             * wdt.save2D(outputFile + "_liquid_type.png", FileType2D.PNG,
+             * Render2DType.RENDER_TILEMAP_LIQUID_TYPE);
+             */
         } catch (IOException | FileReaderException | MPQException ex) {
             logger.error(ex.getMessage());
-        } 
+        }
     }
 }

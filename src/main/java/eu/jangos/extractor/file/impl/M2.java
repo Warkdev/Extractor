@@ -220,11 +220,11 @@ public class M2 extends FileReader {
         this.textureTransformsLookupTable.read(super.data);
         Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
-        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
+        this.boundingBox = new BoundingBox(min.getZ(), min.getX(), min.getY(), max.getZ() - min.getZ(), max.getX() - min.getX(), max.getY() - min.getY());        
         this.boundingSphereRadius = super.data.getFloat();
         max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
-        this.collisionBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
+        this.collisionBox = new BoundingBox(min.getZ(), min.getX(), min.getY(), max.getZ() - min.getZ(), max.getX() - min.getX(), max.getY() - min.getY());        
         this.collisionSphereRadius = super.data.getFloat();
         this.collisionTriangles.read(super.data);
         this.collisionVertices.read(super.data);

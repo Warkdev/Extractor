@@ -50,7 +50,6 @@ public abstract class ModelRenderer {
 
     private static final Logger logger = LoggerFactory.getLogger(ModelRenderer.class);
 
-    protected PolygonMeshView view;
     protected PolygonMesh shapeMesh;
     protected PolygonMesh liquidMesh;
     protected Map<String, M2> modelCache;
@@ -58,7 +57,6 @@ public abstract class ModelRenderer {
     public ModelRenderer() {
         this.liquidMesh = new PolygonMesh();
         this.shapeMesh = new PolygonMesh();
-        this.view = new PolygonMeshView();
     }
 
     /**
@@ -365,7 +363,6 @@ public abstract class ModelRenderer {
     protected void clearMesh() {
         clearLiquidMesh();
         clearShapeMesh();
-        clearView();
     }
 
     protected void clearLiquidMesh() {
@@ -382,10 +379,6 @@ public abstract class ModelRenderer {
         this.shapeMesh.getFaceSmoothingGroups().clear();
         this.shapeMesh.getTexCoords().clear();
         this.shapeMesh.faces = null;
-    }
-
-    protected void clearView() {
-        this.view.getTransforms().clear();
     }
 
     public PolygonMesh getShapeMesh() {

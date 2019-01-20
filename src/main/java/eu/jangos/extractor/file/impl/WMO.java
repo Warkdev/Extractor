@@ -58,6 +58,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Transform;
@@ -240,7 +241,7 @@ public class WMO extends FileReader {
         this.wmoAreaTableID = super.data.getInt();
         Point3D min = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         Point3D max = new Point3D(data.getFloat(), data.getFloat(), data.getFloat()); 
-        this.boundingBox = new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());        
+        this.boundingBox = new BoundingBox(min.getY(), min.getZ(), min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ(), max.getX() - min.getX());        
         this.flags = super.data.getShort();
         this.numLod = super.data.getShort();
 
@@ -1016,7 +1017,7 @@ public class WMO extends FileReader {
                         
                         // Now, we have the vertices of this M2, we need to scale, rotate & position.                                                                                
                         // First, we create a view to apply these transformations.
-                        clearView();
+                        Affine affine = new Affine();
 
                         // We translate the object location.
                         Translate translate = new Translate(modelInstance.getPosition().x, modelInstance.getPosition().y, modelInstance.getPosition().z);                        
@@ -1028,20 +1029,21 @@ public class WMO extends FileReader {
                         Scale scale = new Scale(modelInstance.getScale(), modelInstance.getScale(), modelInstance.getScale());
 
                         // We add all transformations to the view and we get back the transformation matrix.
-                        view.getTransforms().addAll(translate, rotate, scale);                        
-                        Transform concat = view.getLocalToSceneTransform();
+                        affine.append(translate);                    
+                        affine.append(rotate);                        
+                        affine.append(scale);  
 
                         // We apply the transformation matrix to all points of the mesh.
                         PolygonMesh temp = new PolygonMesh();
                         for (int i = 0; i < model.getShapeMesh().getPoints().size(); i += 3) {
                             Point3D point = new Point3D(model.getShapeMesh().getPoints().get(i), model.getShapeMesh().getPoints().get(i + 1), model.getShapeMesh().getPoints().get(i + 2));
-                            point = concat.transform(point);
+                            point = affine.transform(point);
                             temp.getPoints().addAll((float) point.getY(), (float) point.getZ(), (float) point.getX());
                         }
 
                         for (int i = 0; i < model.getShapeMesh().getNormals().size(); i += 3) {
                             Point3D normal = new Point3D(model.getShapeMesh().getNormals().get(i), model.getShapeMesh().getNormals().get(i + 1), model.getShapeMesh().getNormals().get(i + 2));
-                            normal = concat.transform(normal);
+                            normal = affine.transform(normal);
                             temp.getNormals().addAll((float) normal.getY(), (float) normal.getZ(), (float) normal.getX());
                         }
                         
