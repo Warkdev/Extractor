@@ -89,7 +89,7 @@ public class WDT extends FileReader {
     private float liquidMaxHeight;
 
     @Override
-    public void init(MPQManager manager, String filename, boolean loadChildren) throws FileReaderException, JMpqException, MPQException, IOException {
+    public void init(MPQManager manager, String filename, boolean loadChildren, int idxX, int idxY) throws FileReaderException, JMpqException, MPQException, IOException {
         super.init = false;
         listAreas.clear();
         this.adtArray = new ADT[MAP_TILE_SIZE][MAP_TILE_SIZE];
@@ -161,7 +161,7 @@ public class WDT extends FileReader {
                 for (int y = 0; y < MAP_TILE_SIZE; y++) {
                     if (hasTerrain(x, y)) {                                                
                         adt = new ADT();
-                        adt.init(manager, base + "_" + y + "_" + x + ".adt", false);
+                        adt.init(manager, base + "_" + y + "_" + x + ".adt", false, x, y);
                         adtArray[x][y] = adt;
                         liquidMapBounds = adt.getLiquidMapBounds();
                         if (liquidMapBounds.x > this.liquidMaxHeight) {

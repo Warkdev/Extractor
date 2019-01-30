@@ -15,7 +15,9 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
+import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.ChunkLiquidRenderer;
+import eu.jangos.extractor.file.common.MapUnit;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
 import eu.jangos.extractor.file.exception.ModelRendererException;
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javafx.scene.layout.Pane;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  *
@@ -38,7 +41,7 @@ public class MCLQ extends ChunkLiquidRenderer {
     private float minHeight;
     private float maxHeight;
     private List<Integer> light;
-    private List<Float> height;    
+    private List<Float> height;
     private int nFlowvs;
     private List<SWFlowv> flowvs;
 
@@ -51,7 +54,7 @@ public class MCLQ extends ChunkLiquidRenderer {
 
     public void read(ByteBuffer data) {
         clear();
-        
+
         this.minHeight = data.getFloat();
         this.maxHeight = data.getFloat();
         for (int i = 0; i < LIQUID_DATA_LENGTH; i++) {
@@ -108,59 +111,109 @@ public class MCLQ extends ChunkLiquidRenderer {
         this.height = height;
     }
 
-    public boolean hasNoSurroundingLiquid(int row, int col) {
-        // Check bottom right tile.
-        if (row >= 0 && row < LIQUID_FLAG_LENGTH && (col - 1) >= 0 && (col - 1) < LIQUID_FLAG_LENGTH) {
-            if (!hasNoLiquid(row, col - 1)) {
-                return false;
-            }
-        }
-
-        // Check bottom left tile.
-        if (row >= 0 && row < LIQUID_FLAG_LENGTH && col >= 0 && col < LIQUID_FLAG_LENGTH) {
-            if (!hasNoLiquid(row, col)) {
-                return false;
-            }
-        }
-
-        // Check upper right tile.
-        if ((row - 1) >= 0 && (row - 1) < LIQUID_FLAG_LENGTH && (col - 1) >= 0 && (col - 1) < LIQUID_FLAG_LENGTH) {
-            if (!hasNoLiquid(row - 1, col - 1)) {
-                return false;
-            }
-        }
-
-        // Check upper left tile.
-        if ((row - 1) >= 0 && (row - 1) < LIQUID_FLAG_LENGTH && col >= 0 && col < LIQUID_FLAG_LENGTH) {
-            if (!hasNoLiquid(row - 1, col)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     private void clear() {
         this.light.clear();
         this.height.clear();
     }
+
+    private PolygonMesh renderLiquid() {
+        clearLiquidMesh();        
+        
+        float baseX = 0;
+        float baseY = 0;
+        // Starting with vertices.   
+        List<Vec3f> tempVertices = new ArrayList<>();
+        for (int x = 0; x < LIQUID_DATA_LENGTH; x++) {
+            for (int y = 0; y < LIQUID_DATA_LENGTH; y++) {                                
+                tempVertices.add(new Vec3f(baseX + MapUnit.UNIT_SIZE * x,
+                        baseY + MapUnit.UNIT_SIZE * y,
+                        this.height.get(x * LIQUID_DATA_LENGTH + y)));
+                baseY += MapUnit.UNIT_SIZE;
+            }                        
+            baseY = 0;
+            baseX += MapUnit.UNIT_SIZE;
+        }
+
+        // Then with indices & texture coord.
+        short index = 0;
+        int pos;
+        List<Short> liquidIndicesList = new ArrayList<>();
+        for (int x = 0; x < LIQUID_FLAG_LENGTH; x++) {
+            for (int y = 0; y < LIQUID_FLAG_LENGTH; y++) {                
+                if (!hasNoLiquid(x, y)) {
+                    pos = x * (LIQUID_DATA_LENGTH) + y;
+                    this.liquidMesh.getPoints().addAll(tempVertices.get(pos + 1).y, tempVertices.get(pos + 1).z, tempVertices.get(pos + 1).x);
+                    liquidIndicesList.add(index++);
+
+                    this.liquidMesh.getPoints().addAll(tempVertices.get(pos).y, tempVertices.get(pos).z, tempVertices.get(pos).x);
+                    liquidIndicesList.add(index++);
+
+                    this.liquidMesh.getPoints().addAll(tempVertices.get(pos + LIQUID_DATA_LENGTH + 1).y, tempVertices.get(pos + LIQUID_DATA_LENGTH + 1).z, tempVertices.get(pos + LIQUID_DATA_LENGTH + 1).x);
+                    liquidIndicesList.add(index++);
+
+                    this.liquidMesh.getPoints().addAll(tempVertices.get(pos + LIQUID_DATA_LENGTH).y, tempVertices.get(pos + LIQUID_DATA_LENGTH).z, tempVertices.get(pos + LIQUID_DATA_LENGTH).x);
+                    liquidIndicesList.add(index++);
+                }
+            }            
+        }
+
+        int[][] faces = new int[liquidIndicesList.size() / 4][8];        
+        for (int face = 0, idx = 0; face < liquidIndicesList.size(); face += 4, idx++) {
+            faces[idx][0] = liquidIndicesList.get(face);
+            faces[idx][1] = liquidIndicesList.get(face);
+            faces[idx][2] = liquidIndicesList.get(face + 2);
+            faces[idx][3] = liquidIndicesList.get(face + 2);
+            faces[idx][4] = liquidIndicesList.get(face + 3);
+            faces[idx][5] = liquidIndicesList.get(face + 3);
+            faces[idx][6] = liquidIndicesList.get(face + 1);
+            faces[idx][7] = liquidIndicesList.get(face + 1);
+            liquidMesh.getFaceSmoothingGroups().addAll(0);
+        }
+        liquidMesh.faces = ArrayUtils.addAll(liquidMesh.faces, faces);
+
+        return this.liquidMesh;
+    }    
+    
+    public void printFlags(int flag) {
+        for(int i = 0; i < LIQUID_FLAG_LENGTH; i++) {
+            for (int j = 0; j < LIQUID_FLAG_LENGTH; j++) {
+                System.out.print((this.flags.get(i * LIQUID_FLAG_LENGTH + j) & flag)+";");
+            }
+            System.out.println();
+        }
+    }
+    
+    public void printHeight() {
+        for(int i = 0; i < LIQUID_DATA_LENGTH; i++) {
+            for (int j = 0; j < LIQUID_DATA_LENGTH; j++) {
+                System.out.print(this.height.get(i * LIQUID_DATA_LENGTH + j)+";");
+            }
+            System.out.println();
+        }
+    }
     
     @Override
     public Pane render2D(Render2DType renderType) throws ModelRendererException, FileReaderException {
-        switch(renderType) {
+        switch (renderType) {
             case RENDER_TILEMAP_LIQUID_ANIMATED:
             case RENDER_TILEMAP_LIQUID_FISHABLE:
             case RENDER_TILEMAP_LIQUID_TYPE:
             case RENDER_TILEMAP_LIQUID_HEIGHTMAP:
-                return renderLiquid(renderType);
+                return renderLiquidTileMap(renderType);
             default:
-                throw new UnsupportedOperationException("Render type are not supported.");
+                throw new UnsupportedOperationException("Render type is not supported.");
         }
     }
 
     @Override
     public PolygonMesh render3D(Render3DType renderType, Map<String, M2> cache) throws ModelRendererException, MPQException, FileReaderException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        switch (renderType) {
+            case LIQUID:
+            case COLLISION_TERRAIN:
+                return renderLiquid();
+            default:
+                throw new UnsupportedOperationException("Render type is not supported.");
+        }
     }
 
 }

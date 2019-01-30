@@ -166,11 +166,11 @@ public class M2 extends FileReader {
     }
 
     public void init(MPQManager manager, String filename) throws IOException, FileReaderException, MPQException {
-        init(manager, filename, false);
+        init(manager, filename, false, -1, -1);
     }
 
     @Override
-    public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, MPQException {
+    public void init(MPQManager manager, String filename, boolean loadChildren, int idxX, int idxY) throws IOException, FileReaderException, MPQException {
         super.init = false;
 
         super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));

@@ -16,6 +16,7 @@
 package eu.jangos.extractor.file;
 
 import static eu.jangos.extractor.file.ChunkLiquidRenderer.LIQUID_FLAG_LENGTH;
+import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.mangos.shared.flags.FlagUtils;
 import java.util.List;
@@ -60,9 +61,9 @@ public abstract class ChunkLiquidRenderer extends ModelRenderer {
     public static Color COLOR_ANIMATED = Color.GREEN;
     public static Color COLOR_FISHABLE = Color.GREEN;  
     
-    protected List<Short> flags;
+    protected List<Short> flags;    
     
-    protected Pane renderLiquid(Render2DType renderType) {
+    protected Pane renderLiquidTileMap(Render2DType renderType) {
         Pane pane = new Pane();        
         Canvas canvas = new Canvas(LIQUID_FLAG_LENGTH, LIQUID_FLAG_LENGTH);                
         PixelWriter pixel = canvas.getGraphicsContext2D().getPixelWriter();        

@@ -125,7 +125,7 @@ public class MCNK extends FileReader {
     }
 
     @Override
-    public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException {
+    public void init(MPQManager manager, String filename, boolean loadChildren, int idxX, int idxY) throws IOException, FileReaderException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

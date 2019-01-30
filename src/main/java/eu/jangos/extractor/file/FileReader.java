@@ -43,12 +43,14 @@ public abstract class FileReader extends ModelRenderer {
      * @param manager The manager of MPQ that will provide the file to extract.
      * @param filename The filename that is being represented by the byte data.
      * @param loadChildren Load the children of the file (e.g. ADT is a child of WMO).
+     * @param idxX The index X of the file. Only used by ADT redader.
+     * @param idxY The index Y of the file. Only used by ADT redader.
      * @throws IOException If there's any issue while reading the file.
      * @throws FileReaderException If there's any functional issue while reading the file (File version, expected header, chunk size, ..)
      * @throws systems.crigges.jmpq3.JMpqException
      * @throws eu.jangos.extractor.file.exception.MPQException
      */
-    public abstract void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, JMpqException, MPQException;
+    public abstract void init(MPQManager manager, String filename, boolean loadChildren, int idxX, int idxY) throws IOException, FileReaderException, JMpqException, MPQException;
     
     // Getter & Setter.
     public String getFilename() {

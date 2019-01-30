@@ -39,6 +39,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javax.imageio.ImageIO;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -203,10 +204,26 @@ public abstract class ModelRenderer {
 
         switch (renderType) {
             case MODEL:
-            case TERRAIN:
-            case COLLISION_TERRAIN:
+            case TERRAIN:            
             case COLLISION_MODEL:
                 content = getMeshAsOBJ(this.shapeMesh, addNormals, addTextures);
+                break;
+            case COLLISION_TERRAIN:
+                // Merging Meshes
+                int offset = this.shapeMesh.getPoints().size() / 3;
+                PolygonMesh merged = new PolygonMesh(this.shapeMesh.getPoints().toArray(null), this.shapeMesh.getNormals().toArray(null), this.shapeMesh.getTexCoords().toArray(null), this.shapeMesh.faces);
+                if(this.liquidMesh.faces != null) {
+                    merged.getPoints().addAll(this.liquidMesh.getPoints());                
+                    int[][] faces = new int[liquidMesh.faces.length][8];
+                    for(int i = 0; i < liquidMesh.faces.length; i++) {
+                        for (int j = 0; j < liquidMesh.faces[i].length; j++) {
+                            faces[i][j] = liquidMesh.faces[i][j] + offset;
+                        }
+                    }
+                    merged.faces = ArrayUtils.addAll(merged.faces, faces);
+                }
+                content = getMeshAsOBJ(merged, addNormals, addTextures);
+                //content = getMeshAsOBJ(this.shapeMesh, addNormals, addTextures);                
                 break;
             case LIQUID:
                 content = getMeshAsOBJ(this.liquidMesh, addNormals, addTextures);

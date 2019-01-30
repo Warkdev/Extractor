@@ -263,7 +263,7 @@ public class WMOGroup {
 
             // Then with indices & texture coord.
             short index = 0;
-            int pos;
+            int pos;            
             for (int x = 0; x < liquid.getxTiles(); x++) {
                 for (int y = 0; y < liquid.getyTiles(); y++) {
                     if (!liquid.hasNoLiquid(x, y)) {

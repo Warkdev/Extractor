@@ -29,6 +29,7 @@ import eu.jangos.extractorfx.rendering.FileType2D;
 import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
+import eu.jangos.extractorfx.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -42,6 +43,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.recast4j.detour.DetourBuilder;
 import org.recast4j.detour.DetourCommon;
 import org.recast4j.detour.FindRandomPointResult;
@@ -80,7 +82,9 @@ public class Extractor extends Application {
     private static final String kalimdor = "world\\maps\\kalimdor\\kalimdor.wdt";
     //private static final String map = "World\\Maps\\emeralddream\\emeralddream_33_27.adt";
     //private static final String map = "World\\Maps\\deadminesinstance\\deadminesinstance_33_31.adt";
-    private static final String map = "World\\Maps\\Azeroth\\Azeroth_32_48.adt";
+    private static final int idxX = 31;
+    private static final int idxY = 49;
+    private static final String map = "World\\Maps\\Azeroth\\Azeroth_"+idxX+"_"+idxY+".adt";
     //private static final String map = "World\\Maps\\Azeroth\\Azeroth_30_47.adt";
     //private static final String map = "world\\maps\\kalimdor\\kalimdor_30_11.adt";
     private static MPQManager manager;
@@ -134,9 +138,10 @@ public class Extractor extends Application {
             public void run() {
                 try {
                     //extractAllTerrains();
-                    adt.init(manager, map);
+                    adt.init(manager, map, idxX, idxY);
                     adt.setAddModels(true);
                     adt.setAddWMO(true);
+                    adt.setAddLiquid(true);
                     /**
                      * if
                      * (adt.save3D("D:\\Mangos\\recastnavigation\\RecastDemo\\Bin\\Meshes\\terrain.obj",
@@ -144,11 +149,13 @@ public class Extractor extends Application {
                      * false)) { logger.info("File saved!"); } else {
                      * logger.info("Error!"); }
                      */
-
-                    String file = ROOT + FilenameUtils.getBaseName(map) + ".obj";
-                    System.out.println(file);
-                    //adt.save3D(file, FileType3D.OBJ, Render3DType.COLLISION_TERRAIN, false, false);
-                    adt.render3D(Render3DType.COLLISION_TERRAIN, cache);
+                                        
+                    String file = ROOT + FilenameUtils.getBaseName(map) + ".obj";                    
+                    String liquid = ROOT + FilenameUtils.getBaseName(map) + "_liquid.obj";
+                    String pMeshFile = ROOT + FilenameUtils.getBaseName(map) + "_pmesh.obj";
+                    String dMeshFile = ROOT + FilenameUtils.getBaseName(map) + "_dmesh.obj";                    
+                    adt.save3D(file, FileType3D.OBJ, Render3DType.COLLISION_TERRAIN, false, false);
+                    //adt.render3D(Render3DType.COLLISION_TERRAIN, cache);
                     int[] indices = new int[adt.getShapeMesh().faces.length * 3];
                     for (int i = 0; i < adt.getShapeMesh().faces.length; i++) {
                         for (int j = 0; j < adt.getShapeMesh().faces[i].length; j += 2) {
@@ -156,57 +163,35 @@ public class Extractor extends Application {
                         }
                     }
                     InputGeomProvider geometry = new SimpleInputGeomProvider(adt.getShapeMesh().getPoints().toArray(null), indices);
-                   
-                    System.out.println(RecastParameters.VERTEX_PER_MAP);
-                    System.out.println(RecastParameters.VERTEX_PER_TILE);                    
+                                                           
                     RecastConfig cfg = new RecastConfig(RecastConstants.PartitionType.WATERSHED, RecastParameters.CELL_SIZE, RecastParameters.CELL_HEIGHT, 
                             RecastParameters.AGENT_HEIGHT, RecastParameters.AGENT_RADIUS, RecastParameters.AGENT_CLIMB, RecastParameters.AGENT_MAX_SLOPE_ANGLE, 
                             RecastParameters.REGION_MIN_AREA, RecastParameters.REGION_MERGE_AREA, RecastParameters.POLY_MAX_EDGE_LEN , RecastParameters.POLY_MAX_EDGE_ERROR, 
                             RecastParameters.POLY_VERTS_PER_POLYGON, RecastParameters.DETAIL_SAMPLE_DIST, RecastParameters.DETAIL_SAMPLE_MAX_ERROR, RecastParameters.VERTEX_PER_TILE, new AreaModification(0x1, 0x7));
                     RecastBuilderConfig bcfg = new RecastBuilderConfig(cfg, geometry.getMeshBoundsMin(), geometry.getMeshBoundsMax());
                     RecastBuilder rcBuilder = new RecastBuilder();
-                    int[] twh = Recast.calcTileCount(geometry.getMeshBoundsMin(), geometry.getMeshBoundsMax(), cfg.cs, cfg.tileSize);                    
-                    System.out.println(Arrays.toString(twh));
+                    /**int[] twh = Recast.calcTileCount(geometry.getMeshBoundsMin(), geometry.getMeshBoundsMax(), cfg.cs, cfg.tileSize);                    
+                    System.out.println(Arrays.toString(twh));*/
 
                     logger.info("Building RC Result.");
-                    RecastBuilder.RecastBuilderResult rcResult = rcBuilder.build(geometry, bcfg);
+                    /**RecastBuilder.RecastBuilderResult[][] rcResult = rcBuilder.buildTiles(geometry, cfg, 8);                                           
                     logger.info("Build done.");
-                    PolyMesh pMesh = rcResult.getMesh();
-                    logger.info("Get Mesh done.");
-                    for (int i = 0; i < pMesh.npolys; ++i) {
-                        pMesh.flags[i] = 1;
-                    }
-                    PolyMeshDetail dMesh = rcResult.getMeshDetail();
-                    logger.info("Get Mesh Details done.");
-                    // Let's try to convert pMesh in OBJ file.                    
-                    int idx = 0;
-                    System.out.println(pMesh.nverts);
-                    for (int i = 0; i < pMesh.nverts; i++) {
-                        System.out.println("v " + pMesh.verts[i] + " " + pMesh.verts[i + 1] + " " + pMesh.verts[i + 2]);
-                    }
-                    for (int i = 0; i < pMesh.polys.length / (pMesh.nvp * 2); i+=pMesh.nvp*2) {
-                        indices = new int[pMesh.nvp];
-                        int j = 0;                        
-                        while (j < pMesh.nvp) {                            
-                            if(pMesh.polys[i * pMesh.nvp * 2 + j] == RecastConstants.RC_MESH_NULL_IDX) {
-                                // All faces are there, need to dump content.                                                                
-                                j = pMesh.nvp;
-                                continue;
-                            }                                  
-                            indices[j] = pMesh.polys[i * pMesh.nvp * 2 + j];                            
-                            j++;
-                        }         
-                        System.out.print("f ");
-                        for (int k = 0; k < j; k++) {
-                            System.out.print(indices[k] + " ");
+                    for(int i = 0; i < rcResult.length; i++) {
+                        for (int j = 0; j < rcResult[i].length; j++) {
+                            PolyMesh pMesh = rcResult[i][j].getMesh();
+                            logger.info("Get Mesh done.");
+                            PolyMeshDetail dMesh = rcResult[i][j].getMeshDetail();
+                            logger.info("Get Mesh Details done.");
+                            // Let's try to convert pMesh in OBJ file.                                        
+                            Utils.savePolygonMesh(pMesh, pMeshFile);
+                    
+                            // Now dMesh in OBJ file.
+                            Utils.savePolygonDetailMesh(dMesh, dMeshFile);
                         }
-                        System.out.println();
-                    }                    
-                    //System.out.println(dMesh.nverts);
-                    //System.out.println(dMesh.nmeshes);
-                    //System.out.println(dMesh.ntris);
+                    }  */                  
+                    
                     NavMeshDataCreateParams params = new NavMeshDataCreateParams();                    
-                    params.verts = pMesh.verts;
+                    /**params.verts = pMesh.verts;
                     params.vertCount = pMesh.nverts;
                     params.polys = pMesh.polys;
                     params.polyAreas = pMesh.areas;
@@ -225,7 +210,7 @@ public class Extractor extends Application {
                     params.bmax = pMesh.bmax;
                     params.cs = cfg.cs;
                     params.ch = cfg.ch;
-                    params.buildBvTree = true;                    
+                    params.buildBvTree = true;                    */
                     
                     params.offMeshConVerts = new float[0];                    
                     /**params.offMeshConVerts[0] = 0.1f;
@@ -359,7 +344,7 @@ public class Extractor extends Application {
                 logger.info("Extracting WDT... " + wdtFile);
                 String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
                 String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile);
-                wdt.init(manager, wdtFile, true);
+                wdt.init(manager, wdtFile, true, idxX, idxY);
                 for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
                     for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
                         if (wdt.hasTerrain(x, y)) {
@@ -386,7 +371,7 @@ public class Extractor extends Application {
     private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, boolean saveToFile) {
         try {
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
-            adt.init(manager, path);
+            adt.init(manager, path, idxX, idxY);
             adt.setyUp(yUp);
             adt.setAddWMO(addWMO);
             adt.setAddModels(addModels);
@@ -416,7 +401,7 @@ public class Extractor extends Application {
             logger.info("Extracting WDT... " + wdtFile);
             String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile);
-            wdt.init(manager, wdtFile, true);
+            wdt.init(manager, wdtFile, true, idxX, idxY);
             logger.debug("WDT file initialized.");
             for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
                 for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
