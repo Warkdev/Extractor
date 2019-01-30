@@ -18,6 +18,7 @@ package eu.jangos.extractor.file.impl;
 import com.sun.javafx.geom.Vec2f;
 import eu.jangos.extractor.file.ChunkLiquidRenderer;
 import eu.jangos.extractor.file.FileReader;
+import eu.jangos.extractor.file.ObjectRendererIndices;
 import eu.jangos.extractor.file.adt.chunk.MCIN;
 import eu.jangos.extractor.file.adt.chunk.MCLQ;
 import eu.jangos.extractor.file.adt.chunk.MCNK;
@@ -32,7 +33,6 @@ import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
-import eu.jangos.extractorfx.utils.Utils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -41,8 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import javafx.geometry.BoundingBox;
-import javafx.geometry.Bounds;
-import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
@@ -55,7 +53,6 @@ import javafx.scene.shape.VertexFormat;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
-import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -454,14 +451,15 @@ public class ADT extends FileReader {
         List<MCNK> listChunks = getMapChunks();
         MCNK chunk;
         MCLQ liquid;
-        int offsetVertices;
+        int offsetVertices;    
+        int startIndex;
         for (int x = 0; x < SIZE_TILE_MAP; x++) {
             for (int y = 0; y < SIZE_TILE_MAP; y++) {
                 chunk = listChunks.get(y * SIZE_TILE_MAP + x);                                
                 if (chunk.hasLiquid()) {
                     liquid = chunk.getListLiquids().get(0);
                     liquid.render3D(Render3DType.LIQUID, null);
-                    // Should merge liquid mesh now with offset.
+                    // Should merge liquid mesh now with offset.                    
                     offsetVertices = this.liquidMesh.getPoints().size() / 3;
                     for (int i = 0; i < liquid.getLiquidMesh().getPoints().size(); i += 3) {
                         this.liquidMesh.getPoints().addAll((float) chunk.getPosition().getY() - liquid.getLiquidMesh().getPoints().get(i), liquid.getLiquidMesh().getPoints().get(i + 1), (float) chunk.getPosition().getX() - liquid.getLiquidMesh().getPoints().get(i + 2));
@@ -472,7 +470,11 @@ public class ADT extends FileReader {
                             liquid.getLiquidMesh().faces[i][j] += offsetVertices;
                         }
                     }
+                    
+                    startIndex = (this.liquidMesh.faces == null ? 0 : this.liquidMesh.faces.length);
                     this.liquidMesh.faces = ArrayUtils.addAll(this.liquidMesh.faces, liquid.getLiquidMesh().faces);
+                    
+                    renderedLiquidList.add(new ObjectRendererIndices(FilenameUtils.getBaseName(filename)+"_"+formatter.format(chunk.getIndexX())+"_"+formatter.format(chunk.getIndexY())+"_liquid", startIndex, this.liquidMesh.faces.length, offsetVertices * 3, liquidMesh.getPoints().size()));
                 }                
             }            
         }
@@ -481,7 +483,9 @@ public class ADT extends FileReader {
     }
 
     private PolygonMesh renderCollisionTerrain(Map<String, M2> cache) throws FileReaderException, ModelRendererException, MPQException {
-        clearShapeMesh();        
+        clearShapeMesh();       
+        renderedObjectsList.clear();
+        renderedLiquidList.clear();
         
         if (cache == null) {
             logger.info("Cache entry is null, creating a temporary empty cache.");
@@ -505,7 +509,8 @@ public class ADT extends FileReader {
         float maxX = -Float.MAX_VALUE;
         float maxY = -Float.MAX_VALUE;
         float maxZ = -Float.MAX_VALUE;
-              
+        int startIndex;      
+        
         for (MCNK chunk : mapChunks) {
             int offset = shapeMesh.getPoints().size() / 3;
 
@@ -549,7 +554,7 @@ public class ADT extends FileReader {
             }
 
             // We allocate the maximum amount of faces.
-            int[][] faces = new int[256][6];
+            int[][] faces = new int[256][6];            
             int idx = 0;
             for (int j = 9, x = 0, y = 0; j < 145; j++, x++) {
                 if (x >= 8) {
@@ -609,8 +614,11 @@ public class ADT extends FileReader {
                 }
             }
 
+            startIndex = (this.shapeMesh.faces == null ? 0 : this.shapeMesh.faces.length);
             // We include only faces for which we had record. Holes are not included in here.
-            shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, ArrayUtils.subarray(faces, 0, idx));
+            shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, ArrayUtils.subarray(faces, 0, idx));                        
+            
+            renderedObjectsList.add(new ObjectRendererIndices(FilenameUtils.getBaseName(filename)+"_"+formatter.format(chunk.getIndexX())+"_"+formatter.format(chunk.getIndexY()), startIndex, shapeMesh.faces.length, offset * 3, shapeMesh.getPoints().size()));
             
             // Adding doodad indices.
             if (addModels) {
@@ -629,8 +637,8 @@ public class ADT extends FileReader {
                     }
                 }
             }
-        }
-
+        }        
+        
         boundingBox = new BoundingBox(minY, minZ, minX, maxY - minY, maxZ - minZ, maxX - minX);
 
         if (addLiquid) {
@@ -735,7 +743,11 @@ public class ADT extends FileReader {
                             faces[i][j] = model.getShapeMesh().faces[i][j] + offset;
                         }
                     }
+                    
+                    startIndex = this.shapeMesh.faces.length;
                     shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
+                    
+                    renderedObjectsList.add(new ObjectRendererIndices(FilenameUtils.getBaseName(modelFile), startIndex, shapeMesh.faces.length, offset * 3, shapeMesh.getPoints().size()));
                 } catch (JMpqException | FileReaderException ex) {
                     logger.error("An error occured while reading the MPQ when importing Models.");
                 } catch (IOException ex) {
@@ -825,8 +837,11 @@ public class ADT extends FileReader {
                             faces[i][j] = wmo.getShapeMesh().faces[i][j] + offset;
                         }
                     }
-                    shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);
-
+                    startIndex = this.shapeMesh.faces.length;
+                    shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);                    
+                    
+                    renderedObjectsList.add(new ObjectRendererIndices(FilenameUtils.getBaseName(wmoFile), startIndex, shapeMesh.faces.length, offset * 3, shapeMesh.getPoints().size()));
+                    
                     // Now we can also add WMO liquid.
                     if (addLiquid && wmo.hasLiquid()) {
                         wmo.render3D(Render3DType.LIQUID, null);                        
@@ -859,7 +874,11 @@ public class ADT extends FileReader {
                                 faces[i][j] = wmo.getLiquidMesh().faces[i][j] + offset;
                             }
                         }
+                        
+                        startIndex = this.liquidMesh.faces.length;
                         liquidMesh.faces = ArrayUtils.addAll(liquidMesh.faces, faces);
+                        
+                        renderedLiquidList.add(new ObjectRendererIndices("liquid_"+FilenameUtils.getBaseName(wmoFile), startIndex, liquidMesh.faces.length, offset * 3, liquidMesh.getPoints().size()));
                     }
                     
                 } catch (JMpqException | FileReaderException ex) {

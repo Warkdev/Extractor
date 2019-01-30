@@ -119,19 +119,15 @@ public class MCLQ extends ChunkLiquidRenderer {
     private PolygonMesh renderLiquid() {
         clearLiquidMesh();        
         
-        float baseX = 0;
-        float baseY = 0;
         // Starting with vertices.   
         List<Vec3f> tempVertices = new ArrayList<>();
         for (int x = 0; x < LIQUID_DATA_LENGTH; x++) {
             for (int y = 0; y < LIQUID_DATA_LENGTH; y++) {                                
-                tempVertices.add(new Vec3f(baseX + MapUnit.UNIT_SIZE * x,
-                        baseY + MapUnit.UNIT_SIZE * y,
-                        this.height.get(x * LIQUID_DATA_LENGTH + y)));
-                baseY += MapUnit.UNIT_SIZE;
-            }                        
-            baseY = 0;
-            baseX += MapUnit.UNIT_SIZE;
+                tempVertices.add(new Vec3f(
+                        MapUnit.UNIT_SIZE * x,
+                        MapUnit.UNIT_SIZE * y,
+                        this.height.get(x * LIQUID_DATA_LENGTH + y)));                
+            }                                    
         }
 
         // Then with indices & texture coord.
@@ -140,7 +136,7 @@ public class MCLQ extends ChunkLiquidRenderer {
         List<Short> liquidIndicesList = new ArrayList<>();
         for (int x = 0; x < LIQUID_FLAG_LENGTH; x++) {
             for (int y = 0; y < LIQUID_FLAG_LENGTH; y++) {                
-                if (!hasNoLiquid(x, y)) {
+                if (!hasNoLiquid(x, y)) {                    
                     pos = x * (LIQUID_DATA_LENGTH) + y;
                     this.liquidMesh.getPoints().addAll(tempVertices.get(pos + 1).y, tempVertices.get(pos + 1).z, tempVertices.get(pos + 1).x);
                     liquidIndicesList.add(index++);

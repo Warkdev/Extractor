@@ -82,8 +82,8 @@ public class Extractor extends Application {
     private static final String kalimdor = "world\\maps\\kalimdor\\kalimdor.wdt";
     //private static final String map = "World\\Maps\\emeralddream\\emeralddream_33_27.adt";
     //private static final String map = "World\\Maps\\deadminesinstance\\deadminesinstance_33_31.adt";
-    private static final int idxX = 31;
-    private static final int idxY = 49;
+    private static final int idxX = 32;
+    private static final int idxY = 48;
     private static final String map = "World\\Maps\\Azeroth\\Azeroth_"+idxX+"_"+idxY+".adt";
     //private static final String map = "World\\Maps\\Azeroth\\Azeroth_30_47.adt";
     //private static final String map = "world\\maps\\kalimdor\\kalimdor_30_11.adt";
@@ -155,6 +155,7 @@ public class Extractor extends Application {
                     String pMeshFile = ROOT + FilenameUtils.getBaseName(map) + "_pmesh.obj";
                     String dMeshFile = ROOT + FilenameUtils.getBaseName(map) + "_dmesh.obj";                    
                     adt.save3D(file, FileType3D.OBJ, Render3DType.COLLISION_TERRAIN, false, false);
+                    //adt.save3D(file, FileType3D.OBJ, Render3DType.LIQUID, false, false);
                     //adt.render3D(Render3DType.COLLISION_TERRAIN, cache);
                     int[] indices = new int[adt.getShapeMesh().faces.length * 3];
                     for (int i = 0; i < adt.getShapeMesh().faces.length; i++) {
@@ -162,14 +163,14 @@ public class Extractor extends Application {
                             indices[i * 3 + (j / 2)] = adt.getShapeMesh().faces[i][j];
                         }
                     }
-                    InputGeomProvider geometry = new SimpleInputGeomProvider(adt.getShapeMesh().getPoints().toArray(null), indices);
+                    /**InputGeomProvider geometry = new SimpleInputGeomProvider(adt.getShapeMesh().getPoints().toArray(null), indices);
                                                            
                     RecastConfig cfg = new RecastConfig(RecastConstants.PartitionType.WATERSHED, RecastParameters.CELL_SIZE, RecastParameters.CELL_HEIGHT, 
                             RecastParameters.AGENT_HEIGHT, RecastParameters.AGENT_RADIUS, RecastParameters.AGENT_CLIMB, RecastParameters.AGENT_MAX_SLOPE_ANGLE, 
                             RecastParameters.REGION_MIN_AREA, RecastParameters.REGION_MERGE_AREA, RecastParameters.POLY_MAX_EDGE_LEN , RecastParameters.POLY_MAX_EDGE_ERROR, 
                             RecastParameters.POLY_VERTS_PER_POLYGON, RecastParameters.DETAIL_SAMPLE_DIST, RecastParameters.DETAIL_SAMPLE_MAX_ERROR, RecastParameters.VERTEX_PER_TILE, new AreaModification(0x1, 0x7));
                     RecastBuilderConfig bcfg = new RecastBuilderConfig(cfg, geometry.getMeshBoundsMin(), geometry.getMeshBoundsMax());
-                    RecastBuilder rcBuilder = new RecastBuilder();
+                    RecastBuilder rcBuilder = new RecastBuilder();*/
                     /**int[] twh = Recast.calcTileCount(geometry.getMeshBoundsMin(), geometry.getMeshBoundsMax(), cfg.cs, cfg.tileSize);                    
                     System.out.println(Arrays.toString(twh));*/
 

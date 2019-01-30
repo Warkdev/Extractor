@@ -22,6 +22,6 @@ package eu.jangos.extractor.file.common;
 public class MapUnit {
     public static final float TILE_SIZE = 533 + 1/3.0f;
     public static final float CHUNK_SIZE = TILE_SIZE / 16.0f;        
-    public static final float UNIT_SIZE = CHUNK_SIZE / 8.0f;
+    public static final float UNIT_SIZE = CHUNK_SIZE / 8.0f;    
     public static final float ZERO_POINT = 32.0f * TILE_SIZE;   
 }

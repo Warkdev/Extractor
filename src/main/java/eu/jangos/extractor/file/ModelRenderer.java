@@ -30,6 +30,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Point3D;
@@ -51,13 +56,19 @@ public abstract class ModelRenderer {
 
     private static final Logger logger = LoggerFactory.getLogger(ModelRenderer.class);
 
+    protected NumberFormat formatter = new DecimalFormat("00");
+    
     protected PolygonMesh shapeMesh;
+    protected List<ObjectRendererIndices> renderedObjectsList;
     protected PolygonMesh liquidMesh;
+    protected List<ObjectRendererIndices> renderedLiquidList;
     protected Map<String, M2> modelCache;
 
     public ModelRenderer() {
         this.liquidMesh = new PolygonMesh();
         this.shapeMesh = new PolygonMesh();
+        this.renderedObjectsList = new ArrayList<>();
+        this.renderedLiquidList = new ArrayList<>();
     }
 
     /**
@@ -77,8 +88,10 @@ public abstract class ModelRenderer {
      * Render3D provides a PolygonMesh object containing a 3D representation of
      * the requested render type.
      *
-     * @param renderType The render type that needs to be used when generating this polygon mesh.
-     * @param cache A cache of models, in case of generation of mesh with a lot of models, this helps to speed up the mesh generation process.
+     * @param renderType The render type that needs to be used when generating
+     * this polygon mesh.
+     * @param cache A cache of models, in case of generation of mesh with a lot
+     * of models, this helps to speed up the mesh generation process.
      * @return A PolygonMesh object representing the object to be rendered.
      * @throws ModelRendererException This method can throw a converter
      * exception if an error occured during the rendering.
@@ -122,8 +135,11 @@ public abstract class ModelRenderer {
      * @throws ModelRendererException This method can throw a converter
      * exception in case of some conversion went wront.
      * @return True if the file has been saved, false otherwise.
-     * @throws eu.jangos.extractor.file.exception.MPQException MPQ Exception can be raised in case there's an error to find the requested file.
-     * @throws eu.jangos.extractor.file.exception.FileReaderException File Reader exception can be raised in case there's an error while reading the requested file.
+     * @throws eu.jangos.extractor.file.exception.MPQException MPQ Exception can
+     * be raised in case there's an error to find the requested file.
+     * @throws eu.jangos.extractor.file.exception.FileReaderException File
+     * Reader exception can be raised in case there's an error while reading the
+     * requested file.
      */
     public boolean save3D(String path, FileType3D fileType, Render3DType renderType, boolean addNormals, boolean addTextures) throws ModelRendererException, MPQException, FileReaderException {
         render3D(renderType, modelCache);
@@ -142,45 +158,107 @@ public abstract class ModelRenderer {
      * complete and that it can be rendered.
      *
      * @param mesh The mesh to convert to Wavefront OBJ format.
-     * @param addNormals Specify whether normals must be added to the OBJ format or not.
+     * @param addNormals Specify whether normals must be added to the OBJ format
+     * or not.
      * @param addTextures Specify whether texture coordinates must be added to
      * the OBJ format or not.
      * @return A String containing the content of the Wavefront OBJ format.
      */
-    private String getMeshAsOBJ(PolygonMesh mesh, boolean addNormals, boolean addTextures) {
+    private String getMeshAsOBJ(boolean addNormals, boolean addTextures) {
         StringBuilder sb = new StringBuilder();
+        List<String> addedObject = new ArrayList<>();
 
-        for (int i = 0; i < mesh.getPoints().size(); i += 3) {
-            sb.append("v ").append(mesh.getPoints().get(i)).append(" ").append(mesh.getPoints().get(i + 1)).append(" ").append(mesh.getPoints().get(i + 2)).append("\n");
-        }
+        boolean added = false;
+        int index = 0;
+        String search = "";
+        int offset = this.shapeMesh.getPoints().size() / 3;
 
-        if (addNormals) {
-            for (int i = 0; i < mesh.getNormals().size(); i += 3) {
-                sb.append("vn ").append(mesh.getNormals().get(i)).append(" ").append(mesh.getNormals().get(i + 1)).append(" ").append(mesh.getNormals().get(i + 2)).append("\n");
+        for (ObjectRendererIndices object : renderedObjectsList) {
+            if (!addedObject.contains(object.getObjectName())) {
+                addedObject.add(object.getObjectName());
+                sb.append("o " + object.getObjectName() + "\n");
+            } else {
+                added = false;
+                index = 0;
+                while (!added) {
+                    index++;
+                    search = object.getObjectName() + "_" + index;
+                    if (!addedObject.contains(search)) {
+                        addedObject.add(search);
+                        added = true;
+                    }
+                }
+                sb.append("o " + search + "\n");
+            }
+
+            for (int j = object.getStartPoint(); j < object.getEndPoint(); j += 3) {
+                sb.append("v ")
+                        .append(this.shapeMesh.getPoints().get(j)).append(" ")
+                        .append(this.shapeMesh.getPoints().get(j + 1)).append(" ")
+                        .append(this.shapeMesh.getPoints().get(j + 2)).append("\n");
+            }
+
+            for (int i = object.getStartIndex(); i < object.getEndIndex(); i++) {
+                sb.append("f ");
+                for (int j = 0; j < this.shapeMesh.faces[i].length; j += 2) {
+                    sb.append(this.shapeMesh.faces[i][j] + 1);
+
+                    if (addNormals) {
+                        sb.append("/").append(this.shapeMesh.faces[i][j] + 1);
+                    }
+                    if (addTextures) {
+                        sb.append("/").append(this.shapeMesh.faces[i][j + 1]);
+                    }
+                    sb.append(" ");
+                }
+                sb.append("\n");
+
+            }
+        }        
+        
+        for (ObjectRendererIndices object : renderedLiquidList) {
+            if (!addedObject.contains(object.getObjectName())) {
+                addedObject.add(object.getObjectName());
+                sb.append("o " + object.getObjectName() + "\n");
+            } else {
+                added = false;
+                index = 0;
+                while (!added) {
+                    index++;
+                    search = object.getObjectName() + "_" + index;
+                    if (!addedObject.contains(search)) {
+                        addedObject.add(search);
+                        added = true;
+                    }
+                }
+                sb.append("o " + search + "\n");
+            }
+
+            for (int j = object.getStartPoint(); j < object.getEndPoint(); j += 3) {
+                sb.append("v ")
+                        .append(this.liquidMesh.getPoints().get(j)).append(" ")
+                        .append(this.liquidMesh.getPoints().get(j + 1)).append(" ")
+                        .append(this.liquidMesh.getPoints().get(j + 2)).append("\n");
+            }
+
+            for (int i = object.getStartIndex(); i < object.getEndIndex(); i++) {
+                sb.append("f ");
+                for (int j = 0; j < this.liquidMesh.faces[i].length; j += 2) {
+                    sb.append(this.liquidMesh.faces[i][j] + 1 + offset);
+
+                    if (addNormals) {
+                        sb.append("/").append(this.liquidMesh.faces[i][j] + 1);
+                    }
+                    if (addTextures) {
+                        sb.append("/").append(this.liquidMesh.faces[i][j + 1]);
+                    }
+                    sb.append(" ");
+                }
+                sb.append("\n");
+
             }
         }
         
-        if (addTextures) {
-            for (int i = 0; i < mesh.getTexCoords().size(); i += 2) {
-                sb.append("vt ").append(mesh.getTexCoords().get(i)).append(" ").append(mesh.getTexCoords().get(i + 1)).append("\n");
-            }
-        }
-
-        for (int i = 0; i < mesh.faces.length; i++) {
-            sb.append("f ");
-            for (int j = 0; j < mesh.faces[i].length; j += 2) {
-                sb.append(mesh.faces[i][j] + 1);
-                if (addNormals) {
-                    sb.append("/").append(mesh.faces[i][j] + 1);
-                }
-                if (addTextures) {
-                    sb.append("/").append(mesh.faces[i][j + 1]);
-                }
-                sb.append(" ");
-            }
-            sb.append("\n");
-        }
-
         return sb.toString();
     }
 
@@ -204,29 +282,15 @@ public abstract class ModelRenderer {
 
         switch (renderType) {
             case MODEL:
-            case TERRAIN:            
+            case TERRAIN:
             case COLLISION_MODEL:
-                content = getMeshAsOBJ(this.shapeMesh, addNormals, addTextures);
+                content = getMeshAsOBJ(addNormals, addTextures);
                 break;
-            case COLLISION_TERRAIN:
-                // Merging Meshes
-                int offset = this.shapeMesh.getPoints().size() / 3;
-                PolygonMesh merged = new PolygonMesh(this.shapeMesh.getPoints().toArray(null), this.shapeMesh.getNormals().toArray(null), this.shapeMesh.getTexCoords().toArray(null), this.shapeMesh.faces);
-                if(this.liquidMesh.faces != null) {
-                    merged.getPoints().addAll(this.liquidMesh.getPoints());                
-                    int[][] faces = new int[liquidMesh.faces.length][8];
-                    for(int i = 0; i < liquidMesh.faces.length; i++) {
-                        for (int j = 0; j < liquidMesh.faces[i].length; j++) {
-                            faces[i][j] = liquidMesh.faces[i][j] + offset;
-                        }
-                    }
-                    merged.faces = ArrayUtils.addAll(merged.faces, faces);
-                }
-                content = getMeshAsOBJ(merged, addNormals, addTextures);
-                //content = getMeshAsOBJ(this.shapeMesh, addNormals, addTextures);                
+            case COLLISION_TERRAIN:                                                                
+                content = getMeshAsOBJ(addNormals, addTextures);
                 break;
             case LIQUID:
-                content = getMeshAsOBJ(this.liquidMesh, addNormals, addTextures);
+                content = getMeshAsOBJ(addNormals, addTextures);
                 break;
             default:
                 throw new ModelRendererException("This render type is not supported");
@@ -252,7 +316,8 @@ public abstract class ModelRenderer {
     }
 
     /**
-     * Save a JavaFX Pane object to PNG file, this method will also scale down any too large image to a maximum of 5000 * 5000 pixels.
+     * Save a JavaFX Pane object to PNG file, this method will also scale down
+     * any too large image to a maximum of 5000 * 5000 pixels.
      *
      * @param path The file where this image must be saved.
      * @param renderType The desired render type that will be used to render
@@ -264,31 +329,31 @@ public abstract class ModelRenderer {
         if (path == null || path.isEmpty()) {
             throw new ModelRendererException("Provided file is null or empty.");
         }
-        
-        Pane pane = render2D(renderType);   
+
+        Pane pane = render2D(renderType);
         double scale = 1;
         int maxSize = 5000;
-        
-        if(pane.getPrefHeight() <= 0) {
+
+        if (pane.getPrefHeight() <= 0) {
             pane.setPrefHeight(1);
-        } 
-        
-        if(pane.getPrefWidth() <= 0) {
+        }
+
+        if (pane.getPrefWidth() <= 0) {
             pane.setPrefWidth(1);
-        }                
-        
+        }
+
         if (pane.getPrefWidth() >= maxSize) {
             scale = maxSize / pane.getPrefWidth();
         } else if (pane.getPrefHeight() >= maxSize) {
             scale = maxSize / pane.getPrefHeight();
         }
-        
-        logger.debug("Pane size: "+pane.getPrefHeight() + ", "+pane.getPrefWidth());
-        WritableImage image = new WritableImage((int) (pane.getPrefWidth() * scale), (int) (pane.getPrefHeight() * scale));        
-        SnapshotParameters params = new SnapshotParameters();                    
+
+        logger.debug("Pane size: " + pane.getPrefHeight() + ", " + pane.getPrefWidth());
+        WritableImage image = new WritableImage((int) (pane.getPrefWidth() * scale), (int) (pane.getPrefHeight() * scale));
+        SnapshotParameters params = new SnapshotParameters();
         params.setTransform(Transform.scale(scale, scale));
         pane.snapshot(params, image);
-        
+
         File file = new File(path);
         if (file.exists()) {
             file.delete();
