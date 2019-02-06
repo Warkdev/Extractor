@@ -16,7 +16,6 @@
 package eu.jangos.extractor.file.adt.chunk;
 
 import com.sun.javafx.geom.Vec2f;
-import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
@@ -125,7 +124,7 @@ public class MCNK extends FileReader {
     }
 
     @Override
-    public void init(MPQManager manager, String filename, boolean loadChildren, int idxX, int idxY) throws IOException, FileReaderException {
+    public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

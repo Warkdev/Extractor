@@ -195,11 +195,11 @@ public class WMO extends FileReader {
     }
 
     public void init(MPQManager manager, String filename) throws JMpqException, FileReaderException, MPQException {
-        init(manager, filename, false, -1, -1);
+        init(manager, filename, false);
     }
 
     @Override
-    public void init(MPQManager manager, String filename, boolean loadChildren, int idxX, int idxY) throws FileReaderException, MPQException, JMpqException {
+    public void init(MPQManager manager, String filename, boolean loadChildren) throws FileReaderException, MPQException, JMpqException {
         super.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
 
         if (data.remaining() == 0) {

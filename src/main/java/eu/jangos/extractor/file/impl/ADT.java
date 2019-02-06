@@ -104,15 +104,7 @@ public class ADT extends FileReader {
     private int offsetMODF;
     private int offsetMFBO;
     private int offsetMH2O;
-    private int offsetMTFX;
-
-    // Index X and Y are etracted from the filename to render liquid data.
-    private int indexX;
-    private int indexY;
-
-    // These are the positions of the upper left corner of the map.
-    private float baseX;
-    private float baseY;
+    private int offsetMTFX;    
 
     private BoundingBox boundingBox;
 
@@ -125,12 +117,12 @@ public class ADT extends FileReader {
     private float maxHeight;
     private float minHeight;
 
-    public void init(MPQManager manager, String filename, int idxX, int idxY) throws IOException, FileReaderException, MPQException {
-        init(manager, filename, false, idxX, idxY);
+    public void init(MPQManager manager, String filename) throws IOException, FileReaderException, MPQException {
+        init(manager, filename, false);
     }
 
     @Override
-    public void init(MPQManager manager, String filename, boolean loadChildren, int idxX, int idxY) throws IOException, FileReaderException, MPQException {
+    public void init(MPQManager manager, String filename, boolean loadChildren) throws IOException, FileReaderException, MPQException {
         super.init = false;
         super.manager = manager;
 
@@ -143,9 +135,6 @@ public class ADT extends FileReader {
 
         super.data.order(ByteOrder.LITTLE_ENDIAN);
         super.filename = filename;
-
-        this.indexX = idxX;
-        this.indexY = idxY;
 
         // This is all what we need to read our file. Initialize the offset and check the version.
         readVersion(super.data);

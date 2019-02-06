@@ -23,7 +23,6 @@ import eu.jangos.extractor.file.impl.M2;
 import eu.jangos.extractorfx.rendering.FileType2D;
 import eu.jangos.extractorfx.rendering.FileType3D;
 import eu.jangos.extractorfx.rendering.PolygonMesh;
-import eu.jangos.extractorfx.rendering.PolygonMeshView;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import eu.jangos.extractorfx.rendering.Render3DType;
 import java.io.File;
@@ -33,7 +32,6 @@ import java.io.OutputStreamWriter;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javafx.embed.swing.SwingFXUtils;
@@ -44,7 +42,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javax.imageio.ImageIO;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -283,12 +280,8 @@ public abstract class ModelRenderer {
         switch (renderType) {
             case MODEL:
             case TERRAIN:
-            case COLLISION_MODEL:
-                content = getMeshAsOBJ(addNormals, addTextures);
-                break;
-            case COLLISION_TERRAIN:                                                                
-                content = getMeshAsOBJ(addNormals, addTextures);
-                break;
+            case COLLISION_MODEL:                
+            case COLLISION_TERRAIN:                                                                                
             case LIQUID:
                 content = getMeshAsOBJ(addNormals, addTextures);
                 break;

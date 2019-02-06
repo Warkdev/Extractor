@@ -21,6 +21,7 @@ import static javafx.application.Application.launch;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +40,9 @@ public class ExtractorFx extends Application {
         
         // Maximizing.
         stage.setMaximized(true);
-        stage.setTitle("Extractor FX");
-
+        stage.setTitle("JaNGOS Extractor FX");
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/images/icon.png")));
+        
         stage.setScene(scene);
         stage.show();        
         logger.info("Application started!");

@@ -7,33 +7,42 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.jangos.extractorfx.gui.assets.AssetTabController">
+<VBox fx:id="root" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.jangos.extractorfx.gui.assets.AssetTabController">
     <children>
         <TextField fx:id="tfSearch" />
         <ListView fx:id="listView" prefHeight="676.0" prefWidth="200.0">
             <contextMenu>
-                <ContextMenu>
+                <ContextMenu fx:id="contextMenu">
                     <items>
                         <MenuItem mnemonicParsing="false" onAction="#onSelectedItemAction" text="Selected Item" />
                         <Menu mnemonicParsing="false" text="2D Rendering">
                             <items>
                                 <Menu mnemonicParsing="false" text="Liquid rendering">
                                     <items>
-                                        <MenuItem mnemonicParsing="false" text="Type" />
-                                        <MenuItem mnemonicParsing="false" text="Fishable" />
-                                        <MenuItem mnemonicParsing="false" text="Animated" />
-                                        <MenuItem mnemonicParsing="false" text="Heightmap" />
+                                        <MenuItem mnemonicParsing="false" onAction="#onLiquid2DAnimatedRendering" text="Animated" />
+                                        <MenuItem mnemonicParsing="false" onAction="#onLiquid2DFishableRendering" text="Fishable" />
+                                        <MenuItem mnemonicParsing="false" onAction="#onLiquid2DHeightmapRendering" text="Heightmap" />
+                                        <MenuItem mnemonicParsing="false" onAction="#onLiquid2DTypeRendering" text="Type" />
                                     </items>
                                 </Menu>
                                 <Menu mnemonicParsing="false" text="Terrain rendering">
                                     <items>
-                                        <MenuItem mnemonicParsing="false" text="Terrain" />
-                                        <MenuItem mnemonicParsing="false" text="Heightmap" />
-                                        <MenuItem mnemonicParsing="false" text="Holemap" />
+                                        <MenuItem mnemonicParsing="false" onAction="#onTerrain2DHeightmapRendering" text="Heightmap" />
+                                        <MenuItem mnemonicParsing="false" onAction="#onTerrain2DHolemapRendering" text="Holemap" />
+                                        <MenuItem mnemonicParsing="false" onAction="#onTerrain2DTerrainRendering" text="Terrain" />
                                     </items>
                                 </Menu>
                             </items>
                         </Menu>
+                  <Menu mnemonicParsing="false" text="3D Rendering">
+                    <items>
+                      <MenuItem mnemonicParsing="false" text="Liquid" />
+                        <MenuItem mnemonicParsing="false" text="Terrain" />
+                        <MenuItem mnemonicParsing="false" text="Terrain (Collision)" />
+                        <MenuItem mnemonicParsing="false" text="Model (Full)" />
+                        <MenuItem mnemonicParsing="false" text="Model (Collision)" />
+                    </items>
+                  </Menu>
                     </items>
                 </ContextMenu>
             </contextMenu>

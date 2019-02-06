@@ -138,7 +138,7 @@ public class Extractor extends Application {
             public void run() {
                 try {
                     //extractAllTerrains();
-                    adt.init(manager, map, idxX, idxY);
+                    adt.init(manager, map);
                     adt.setAddModels(true);
                     adt.setAddWMO(true);
                     adt.setAddLiquid(true);
@@ -345,7 +345,7 @@ public class Extractor extends Application {
                 logger.info("Extracting WDT... " + wdtFile);
                 String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
                 String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile);
-                wdt.init(manager, wdtFile, true, idxX, idxY);
+                wdt.init(manager, wdtFile, true);
                 for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
                     for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
                         if (wdt.hasTerrain(x, y)) {
@@ -372,7 +372,7 @@ public class Extractor extends Application {
     private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, boolean saveToFile) {
         try {
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
-            adt.init(manager, path, idxX, idxY);
+            adt.init(manager, path);
             adt.setyUp(yUp);
             adt.setAddWMO(addWMO);
             adt.setAddModels(addModels);
@@ -402,7 +402,7 @@ public class Extractor extends Application {
             logger.info("Extracting WDT... " + wdtFile);
             String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
             String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile);
-            wdt.init(manager, wdtFile, true, idxX, idxY);
+            wdt.init(manager, wdtFile, true);
             logger.debug("WDT file initialized.");
             for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
                 for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {

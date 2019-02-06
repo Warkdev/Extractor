@@ -15,29 +15,30 @@
  */
 package eu.jangos.extractorfx.gui;
 
+import eu.jangos.extractor.file.FileReader;
+import eu.jangos.extractor.file.ModelRenderer;
+import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
+import eu.jangos.extractor.file.exception.ModelRendererException;
+import eu.jangos.extractor.file.impl.ADT;
+import eu.jangos.extractor.file.impl.M2;
+import eu.jangos.extractor.file.impl.WDT;
+import eu.jangos.extractor.file.impl.WMO;
 import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractorfx.gui.assets.AssetTabController;
-import eu.jangos.extractorfx.gui.assets.StringCellComparator;
-import eu.jangos.extractorfx.gui.assets.StringCellFactory;
+import eu.jangos.extractorfx.rendering.Render2DType;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.apache.commons.io.FilenameUtils;
+import org.controlsfx.control.StatusBar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +71,9 @@ public class MainController implements Initializable {
     @FXML
     private AssetTabController modelTabController;
 
+    @FXML
+    private StatusBar statusBar;
+    
     private DirectoryChooser dirChooser;
     private Stage stage;
 
@@ -84,6 +88,18 @@ public class MainController implements Initializable {
         this.dirChooser.setTitle("Select the directory where MPQ files are stored");
         // Debug
         this.dirChooser.setInitialDirectory(new File("D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK"));
+        
+        this.wdtTabController.setMediator(this);
+        this.wdtTabController.setModel(new WDT());
+        
+        this.adtTabController.setMediator(this);
+        this.adtTabController.setModel(new ADT());
+        
+        this.wmoTabController.setMediator(this);
+        this.wmoTabController.setModel(new WMO());
+        
+        this.modelTabController.setMediator(this);
+        this.modelTabController.setModel(new M2());
     }
 
     @FXML
@@ -115,6 +131,25 @@ public class MainController implements Initializable {
         logger.info("MPQ directory opened..");
     }
 
+    public void render2D(Render2DType renderType, String filename, ModelRenderer model) {
+        logger.info("Rendering 2D model "+renderType+" for file "+FilenameUtils.getBaseName(filename));
+        if (model == null) {
+            return;
+        }
+        
+        try {
+            ((FileReader) model).init(this.mpqManager, filename, true);
+            model.render2D(renderType);        
+            logger.info("Rendering finished!");
+        } catch (IOException | MPQException mioe) {
+            logger.error("Error while initializing the file");
+        } catch (FileReaderException fre) {
+            logger.error("Error while reading the model");
+        } catch (ModelRendererException mre) {
+            logger.error("Error while rendering the model");
+        }
+    }
+    
     @FXML
     private void onCloseAction(ActionEvent event) {
         logger.info("Closing application...");
