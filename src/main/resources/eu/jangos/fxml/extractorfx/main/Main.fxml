@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.controlsfx.control.StatusBar?>
+
+<AnchorPane id="AnchorPane" prefHeight="760.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.jangos.extractorfx.gui.MainController">
+   <children>
+      <BorderPane layoutX="230.0" layoutY="81.0" prefHeight="760.0" prefWidth="1024.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <top>
+            <MenuBar BorderPane.alignment="CENTER">
+              <menus>
+                <Menu mnemonicParsing="false" text="File">
+                  <items>
+                        <MenuItem mnemonicParsing="false" onAction="#onOpenMPQAction" text="Open MPQ..." />
+                    <MenuItem mnemonicParsing="false" onAction="#onCloseAction" text="Close" />
+                  </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Edit">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="Delete" />
+                  </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Help">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="About" />
+                  </items>
+                </Menu>
+              </menus>
+            </MenuBar>
+         </top>
+         <bottom>
+            <StatusBar BorderPane.alignment="CENTER" />
+         </bottom>
+         <right>
+            <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+              <tabs>
+                <Tab text="WDT">
+                    <content>
+                        <fx:include fx:id="wdtTab" source="asset\AssetTab.fxml"/>
+                    </content>
+                </Tab>
+                <Tab text="ADT">
+                  <content>
+                        <fx:include fx:id="adtTab" source="asset\AssetTab.fxml"/>
+                  </content>
+                </Tab>
+                <Tab text="WMO">
+                  <content>
+                        <fx:include fx:id="wmoTab" source="asset\AssetTab.fxml"/>
+                  </content>
+                </Tab>
+                  <Tab text="M2">
+                    <content>
+                        <fx:include fx:id="modelTab" source="asset\AssetTab.fxml"/>
+                    </content>
+                  </Tab>
+              </tabs>
+            </TabPane>
+         </right>
+      </BorderPane>
+   </children>
+</AnchorPane>

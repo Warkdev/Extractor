@@ -119,17 +119,9 @@ public class MainApp extends Application {
         xLine.setStroke(Color.RED);
         Line yLine = new Line(0, VIEWPORT_H / 2, VIEWPORT_W, VIEWPORT_H / 2);
         yLine.setStroke(Color.GREEN);
-        Group root = new Group();
-        //view = new PolygonMeshView();
-        /**view.setCullFace(CullFace.BACK);
-        view.setDrawMode(DrawMode.FILL);
-        view.setMaterial(new PhongMaterial(Color.RED));        */
+        Group root = new Group();        
         
-        root.getChildren().addAll(xLine, yLine);
-        //root.getChildren().add(view);
-        //extractWmo(ironforge, false, false);                   
-        //extractAllWMO(false, root, true);
-        extractWdt(azeroth, root);
+        root.getChildren().addAll(xLine, yLine);        
         
         Scene scene = new Scene(root, VIEWPORT_W, VIEWPORT_H, true, SceneAntialiasing.BALANCED);
         scene.setCamera(camera);
@@ -191,131 +183,5 @@ public class MainApp extends Application {
      */
     public static void main(String[] args) {
         launch(args);
-    }
-
-    private static void extractAllWMO(boolean addModels, boolean saveToFile) {
-        int total = manager.getListWMO().size();
-        int done = 0;
-        for (String path : manager.getListWMO()) {
-            done++;
-            logger.info("Extracting WMO... " + path);
-            extractWmo(path, addModels, saveToFile);
-            logger.info("Done: " + done + " / Total: " + total);
-        }
-    }
-
-    private static void extractWmo(String path, boolean addModels, boolean saveToFile) {
-        try {
-            String outputFile = ROOT + "WMO\\" + FilenameUtils.removeExtension(path) + ".obj";
-            wmo.init(manager, path);
-            if (saveToFile) {
-                /**if (wmo.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, addModels)) {
-                    logger.info("WMO file saved succesfully !");
-                } else {
-                    logger.error("WMO file not saved !");
-                }*/
-            }
-        } catch (IOException | FileReaderException | MPQException ex) {
-            logger.error(ex.getMessage());
-        }
-    }
-
-    private static void extractAllM2(boolean saveToFile) {
-        int total = manager.getListM2().size();
-        int done = 0;
-        for (String path : manager.getListM2()) {
-            done++;
-            logger.info("Extracting M2... " + path);
-            extractM2(path, saveToFile);
-            logger.info("Done: " + done + " / Total: " + total);
-        }
-    }
-
-    private static void extractM2(String path, boolean saveToFile) {
-        try {
-            String outputFile = ROOT + "Models\\" + FilenameUtils.removeExtension(path) + ".obj";
-            model.init(manager, path);
-            if (saveToFile) {
-                //model.save3D(outputFile, FileType3D.OBJ, Render3DType.MODEL, saveToFile);
-            }
-        } catch (IOException | FileReaderException | MPQException ex) {
-            logger.error(ex.getMessage());
-        }
-    }
-
-    private static void extractAllTerrains() {
-
-        int total = manager.getListWDT().size();
-        int done = 0;
-        for (String wdtFile : manager.getListWDT()) {
-            done++;
-            if (wdtFile.endsWith(".wdt")) {
-                try {
-                    logger.info("Extracting WDT... " + wdtFile);
-                    String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
-                    String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + ".png";
-                    wdt.init(manager, wdtFile, true);
-                    for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
-                        for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
-                            if (wdt.hasTerrain(x, y)) {
-                                extractMap(base + "_" + y + "_" + x + ".adt", false, false, false, MAX_HEIGHT, false, MAX_HEIGHT, false);
-                            }
-                        }
-                    }
-                } catch (IOException | FileReaderException | MPQException ex) {
-                    logger.error(ex.getMessage());
-                }
-                logger.info("Done: " + done + " / Total: " + total);
-            }
-        }
-    }
-
-    private static void extractAllMaps(boolean yUp, boolean addWMO, boolean addModels, boolean addModelsInWMO, boolean saveToFile) {
-        for (String path : manager.getListADT()) {
-            extractMap(path, yUp, addWMO, addModels, MAX_HEIGHT, addModelsInWMO, MAX_HEIGHT, saveToFile);
-        }
-
-    }
-
-    private static void extractMap(String path, boolean yUp, boolean addWMO, boolean addModels, int modelMaxHeight, boolean addModelsInWMO, int wmoModelMaxHeight, boolean saveToFile) {
-        try {
-            String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(path) + ".obj";
-            adt.init(manager, path);
-            if (saveToFile) {
-                //adt.save3D(outputFile, FileType3D.OBJ, Render3DType.TERRAIN, false);
-            }
-        } catch (IOException | FileReaderException | MPQException ex) {
-            logger.error(ex.getMessage());
-        }
-    }
-
-    private static void extractAllWdt() {
-        for (String path : manager.getListWDT()) {
-            extractWdt(path, null);
-        }
-
-    }
-
-    private static void extractWdt(String wdtFile, Group root) {
-
-        try {
-            logger.info("Extracting WDT... " + wdtFile);
-            String base = FilenameUtils.getPath(wdtFile) + FilenameUtils.getBaseName(wdtFile);
-            String outputFile = ROOT + "Maps\\" + FilenameUtils.removeExtension(wdtFile) + ".png";
-            wdt.init(manager, wdtFile, true);
-            for (int x = 0; x < WDT.MAP_TILE_SIZE; x++) {
-                for (int y = 0; y < WDT.MAP_TILE_SIZE; y++) {
-                    if (wdt.hasTerrain(x, y)) {
-                        extractMap(base + "_" + y + "_" + x + ".adt", false, false, false, MAX_HEIGHT, false, MAX_HEIGHT, false);
-                    }
-                }
-            }
-            root.getChildren().add(wdt.render2D(Render2DType.RENDER_TILEMAP_LIQUID_TYPE));
-        } catch (IOException | FileReaderException | MPQException ex) {
-            logger.error(ex.getMessage());
-        } catch (ModelRendererException ex) {
-            java.util.logging.Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-    }
+    }    
 }
