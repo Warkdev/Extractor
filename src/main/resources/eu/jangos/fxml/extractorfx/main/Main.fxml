@@ -11,7 +11,7 @@
 
 <AnchorPane id="AnchorPane" prefHeight="760.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.jangos.extractorfx.gui.MainController">
    <children>
-      <BorderPane layoutX="230.0" layoutY="81.0" prefHeight="760.0" prefWidth="1024.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <BorderPane fx:id="borderPane" layoutX="230.0" layoutY="81.0" prefHeight="760.0" prefWidth="1024.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <top>
             <MenuBar BorderPane.alignment="CENTER">
               <menus>
@@ -34,11 +34,14 @@
               </menus>
             </MenuBar>
          </top>
+         <center>
+             <fx:include fx:id="viewer2D" source="viewers\Viewer2D.fxml" />
+         </center>
          <bottom>
             <StatusBar fx:id="statusBar" text="" BorderPane.alignment="CENTER" />
          </bottom>
-         <right>
-            <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+         <left>
+            <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="TOP_LEFT">
               <tabs>
                 <Tab text="WDT">
                     <content>
@@ -62,7 +65,7 @@
                   </Tab>
               </tabs>
             </TabPane>
-         </right>
+         </left>
       </BorderPane>
    </children>
 </AnchorPane>

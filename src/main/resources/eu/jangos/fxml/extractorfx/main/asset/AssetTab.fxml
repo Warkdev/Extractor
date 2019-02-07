@@ -7,10 +7,10 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="root" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.jangos.extractorfx.gui.assets.AssetTabController">
+<VBox fx:id="root" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.jangos.extractorfx.gui.assets.AssetTabController">
     <children>
         <TextField fx:id="tfSearch" />
-        <ListView fx:id="listView" prefHeight="676.0" prefWidth="200.0">
+        <ListView fx:id="listView" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="2500.0" prefWidth="149.0">
             <contextMenu>
                 <ContextMenu fx:id="contextMenu">
                     <items>

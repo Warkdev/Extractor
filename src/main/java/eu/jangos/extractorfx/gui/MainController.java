@@ -26,14 +26,23 @@ import eu.jangos.extractor.file.impl.WDT;
 import eu.jangos.extractor.file.impl.WMO;
 import eu.jangos.extractor.file.mpq.MPQManager;
 import eu.jangos.extractorfx.gui.assets.AssetTabController;
+import eu.jangos.extractorfx.gui.viewers.Viewer2DController;
 import eu.jangos.extractorfx.rendering.Render2DType;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -51,6 +60,9 @@ public class MainController implements Initializable {
 
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
 
+    @FXML
+    private BorderPane borderPane;
+    
     @FXML
     private VBox wdtTab;
     @FXML
@@ -73,7 +85,13 @@ public class MainController implements Initializable {
 
     @FXML
     private StatusBar statusBar;
-    
+
+    @FXML
+    private ScrollPane viewer2D;
+
+    @FXML
+    private Viewer2DController viewer2DController;
+
     private DirectoryChooser dirChooser;
     private Stage stage;
 
@@ -88,18 +106,23 @@ public class MainController implements Initializable {
         this.dirChooser.setTitle("Select the directory where MPQ files are stored");
         // Debug
         this.dirChooser.setInitialDirectory(new File("D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK"));
-        
+
         this.wdtTabController.setMediator(this);
         this.wdtTabController.setModel(new WDT());
-        
+
         this.adtTabController.setMediator(this);
         this.adtTabController.setModel(new ADT());
-        
+
         this.wmoTabController.setMediator(this);
         this.wmoTabController.setModel(new WMO());
-        
+
         this.modelTabController.setMediator(this);
         this.modelTabController.setModel(new M2());
+                
+        BorderPane.setMargin(this.viewer2D, Insets.EMPTY);
+        BorderPane.setAlignment(this.viewer2D, Pos.TOP_LEFT);
+        this.viewer2D.setVisible(false);
+        
     }
 
     @FXML
@@ -131,25 +154,63 @@ public class MainController implements Initializable {
         logger.info("MPQ directory opened..");
     }
 
-    public void render2D(Render2DType renderType, String filename, ModelRenderer model) {
-        logger.info("Rendering 2D model "+renderType+" for file "+FilenameUtils.getBaseName(filename));
+    public void render2D(Render2DType renderType, String filename, ModelRenderer model) {        
         if (model == null) {
             return;
         }
+            
+        Task task = new Task<Pane>() {
+            @Override
+            protected Pane call() throws Exception {
+                Pane pane = null;
+                logger.info("Rendering 2D model " + renderType + " for file " + FilenameUtils.getBaseName(filename));
+                updateMessage("Rendering 2D model " + renderType + " for file " + FilenameUtils.getBaseName(filename));
+                try {
+                    if (((FileReader) model).getFilename() == null || !((FileReader) model).getFilename().equals(filename)) {
+                        // Avoid init twice the same file.
+                        ((FileReader) model).init(mpqManager, filename, true);
+                    }                   
+                    pane = model.render2D(renderType);                                        
+                    logger.info("Rendering finished!");
+                    updateMessage("Rendering finished!");
+                } catch (IOException | MPQException mioe) {
+                    logger.error("Error while initializing the file");
+                    updateMessage("Error while initializing the file");
+                } catch (FileReaderException fre) {
+                    logger.error("Error while reading the model");
+                    updateMessage("Error while reading the model");
+                } catch (ModelRendererException mre) {
+                    logger.error("Error while rendering the model");
+                    updateMessage("Error while rendering the model");
+                }
+                return pane;
+            }
+        };
         
-        try {
-            ((FileReader) model).init(this.mpqManager, filename, true);
-            model.render2D(renderType);        
-            logger.info("Rendering finished!");
-        } catch (IOException | MPQException mioe) {
-            logger.error("Error while initializing the file");
-        } catch (FileReaderException fre) {
-            logger.error("Error while reading the model");
-        } catch (ModelRendererException mre) {
-            logger.error("Error while rendering the model");
-        }
+        task.setOnSucceeded(new EventHandler() {
+            @Override
+            public void handle(Event event) {  
+                logger.info("Task succeeded!");
+                viewer2DController.displayModel(model, (Pane) task.getValue());
+                viewer2D.setVisible(true);
+            }
+        });
+        
+        task.setOnFailed(new EventHandler() {
+            @Override
+            public void handle(Event event) {                
+                logger.info("Task failed!");
+                task.getException().printStackTrace();
+                viewer2D.setVisible(false);
+            }
+        });
+        
+        statusBar.textProperty().bind(task.messageProperty());        
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();        
     }
-    
+
     @FXML
     private void onCloseAction(ActionEvent event) {
         logger.info("Closing application...");
