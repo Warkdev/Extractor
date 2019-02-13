@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.input.KeyCodeCombination?>
 
 
-<ScrollPane fx:id="pane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.jangos.extractorfx.gui.viewers.Viewer2DController" />
+<TitledPane fx:id="pane" collapsible="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="900.0" prefWidth="1500.0" text="2D Viewer" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.jangos.extractorfx.gui.viewers.Viewer2DController">
+   <contextMenu>
+      <ContextMenu>
+        <items>
+          <MenuItem mnemonicParsing="false" onAction="#rotate" text="Rotate">
+               <accelerator>
+                  <KeyCodeCombination alt="UP" code="R" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+               </accelerator>
+            </MenuItem>
+            <MenuItem mnemonicParsing="false" onAction="#zoomIn" text="Zoom In" />
+            <MenuItem mnemonicParsing="false" onAction="#zoomOut" text="Zoom Out" />
+        </items>
+      </ContextMenu>
+   </contextMenu>
+</TitledPane>

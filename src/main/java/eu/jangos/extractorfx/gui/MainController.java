@@ -41,6 +41,8 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TitledPane;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -87,7 +89,7 @@ public class MainController implements Initializable {
     private StatusBar statusBar;
 
     @FXML
-    private ScrollPane viewer2D;
+    private TitledPane viewer2D;
 
     @FXML
     private Viewer2DController viewer2DController;

@@ -243,8 +243,12 @@ public class WDT extends FileReader {
         Canvas canvas = new Canvas(adtSize * this.adtArray.length, adtSize * this.adtArray[0].length);        
         PixelWriter pixelWriter = canvas.getGraphicsContext2D().getPixelWriter();                
                 
-        pane.setPrefHeight(adtSize * this.adtArray[0].length);
-        pane.setPrefWidth(adtSize * this.adtArray.length);
+        pane.setPrefHeight(canvas.getHeight());
+        pane.setPrefWidth(canvas.getWidth());
+        pane.setMinHeight(pane.getPrefHeight());
+        pane.setMaxHeight(pane.getPrefHeight());
+        pane.setMinWidth(pane.getPrefWidth());
+        pane.setMaxWidth(pane.getPrefWidth());
         
         ADT adt;
         List<MCNK> mapChunks;
@@ -259,7 +263,7 @@ public class WDT extends FileReader {
                     mapChunks = adt.getMapChunks();
                     for (int xx = 0; xx < ADT.SIZE_TILE_MAP; xx++) {
                         for (int yy = 0; yy < ADT.SIZE_TILE_MAP; yy++) {
-                            chunk = mapChunks.get(xx * ADT.SIZE_TILE_MAP + yy);
+                            chunk = mapChunks.get(xx * ADT.SIZE_TILE_MAP + yy);                            
                             if (chunk.hasNoLiquid()) {
                                 canvas.getGraphicsContext2D().setFill(ChunkLiquidRenderer.COLOR_NONE);
                                 canvas.getGraphicsContext2D().fillRect((x * adtSize) + (xx * MCLQ.LIQUID_FLAG_LENGTH), (y * adtSize) + (yy * MCLQ.LIQUID_FLAG_LENGTH), MCLQ.LIQUID_FLAG_LENGTH, MCLQ.LIQUID_FLAG_LENGTH);
@@ -271,10 +275,10 @@ public class WDT extends FileReader {
                                         pixelWriter.setColor((x * adtSize) + (xx * MCLQ.LIQUID_FLAG_LENGTH) + i, (y * adtSize) + (yy * MCLQ.LIQUID_FLAG_LENGTH) + j, liquid.getColorForLiquid(renderType, i, j));
                                     }
                                 }
-                            }
+                            }                            
                         }
                     }
-                }
+                } 
             }                    
         }
 
