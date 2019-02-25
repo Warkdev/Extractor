@@ -84,8 +84,7 @@ public class Viewer2DController implements Initializable {
                 if (renderedModel == null) {
                     return;
                 }
-                
-                System.out.println(event.getCode());
+                                
                 switch (event.getCode()) {   
                     case D:
                         renderedModel.setTranslateX(renderedModel.getTranslateX() + 5);
@@ -106,8 +105,7 @@ public class Viewer2DController implements Initializable {
                         zoom(true);
                         break;
                 }
-                
-                pane.requestFocus();
+                                
             }
 
         });
@@ -252,10 +250,10 @@ public class Viewer2DController implements Initializable {
             return;
         }
 
-        this.model = model;
-        Scene test = new Scene(renderedModel);
-        renderedModel.layout();
+        this.model = model;            
+        Scene testScene = new Scene(renderedModel);        
         this.pane.setContent(renderedModel);
+        renderedModel.layout();
         this.pane.getContent().getTransforms().add(new Rotate(180, Rotate.Y_AXIS));
         this.pane.getContent().getTransforms().add(new Rotate(90, Rotate.Z_AXIS));
         renderedModel.setEffect(dropShadow);

@@ -15,8 +15,8 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
-import com.sun.javafx.geom.Vec4f;
+import javafx.geometry.Point3D;
+import eu.jangos.extractor.file.common.Point4D;
 
 /**
  *
@@ -28,10 +28,10 @@ public class M2CompBone {
     private int flags;
     private short parentBone;
     private short submeshId;
-    private M2Track<Vec3f> translation;
-    private M2Track<Vec4f> rotation;
-    private M2Track<Vec3f> scale;
-    private Vec3f pivot;
+    private M2Track<Point3D> translation;
+    private M2Track<Point4D> rotation;
+    private M2Track<Point3D> scale;
+    private Point3D pivot;
 
     public M2CompBone() {
     }
@@ -76,35 +76,35 @@ public class M2CompBone {
         this.submeshId = submeshId;
     }
 
-    public M2Track<Vec3f> getTranslation() {
+    public M2Track<Point3D> getTranslation() {
         return translation;
     }
 
-    public void setTranslation(M2Track<Vec3f> translation) {
+    public void setTranslation(M2Track<Point3D> translation) {
         this.translation = translation;
     }
 
-    public M2Track<Vec4f> getRotation() {
+    public M2Track<Point4D> getRotation() {
         return rotation;
     }
 
-    public void setRotation(M2Track<Vec4f> rotation) {
+    public void setRotation(M2Track<Point4D> rotation) {
         this.rotation = rotation;
     }
 
-    public M2Track<Vec3f> getScale() {
+    public M2Track<Point3D> getScale() {
         return scale;
     }
 
-    public void setScale(M2Track<Vec3f> scale) {
+    public void setScale(M2Track<Point3D> scale) {
         this.scale = scale;
     }
 
-    public Vec3f getPivot() {
+    public Point3D getPivot() {
         return pivot;
     }
 
-    public void setPivot(Vec3f pivot) {
+    public void setPivot(Point3D pivot) {
         this.pivot = pivot;
     }
     

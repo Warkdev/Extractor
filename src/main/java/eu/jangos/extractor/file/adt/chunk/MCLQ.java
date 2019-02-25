@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 import eu.jangos.extractor.file.ChunkLiquidRenderer;
 import eu.jangos.extractor.file.common.MapUnit;
 import eu.jangos.extractor.file.exception.FileReaderException;
@@ -120,10 +120,10 @@ public class MCLQ extends ChunkLiquidRenderer {
         clearLiquidMesh();        
         
         // Starting with vertices.   
-        List<Vec3f> tempVertices = new ArrayList<>();
+        List<Point3D> tempVertices = new ArrayList<>();
         for (int x = 0; x < LIQUID_DATA_LENGTH; x++) {
             for (int y = 0; y < LIQUID_DATA_LENGTH; y++) {                                
-                tempVertices.add(new Vec3f(
+                tempVertices.add(new Point3D(
                         MapUnit.UNIT_SIZE * x,
                         MapUnit.UNIT_SIZE * y,
                         this.height.get(x * LIQUID_DATA_LENGTH + y)));                
@@ -138,16 +138,16 @@ public class MCLQ extends ChunkLiquidRenderer {
             for (int y = 0; y < LIQUID_FLAG_LENGTH; y++) {                
                 if (!hasNoLiquid(x, y)) {                    
                     pos = x * (LIQUID_DATA_LENGTH) + y;
-                    this.liquidMesh.getPoints().addAll(tempVertices.get(pos + 1).y, tempVertices.get(pos + 1).z, tempVertices.get(pos + 1).x);
+                    this.liquidMesh.getPoints().addAll((float) tempVertices.get(pos + 1).getY(), (float) tempVertices.get(pos + 1).getZ(), (float) tempVertices.get(pos + 1).getX());
                     liquidIndicesList.add(index++);
 
-                    this.liquidMesh.getPoints().addAll(tempVertices.get(pos).y, tempVertices.get(pos).z, tempVertices.get(pos).x);
+                    this.liquidMesh.getPoints().addAll((float) tempVertices.get(pos).getY(), (float) tempVertices.get(pos).getZ(), (float) tempVertices.get(pos).getX());
                     liquidIndicesList.add(index++);
 
-                    this.liquidMesh.getPoints().addAll(tempVertices.get(pos + LIQUID_DATA_LENGTH + 1).y, tempVertices.get(pos + LIQUID_DATA_LENGTH + 1).z, tempVertices.get(pos + LIQUID_DATA_LENGTH + 1).x);
+                    this.liquidMesh.getPoints().addAll((float) tempVertices.get(pos + LIQUID_DATA_LENGTH + 1).getY(), (float) tempVertices.get(pos + LIQUID_DATA_LENGTH + 1).getZ(), (float) tempVertices.get(pos + LIQUID_DATA_LENGTH + 1).getX());
                     liquidIndicesList.add(index++);
 
-                    this.liquidMesh.getPoints().addAll(tempVertices.get(pos + LIQUID_DATA_LENGTH).y, tempVertices.get(pos + LIQUID_DATA_LENGTH).z, tempVertices.get(pos + LIQUID_DATA_LENGTH).x);
+                    this.liquidMesh.getPoints().addAll((float) tempVertices.get(pos + LIQUID_DATA_LENGTH).getY(), (float) tempVertices.get(pos + LIQUID_DATA_LENGTH).getZ(), (float) tempVertices.get(pos + LIQUID_DATA_LENGTH).getX());
                     liquidIndicesList.add(index++);
                 }
             }            

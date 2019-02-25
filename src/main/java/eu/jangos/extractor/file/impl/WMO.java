@@ -15,7 +15,6 @@
  */
 package eu.jangos.extractor.file.impl;
 
-import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.common.C4Plane;
 import eu.jangos.extractor.file.common.CArgb;
@@ -61,7 +60,6 @@ import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
-import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -141,10 +139,10 @@ public class WMO extends FileReader {
     private List<String> groupNameList = new ArrayList<>();
     private List<WMOGroupInfo> groupInfoList = new ArrayList<>();
     private String skyBoxName;
-    private List<Vec3f> portalVertexList = new ArrayList<>();
+    private List<Point3D> portalVertexList = new ArrayList<>();
     private List<WMOPortal> portalList = new ArrayList<>();
     private List<WMOPortalRef> portalRefList = new ArrayList<>();
-    private List<Vec3f> visibleBlockVerticesList = new ArrayList<>();
+    private List<Point3D> visibleBlockVerticesList = new ArrayList<>();
     private List<WMOBlock> visibleBlockList = new ArrayList<>();
     private List<WMOLight> lightList = new ArrayList<>();
     private List<WMODoodadSet> doodadSetList = new ArrayList<>();
@@ -280,9 +278,9 @@ public class WMO extends FileReader {
         checkHeader(HEADER_MOPV);
         chunkSize = super.data.getInt() / SIZE_MOPV;
 
-        Vec3f portalVertex;
+        Point3D portalVertex;
         for (int i = 0; i < chunkSize; i++) {
-            portalVertex = new Vec3f(super.data.getFloat(), super.data.getFloat(), super.data.getFloat());
+            portalVertex = new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat());
             this.portalVertexList.add(portalVertex);
         }
 
@@ -309,10 +307,9 @@ public class WMO extends FileReader {
         checkHeader(HEADER_MOVV);
         chunkSize = super.data.getInt() / SIZE_MOVV;
 
-        Vec3f visibleBlockVertices;
-        for (int i = 0; i < chunkSize; i++) {
-            visibleBlockVertices = new Vec3f();
-            visibleBlockVertices.set(super.data.getFloat(), super.data.getFloat(), super.data.getFloat());
+        Point3D visibleBlockVertices;
+        for (int i = 0; i < chunkSize; i++) {            
+            visibleBlockVertices = new Point3D(super.data.getFloat(), super.data.getFloat(), super.data.getFloat());
             this.visibleBlockVerticesList.add(visibleBlockVertices);
         }
 
@@ -586,11 +583,11 @@ public class WMO extends FileReader {
         this.skyBoxName = skyBoxName;
     }
 
-    public List<Vec3f> getPortalVertexList() {
+    public List<Point3D> getPortalVertexList() {
         return portalVertexList;
     }
 
-    public void setPortalVertexList(List<Vec3f> portalVertexList) {
+    public void setPortalVertexList(List<Point3D> portalVertexList) {
         this.portalVertexList = portalVertexList;
     }
 
@@ -610,11 +607,11 @@ public class WMO extends FileReader {
         this.portalRefList = portalRefList;
     }
 
-    public List<Vec3f> getVisibleBlockVerticesList() {
+    public List<Point3D> getVisibleBlockVerticesList() {
         return visibleBlockVerticesList;
     }
 
-    public void setVisibleBlockVerticesList(List<Vec3f> visibleBlockVerticesList) {
+    public void setVisibleBlockVerticesList(List<Point3D> visibleBlockVerticesList) {
         this.visibleBlockVerticesList = visibleBlockVerticesList;
     }
 
@@ -802,7 +799,7 @@ public class WMO extends FileReader {
             if (group.hasLiquid()) {                
                 for (int x = 0; x < group.getLiquid().getxTiles(); x++) {
                     for (int y = 0; y < group.getLiquid().getyTiles(); y++) {
-                        Rectangle tile = new Rectangle(x * MapUnit.UNIT_SIZE + group.getLiquid().getBaseCoordinates().x, -(y * MapUnit.UNIT_SIZE + group.getLiquid().getBaseCoordinates().y), MapUnit.UNIT_SIZE, MapUnit.UNIT_SIZE);
+                        Rectangle tile = new Rectangle(x * MapUnit.UNIT_SIZE + group.getLiquid().getBaseCoordinates().getX(), -(y * MapUnit.UNIT_SIZE + group.getLiquid().getBaseCoordinates().getY()), MapUnit.UNIT_SIZE, MapUnit.UNIT_SIZE);
                         tile.setFill(Color.TRANSPARENT);
 
                         boolean render = true;
@@ -936,9 +933,9 @@ public class WMO extends FileReader {
                 liquidMesh.faces = ArrayUtils.addAll(liquidMesh.faces, faces);                                                
                 
                 int idx = 0;
-                for (Vec3f v : wmoGroup.getLiquidVerticesList()) {
-                    liquidMesh.getPoints().addAll(v.y, v.z, v.x);                    
-                    liquidMesh.getTexCoords().addAll(wmoGroup.getTextureVertexList().get(idx).x, wmoGroup.getTextureVertexList().get(idx).y);
+                for (Point3D v : wmoGroup.getLiquidVerticesList()) {
+                    liquidMesh.getPoints().addAll((float) v.getY(), (float) v.getZ(), (float) v.getX());                    
+                    liquidMesh.getTexCoords().addAll((float) wmoGroup.getTextureVertexList().get(idx).getX(), (float) wmoGroup.getTextureVertexList().get(idx).getY());
                     idx++;
                     offsetVertices++;
                 }
@@ -984,10 +981,10 @@ public class WMO extends FileReader {
                 shapeMesh.faces = ArrayUtils.addAll(shapeMesh.faces, faces);                
 
                 int idx = 0;
-                for (Vec3f v : wmoGroup.getVertexList()) {
-                    shapeMesh.getPoints().addAll(v.y, v.z, v.x);
-                    shapeMesh.getNormals().addAll(wmoGroup.getNormalList().get(idx).y, wmoGroup.getNormalList().get(idx).z, wmoGroup.getNormalList().get(idx).x);
-                    shapeMesh.getTexCoords().addAll(wmoGroup.getTextureVertexList().get(idx).x, wmoGroup.getTextureVertexList().get(idx).y);
+                for (Point3D v : wmoGroup.getVertexList()) {
+                    shapeMesh.getPoints().addAll((float) v.getY(), (float) v.getZ(), (float) v.getX());
+                    shapeMesh.getNormals().addAll((float) wmoGroup.getNormalList().get(idx).getY(), (float) wmoGroup.getNormalList().get(idx).getZ(), (float) wmoGroup.getNormalList().get(idx).getX());
+                    shapeMesh.getTexCoords().addAll((float) wmoGroup.getTextureVertexList().get(idx).getX(), (float) wmoGroup.getTextureVertexList().get(idx).getY());
                     idx++;
                     offsetVertices++;
                 }
@@ -1029,8 +1026,8 @@ public class WMO extends FileReader {
                         // First, we create a view to apply these transformations.
                         Affine affine = new Affine();
 
-                        // We translate the object location.
-                        Translate translate = new Translate(modelInstance.getPosition().x, modelInstance.getPosition().y, modelInstance.getPosition().z);                        
+                        // We translate the object location.                        
+                        Translate translate = new Translate(modelInstance.getPosition().getX(), modelInstance.getPosition().getY(), modelInstance.getPosition().getZ());                        
                         
                         // We convert the quaternion to a Rotate object with angle (in degrees) & pivot point.
                         Rotate rotate = getAngleAndAxis(modelInstance.getOrientation());

@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -24,10 +24,10 @@ import com.sun.javafx.geom.Vec3f;
 public class M2Ribbon {
     private int ribbonId;
     private int boneIndex;
-    private Vec3f position;
+    private Point3D position;
     private M2Array<Short> textureIndices;
     private M2Array<Short> materialIndices;
-    private M2Track<Vec3f> colorTrack;
+    private M2Track<Point3D> colorTrack;
     private M2Track<Short> alphaTrack;
     private M2Track<Float> heightAboveTrack;
     private M2Track<Float> heightBelowTrack;
@@ -58,11 +58,11 @@ public class M2Ribbon {
         this.boneIndex = boneIndex;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 
@@ -82,11 +82,11 @@ public class M2Ribbon {
         this.materialIndices = materialIndices;
     }
 
-    public M2Track<Vec3f> getColorTrack() {
+    public M2Track<Point3D> getColorTrack() {
         return colorTrack;
     }
 
-    public void setColorTrack(M2Track<Vec3f> colorTrack) {
+    public void setColorTrack(M2Track<Point3D> colorTrack) {
         this.colorTrack = colorTrack;
     }
 

@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -24,10 +24,10 @@ import com.sun.javafx.geom.Vec3f;
 public class M2Light {
     private short type;
     private short bone;
-    private Vec3f position;
-    private M2Track<Vec3f> ambientColor;
+    private Point3D position;
+    private M2Track<Point3D> ambientColor;
     private M2Track<Float> ambientIntensity;
-    private M2Track<Vec3f> diffuseColor;
+    private M2Track<Point3D> diffuseColor;
     private M2Track<Float> diffuseIntensity;
     private M2Track<Float> attenuationStart;
     private M2Track<Float> attenuationEnd;
@@ -52,19 +52,19 @@ public class M2Light {
         this.bone = bone;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 
-    public M2Track<Vec3f> getAmbientColor() {
+    public M2Track<Point3D> getAmbientColor() {
         return ambientColor;
     }
 
-    public void setAmbientColor(M2Track<Vec3f> ambientColor) {
+    public void setAmbientColor(M2Track<Point3D> ambientColor) {
         this.ambientColor = ambientColor;
     }
 
@@ -76,11 +76,11 @@ public class M2Light {
         this.ambientIntensity = ambientIntensity;
     }
 
-    public M2Track<Vec3f> getDiffuseColor() {
+    public M2Track<Point3D> getDiffuseColor() {
         return diffuseColor;
     }
 
-    public void setDiffuseColor(M2Track<Vec3f> diffuseColor) {
+    public void setDiffuseColor(M2Track<Point3D> diffuseColor) {
         this.diffuseColor = diffuseColor;
     }
 

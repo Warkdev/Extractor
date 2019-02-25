@@ -15,8 +15,7 @@
  */
 package eu.jangos.extractor.file.common;
 
-import com.sun.javafx.geom.Vec3d;
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 
 public class Quaternion {
     private double w;
@@ -118,17 +117,17 @@ public class Quaternion {
     }
 
     public Quaternion multiply(Quaternion q) {
-        Vec3d va = new Vec3d(getX(), getY(), getZ());
-        Vec3d vb = new Vec3d(q.getX(), q.getY(), q.getZ());
-        double dotAB = va.dot(vb);
-        Vec3d crossAB = new Vec3d();
-        crossAB.cross(va, vb);
+        Point3D va = new Point3D(getX(), getY(), getZ());
+        Point3D vb = new Point3D(q.getX(), q.getY(), q.getZ());
+        double dotAB = va.dotProduct(vb);
+        
+        Point3D crossAB = va.crossProduct(vb);        
 	
         return new Quaternion(
             getW() * q.getW() - dotAB,
-            getW() * vb.x + q.getW() * va.x + crossAB.x,
-            getW() * vb.y + q.getW() * va.y + crossAB.y,
-            getW() * vb.z + q.getW() * va.z + crossAB.z);
+            getW() * vb.getX() + q.getW() * va.getX() + crossAB.getX(),
+            getW() * vb.getY() + q.getW() * va.getY() + crossAB.getY(),
+            getW() * vb.getZ() + q.getW() * va.getZ() + crossAB.getZ());
     }
     
     /**
@@ -136,23 +135,24 @@ public class Quaternion {
      * @param q The quaternion to convert.
      * @return A 3D Vector with float elements.
      */    
-    public static Vec3f toEulerFloat(Quaternion q) {
-        Vec3f v = new Vec3f();
+    public static Point3D toEulerFloat(Quaternion q) {        
+        float x = 0;
+        float y, z;
         
 	// fix roll near poles with this tolerance
 	double pole = Math.PI / 2.0 - 0.05;
 
-	v.y = (float) Math.asin(2.0 * (q.getW() * q.getY() - q.getX() * q.getZ()));
+	y = (float) Math.asin(2.0 * (q.getW() * q.getY() - q.getX() * q.getZ()));
 
-	if ((v.y < pole) && (v.y > -pole)) {
-            v.x = (float) Math.atan2(2.0 * (q.getY() * q.getZ() + q.getW() * q.getX()),
+	if ((y < pole) && (y > -pole)) {
+            x = (float) Math.atan2(2.0 * (q.getY() * q.getZ() + q.getW() * q.getX()),
                 1.0 - 2.0 * (q.getX() * q.getX() + q.getY() * q.getY()));
 	}
 
-	v.z = (float) Math.atan2(2.0 * (q.getX() * q.getY() + q.getW() * q.getZ()),
+	z = (float) Math.atan2(2.0 * (q.getX() * q.getY() + q.getW() * q.getZ()),
             1.0 - 2.0 * (q.getY() * q.getY() + q.getZ() * q.getZ()));
         
-        return v;
+        return new Point3D(x, y, z);
     }
     
     /**
@@ -160,47 +160,38 @@ public class Quaternion {
      * @param q The quaternion to convert.
      * @return A 3D Vector with double elements.
      */
-    public static Vec3d toEuler(Quaternion q) {
-        Vec3d v = new Vec3d();
+    public static Point3D toEuler(Quaternion q) {
+        double x = 0;
+        double y, z;
         
 	// fix roll near poles with this tolerance
 	double pole = Math.PI / 2.0 - 0.05;
 
-	v.y = Math.asin(2.0 * (q.getW() * q.getY() - q.getX() * q.getZ()));
+	y = Math.asin(2.0 * (q.getW() * q.getY() - q.getX() * q.getZ()));
 
-	if ((v.y < pole) && (v.y > -pole)) {
-            v.x = Math.atan2(2.0 * (q.getY() * q.getZ() + q.getW() * q.getX()),
+	if ((y < pole) && (y > -pole)) {
+            x = Math.atan2(2.0 * (q.getY() * q.getZ() + q.getW() * q.getX()),
                 1.0 - 2.0 * (q.getX() * q.getX() + q.getY() * q.getY()));
 	}
 
-	v.z = Math.atan2(2.0 * (q.getX() * q.getY() + q.getW() * q.getZ()),
+	z = Math.atan2(2.0 * (q.getX() * q.getY() + q.getW() * q.getZ()),
             1.0 - 2.0 * (q.getY() * q.getY() + q.getZ() * q.getZ()));
         
-        return v;
-    }
-
-    /**
-     * Convert a 3D-float based vector to a Quaternion representation. This method is provided for convenience and use
-     * fromEuler(Vec3d v) method under the cover.
-     * @param v The 3D-float vector to convert
-     * @return A Quaternion object representing the corresponding 3D-Vector.
-     */
-    public static Quaternion fromEuler(Vec3f v) {
-        return fromEuler(new Vec3d(v));	
-    }
+        return new Point3D(x, y, z);
+    }    
     
     /**
      * Convert a 3D-double based vector to a Quaternion representation.
      * @param v The 3D-double vector to convert
      * @return A Quaternion object representing the corresponding 3D-Vector.     
      */
-    public static Quaternion fromEuler(Vec3d v) {
-	double cosX2 = Math.cos(v.x / 2.0);
-	double sinX2 = Math.sin(v.x / 2.0);
-	double cosY2 = Math.cos(v.y / 2.0);
-	double sinY2 = Math.sin(v.y / 2.0);
-	double cosZ2 = Math.cos(v.z / 2.0);
-	double sinZ2 = Math.sin(v.z / 2.0);
+    public static Quaternion fromEuler(Point3D v) {
+	double cosX2 = Math.cos(v.getX() / 2.0);
+	double sinX2 = Math.sin(v.getX() / 2.0);
+	double cosY2 = Math.cos(v.getY() / 2.0);
+	double sinY2 = Math.sin(v.getY() / 2.0);
+	double cosZ2 = Math.cos(v.getZ() / 2.0);
+	double sinZ2 = Math.sin(v.getZ() / 2.0);
         
         Quaternion q = new Quaternion(
             cosX2 * cosY2 * cosZ2 + sinX2 * sinY2 * sinZ2,

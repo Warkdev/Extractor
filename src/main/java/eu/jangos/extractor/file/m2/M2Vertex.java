@@ -15,8 +15,8 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec2f;
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point2D;
+import javafx.geometry.Point3D;
 import java.nio.ByteBuffer;
 
 /**
@@ -24,35 +24,27 @@ import java.nio.ByteBuffer;
  * @author Warkdev
  */
 public class M2Vertex {
-    private Vec3f position;
+    private Point3D position;
     private byte[] boneWeights = new byte[4];
     private byte[] boneIndices = new byte[4];
-    private Vec3f normal;
-    private Vec2f[] texCoords = new Vec2f[2];
-
-    public M2Vertex() {
-        this.position = new Vec3f();
-        this.normal = new Vec3f();
-        for(int i = 0; i < texCoords.length; i++) {
-            this.texCoords[i] = new Vec2f();
-        }
-    }
+    private Point3D normal;
+    private Point2D[] texCoords = new Point2D[2];    
 
     public void read(ByteBuffer data) {
-        this.position.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.position = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         data.get(this.boneWeights);
         data.get(this.boneIndices);
-        this.normal.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.normal = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         for(int i = 0; i < this.texCoords.length; i++) {
-            texCoords[i].set(data.getFloat(), data.getFloat());
+            texCoords[i] = new Point2D(data.getFloat(), data.getFloat());
         }
     }
     
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 
@@ -72,19 +64,19 @@ public class M2Vertex {
         this.boneIndices = boneIndices;
     }
 
-    public Vec3f getNormal() {
+    public Point3D getNormal() {
         return normal;
     }
 
-    public void setNormal(Vec3f normal) {
+    public void setNormal(Point3D normal) {
         this.normal = normal;
     }
 
-    public Vec2f[] getTexCoords() {
+    public Point2D[] getTexCoords() {
         return texCoords;
     }
 
-    public void setTexCoords(Vec2f[] texCoords) {
+    public void setTexCoords(Point2D[] texCoords) {
         this.texCoords = texCoords;
     }        
 }

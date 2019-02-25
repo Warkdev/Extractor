@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
-import com.sun.javafx.geom.Vec2f;
+import javafx.geometry.Point2D;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
@@ -662,15 +662,15 @@ public class MCNK extends FileReader {
 
     /**
      * Provide a 2-float Vector representing the maximum and the minimum liquid
-     * height found in this chunk. Vec2f.x contains the Maximum Height while
-     * Vec2f.y contains the Minimum Height.
+     * height found in this chunk. Point2D.x contains the Maximum Height while
+     * Point2D.y contains the Minimum Height.
      *
-     * @return A Vec2f object containing the maximum and the minimum liquid
+     * @return A Point2D object containing the maximum and the minimum liquid
      * height in this chunk. If there's no liquid in this chunk, the returned
      * values are -Float.MAX_VALUE as maximum and Float.MAX_VALUE as minimum.
      */
-    public Vec2f getLiquidHeightBounds() {
-        Vec2f heightBounds = new Vec2f(-Float.MAX_VALUE, Float.MAX_VALUE);
+    public Point2D getLiquidHeightBounds() {
+        Point2D heightBounds = new Point2D(-Float.MAX_VALUE, Float.MAX_VALUE);
         float height;
         if (hasLiquid()) {
             for (MCLQ liquid : this.listLiquids) {
@@ -681,11 +681,12 @@ public class MCNK extends FileReader {
                         if (height == Float.MAX_VALUE) {
                             continue;
                         }
-                        if (heightBounds.x < height) {
-                            heightBounds.x = height;
+                        if (heightBounds.getX() < height) {
+                            
+                            heightBounds = new Point2D(height, heightBounds.getY());
                         }
-                        if (heightBounds.y > height) {
-                            heightBounds.y = height;
+                        if (heightBounds.getY() > height) {
+                            heightBounds = new Point2D(heightBounds.getX(), height);
                         }
                     }
                 }

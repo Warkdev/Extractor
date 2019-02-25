@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.wmo.group;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 import eu.mangos.shared.flags.FlagUtils;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class MLIQ {
     private int yVerts;
     private int xTiles;
     private int yTiles;
-    private Vec3f baseCoordinates = new Vec3f();
+    private Point3D baseCoordinates;
     private short materialId;
 
     private List<WaterVert> liquidVertexList = new ArrayList<>();
@@ -63,7 +63,7 @@ public class MLIQ {
         this.yVerts = data.getInt();
         this.xTiles = data.getInt();
         this.yTiles = data.getInt();
-        this.baseCoordinates.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.baseCoordinates = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         this.materialId = data.getShort();
 
         WaterVert liquidVertex;
@@ -110,11 +110,11 @@ public class MLIQ {
         this.yTiles = yTiles;
     }
 
-    public Vec3f getBaseCoordinates() {
+    public Point3D getBaseCoordinates() {
         return baseCoordinates;
     }
 
-    public void setBaseCoordinates(Vec3f baseCoordinates) {
+    public void setBaseCoordinates(Point3D baseCoordinates) {
         this.baseCoordinates = baseCoordinates;
     }
 

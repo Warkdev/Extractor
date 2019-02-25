@@ -15,24 +15,24 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 
 /**
  *
  * @author Warkdev
  */
 public class M2Color {
-    private M2Track<Vec3f> color;
+    private M2Track<Point3D> color;
     private M2Track<Short> alpha;
 
     public M2Color() {
     }
 
-    public M2Track<Vec3f> getColor() {
+    public M2Track<Point3D> getColor() {
         return color;
     }
 
-    public void setColor(M2Track<Vec3f> color) {
+    public void setColor(M2Track<Point3D> color) {
         this.color = color;
     }
 

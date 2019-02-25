@@ -15,7 +15,6 @@
  */
 package eu.jangos.extractor.file.impl;
 
-import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.M2Exception;
@@ -98,8 +97,8 @@ public class M2 extends FileReader {
     private BoundingBox collisionBox;
     private float collisionSphereRadius;
     private M2Array<Short> collisionTriangles;
-    private M2Array<Vec3f> collisionVertices;
-    private M2Array<Vec3f> collisionNormals;
+    private M2Array<Point3D> collisionVertices;
+    private M2Array<Point3D> collisionNormals;
     private M2Array<M2Attachment> attachments;
     private M2Array<Short> attachmentLookupTable;
     private M2Array<M2Event> events;
@@ -455,9 +454,9 @@ public class M2 extends FileReader {
             }            
 
             for (M2Vertex v : getVertices()) {
-                shapeMesh.getPoints().addAll(v.getPosition().y, v.getPosition().z, v.getPosition().x);
-                shapeMesh.getNormals().addAll(v.getNormal().y, v.getNormal().z, v.getNormal().x);
-                shapeMesh.getTexCoords().addAll(v.getTexCoords()[0].x, v.getTexCoords()[0].y);
+                shapeMesh.getPoints().addAll((float) v.getPosition().getY(), (float) v.getPosition().getZ(), (float) v.getPosition().getX());
+                shapeMesh.getNormals().addAll((float) v.getNormal().getY(), (float) v.getNormal().getZ(), (float) v.getNormal().getX());
+                shapeMesh.getTexCoords().addAll((float) v.getTexCoords()[0].getX(), (float) v.getTexCoords()[0].getY());
             }
 
             List<M2SkinProfile> listSkins = getSkins();

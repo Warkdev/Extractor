@@ -15,8 +15,8 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec2f;
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point2D;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -25,7 +25,7 @@ import com.sun.javafx.geom.Vec3f;
 public class M2Particle {
     private int particleId;
     private int flags;
-    private Vec3f position;
+    private Point3D position;
     private short bone;
     private short texture;
     private M2Array<Character> geometryModelFilename;
@@ -58,18 +58,18 @@ public class M2Particle {
     private float tailLength;
     private float twinkleSpeed;
     private float twinklePercent;
-    private Vec2f twinkleScale;
+    private Point2D twinkleScale;
     private float burstMultiplier;
     private float drag;
     private float spin;
     private M2Box tumble;
-    private Vec3f windVector;
+    private Point3D windVector;
     private float windTime;
     private float followSpeed1;
     private float followScale1;
     private float followSpeed2;
     private float followScale2;
-    private M2Array<Vec3f> splinePoints;
+    private M2Array<Point3D> splinePoints;
     private M2Track<Boolean> enableInd;
 
     public M2Particle() {
@@ -91,11 +91,11 @@ public class M2Particle {
         this.flags = flags;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 
@@ -355,11 +355,11 @@ public class M2Particle {
         this.twinklePercent = twinklePercent;
     }
 
-    public Vec2f getTwinkleScale() {
+    public Point2D getTwinkleScale() {
         return twinkleScale;
     }
 
-    public void setTwinkleScale(Vec2f twinkleScale) {
+    public void setTwinkleScale(Point2D twinkleScale) {
         this.twinkleScale = twinkleScale;
     }
 
@@ -395,11 +395,11 @@ public class M2Particle {
         this.tumble = tumble;
     }
 
-    public Vec3f getWindVector() {
+    public Point3D getWindVector() {
         return windVector;
     }
 
-    public void setWindVector(Vec3f windVector) {
+    public void setWindVector(Point3D windVector) {
         this.windVector = windVector;
     }
 
@@ -443,11 +443,11 @@ public class M2Particle {
         this.followScale2 = followScale2;
     }
 
-    public M2Array<Vec3f> getSplinePoints() {
+    public M2Array<Point3D> getSplinePoints() {
         return splinePoints;
     }
 
-    public void setSplinePoints(M2Array<Vec3f> splinePoints) {
+    public void setSplinePoints(M2Array<Point3D> splinePoints) {
         this.splinePoints = splinePoints;
     }
 

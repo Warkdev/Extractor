@@ -15,8 +15,8 @@
  */
 package eu.jangos.extractor.file.impl;
 
-import com.sun.javafx.geom.Vec2f;
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point2D;
+import javafx.geometry.Point3D;
 import eu.jangos.extractor.file.common.CAaBspNode;
 import eu.jangos.extractor.file.common.CImVector;
 import eu.jangos.extractor.file.common.MapUnit;
@@ -113,9 +113,9 @@ public class WMOGroup {
     private MOGP group = new MOGP();
     private List<MOPY> materialsList = new ArrayList<>();
     private List<Short> indexList = new ArrayList<>();
-    private List<Vec3f> vertexList = new ArrayList<>();
-    private List<Vec3f> normalList = new ArrayList<>();
-    private List<Vec2f> textureVertexList = new ArrayList<>();
+    private List<Point3D> vertexList = new ArrayList<>();
+    private List<Point3D> normalList = new ArrayList<>();
+    private List<Point2D> textureVertexList = new ArrayList<>();
     private List<MOBA> batchList = new ArrayList<>();
     private List<Short> lightRefList = new ArrayList<>();
     private List<Short> doodadRefList = new ArrayList<>();
@@ -127,8 +127,8 @@ public class WMOGroup {
 
     // Liquid render data.
     private List<Short> liquidIndicesList = new ArrayList<>();
-    private List<Vec3f> liquidVerticesList = new ArrayList<>();
-    private List<Vec2f> liquidTexCoordList = new ArrayList<>();
+    private List<Point3D> liquidVerticesList = new ArrayList<>();
+    private List<Point2D> liquidTexCoordList = new ArrayList<>();
 
     public void init(MPQManager manager, String filename) throws WMOException, MPQException, JMpqException {
         this.data = ByteBuffer.wrap(manager.getMPQForFile(filename).extractFileAsBytes(filename));
@@ -170,19 +170,19 @@ public class WMOGroup {
         checkHeader(HEADER_MOVT);
         chunkSize = data.getInt() / SIZE_MOVT;
         for (int i = 0; i < chunkSize; i++) {
-            vertexList.add(new Vec3f(data.getFloat(), data.getFloat(), data.getFloat()));
+            vertexList.add(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
         }
 
         checkHeader(HEADER_MONR);
         chunkSize = data.getInt() / SIZE_MONR;
         for (int i = 0; i < chunkSize; i++) {
-            normalList.add(new Vec3f(data.getFloat(), data.getFloat(), data.getFloat()));
+            normalList.add(new Point3D(data.getFloat(), data.getFloat(), data.getFloat()));
         }
 
         checkHeader(HEADER_MOTV);
         chunkSize = data.getInt() / SIZE_MOTV;
         for (int i = 0; i < chunkSize; i++) {
-            textureVertexList.add(new Vec2f(data.getFloat(), data.getFloat()));
+            textureVertexList.add(new Point2D(data.getFloat(), data.getFloat()));
         }
 
         checkHeader(HEADER_MOBA);
@@ -252,12 +252,12 @@ public class WMOGroup {
 
             // Generating Liquid 3D. 
             // Starting with vertices.   
-            List<Vec3f> tempVertices = new ArrayList<>();
+            List<Point3D> tempVertices = new ArrayList<>();
             for (int x = 0; x < liquid.getxVerts(); x++) {
                 for (int y = 0; y < liquid.getyVerts(); y++) {                    
-                    tempVertices.add(new Vec3f(liquid.getBaseCoordinates().x + MapUnit.UNIT_SIZE * x, 
-                            liquid.getBaseCoordinates().y + MapUnit.UNIT_SIZE * y, 
-                            liquid.getBaseCoordinates().z + liquid.getVertextAt(x, y).getHeight()));
+                    tempVertices.add(new Point3D(liquid.getBaseCoordinates().getX() + MapUnit.UNIT_SIZE * x, 
+                            liquid.getBaseCoordinates().getY() + MapUnit.UNIT_SIZE * y, 
+                            liquid.getBaseCoordinates().getZ() + liquid.getVertextAt(x, y).getHeight()));
                 }
             }
 
@@ -269,19 +269,19 @@ public class WMOGroup {
                     if (!liquid.hasNoLiquid(x, y)) {
                         pos = x * (liquid.getyVerts()) + y;
                         
-                        this.liquidTexCoordList.add(new Vec2f(x, y + 1));                                                      
+                        this.liquidTexCoordList.add(new Point2D(x, y + 1));                                                      
                         this.liquidVerticesList.add(tempVertices.get(pos + 1));
                         this.liquidIndicesList.add(index++);                                                
                         
-                        this.liquidTexCoordList.add(new Vec2f(x, y));
+                        this.liquidTexCoordList.add(new Point2D(x, y));
                         this.liquidVerticesList.add(tempVertices.get(pos));
                         this.liquidIndicesList.add(index++);                                                                                                                                                                                                
                         
-                        this.liquidTexCoordList.add(new Vec2f(x + 1, y));                              
+                        this.liquidTexCoordList.add(new Point2D(x + 1, y));                              
                         this.liquidVerticesList.add(tempVertices.get(pos + liquid.getyVerts() + 1));
                         this.liquidIndicesList.add(index++);
                         
-                        this.liquidTexCoordList.add(new Vec2f(x + 1, y + 1));                        
+                        this.liquidTexCoordList.add(new Point2D(x + 1, y + 1));                        
                         this.liquidVerticesList.add(tempVertices.get(pos + liquid.getyVerts()));                        
                         this.liquidIndicesList.add(index++);
                     }
@@ -362,27 +362,27 @@ public class WMOGroup {
         this.indexList = indexList;
     }
 
-    public List<Vec3f> getVertexList() {
+    public List<Point3D> getVertexList() {
         return vertexList;
     }
 
-    public void setVertexList(List<Vec3f> vertexList) {
+    public void setVertexList(List<Point3D> vertexList) {
         this.vertexList = vertexList;
     }
 
-    public List<Vec3f> getNormalList() {
+    public List<Point3D> getNormalList() {
         return normalList;
     }
 
-    public void setNormalList(List<Vec3f> normalList) {
+    public void setNormalList(List<Point3D> normalList) {
         this.normalList = normalList;
     }
 
-    public List<Vec2f> getTextureVertexList() {
+    public List<Point2D> getTextureVertexList() {
         return textureVertexList;
     }
 
-    public void setTextureVertexList(List<Vec2f> textureVertexList) {
+    public void setTextureVertexList(List<Point2D> textureVertexList) {
         this.textureVertexList = textureVertexList;
     }
 
@@ -466,19 +466,19 @@ public class WMOGroup {
         this.liquidIndicesList = liquidIndicesList;
     }
 
-    public List<Vec3f> getLiquidVerticesList() {
+    public List<Point3D> getLiquidVerticesList() {
         return liquidVerticesList;
     }
 
-    public void setLiquidVerticesList(List<Vec3f> liquidVerticesList) {
+    public void setLiquidVerticesList(List<Point3D> liquidVerticesList) {
         this.liquidVerticesList = liquidVerticesList;
     }
 
-    public List<Vec2f> getLiquidTexCoordList() {
+    public List<Point2D> getLiquidTexCoordList() {
         return liquidTexCoordList;
     }
 
-    public void setLiquidTexCoordList(List<Vec2f> liquidTexCoordList) {
+    public void setLiquidTexCoordList(List<Point2D> liquidTexCoordList) {
         this.liquidTexCoordList = liquidTexCoordList;
     }
 

@@ -15,32 +15,32 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 
 /**
  *
  * @author Warkdev
  */
 public class M2Box {
-    private Vec3f modelRotationSpeedMin;
-    private Vec3f modelRotationSpeedMax;
+    private Point3D modelRotationSpeedMin;
+    private Point3D modelRotationSpeedMax;
 
     public M2Box() {
     }
 
-    public Vec3f getModelRotationSpeedMin() {
+    public Point3D getModelRotationSpeedMin() {
         return modelRotationSpeedMin;
     }
 
-    public void setModelRotationSpeedMin(Vec3f modelRotationSpeedMin) {
+    public void setModelRotationSpeedMin(Point3D modelRotationSpeedMin) {
         this.modelRotationSpeedMin = modelRotationSpeedMin;
     }
 
-    public Vec3f getModelRotationSpeedMax() {
+    public Point3D getModelRotationSpeedMax() {
         return modelRotationSpeedMax;
     }
 
-    public void setModelRotationSpeedMax(Vec3f modelRotationSpeedMax) {
+    public void setModelRotationSpeedMax(Point3D modelRotationSpeedMax) {
         this.modelRotationSpeedMax = modelRotationSpeedMax;
     }
     

@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.wmo;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class WMOFog {
     private int flag;
-    private Vec3f position = new Vec3f();
+    private Point3D position;
     private float smallerRadius;
     private float largerRadius;    
     private List<Fog> fogList = new ArrayList<>();
@@ -35,7 +35,7 @@ public class WMOFog {
         fogList.clear();
         
         this.flag = data.getInt();
-        this.position.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.position = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         this.smallerRadius = data.getFloat();
         this.largerRadius = data.getFloat();        
         Fog fog;
@@ -54,11 +54,11 @@ public class WMOFog {
         this.flag = flag;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 

@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.wmo;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 import eu.jangos.extractor.file.common.CImVector;
 import java.nio.ByteBuffer;
 
@@ -28,7 +28,7 @@ public class WMOLight {
     // Document ME, see Wowwiki.
     private int flags;
     private CImVector color = new CImVector();
-    private Vec3f position = new Vec3f();
+    private Point3D position;
     private float intensity;
     private float[] unknown = new float[4];
     private float attenStart;
@@ -40,7 +40,7 @@ public class WMOLight {
         this.color.setG(data.get());        
         this.color.setR(data.get());
         this.color.setA(data.get());
-        this.position.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.position = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         this.intensity = data.getFloat();
         for(int i = 0; i < unknown.length; i++) {
             this.unknown[i] = data.getFloat();
@@ -65,11 +65,11 @@ public class WMOLight {
         this.color = color;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 

@@ -7,7 +7,7 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
-                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.6.0:java</goal>
             </goals>
             <properties>
                 <exec.args>-classpath %classpath eu.jangos.extractorfx.ExtractorFx -Xms1024 -Xmx2096</exec.args>
@@ -21,10 +21,10 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
-                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.6.0:java</goal>
             </goals>
             <properties>
-                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath eu.jangos.extractorfx.ExtractorFx -Xms1024 -Xmx2096</exec.args>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath eu.jangos.extractorfx.ExtractorFx -Xms1024 -Xmx2096</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
             </properties>
@@ -36,7 +36,7 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
-                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.6.0:java</goal>
             </goals>
             <properties>
                 <exec.args>-classpath %classpath eu.jangos.extractorfx.ExtractorFx -Xms1024 -Xmx2096</exec.args>

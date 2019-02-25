@@ -15,7 +15,6 @@
  */
 package eu.jangos.extractor.file.adt.chunk;
 
-import com.sun.javafx.geom.Vec3f;
 import eu.jangos.extractor.file.common.CAaSphere;
 import java.nio.ByteBuffer;
 import javafx.geometry.Point3D;

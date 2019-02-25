@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.impl;
 
-import com.sun.javafx.geom.Vec2f;
+import javafx.geometry.Point2D;
 import eu.jangos.extractor.file.ChunkLiquidRenderer;
 import eu.jangos.extractor.file.FileReader;
 import eu.jangos.extractor.file.ObjectRendererIndices;
@@ -88,7 +88,7 @@ public class ADT extends FileReader {
      */
     public static final int SIZE_TILE_MAP = 16;
     public static final int SIZE_TILE_HEIGHTMAP = 144;
-    private static final int CHUNK_TILE_MAP_LENGTH = 8;
+    public static final int CHUNK_TILE_MAP_LENGTH = 8;
     private static final int CHUNK_TILE_HEIGHTMAP_LENGTH = 9;
 
     private int version;
@@ -368,23 +368,24 @@ public class ADT extends FileReader {
         this.minHeight = minHeight;
     }
 
-    public Vec2f getLiquidMapBounds() throws FileReaderException {
-        Vec2f heightBounds = new Vec2f(-Float.MAX_VALUE, Float.MAX_VALUE);
-        Vec2f heightChunkBounds;
+    public Point2D getLiquidMapBounds() throws FileReaderException {                
+        double x = -Float.MAX_VALUE;
+        double y = Float.MAX_VALUE;
+        Point2D heightChunkBounds;
 
         for (MCNK chunk : getMapChunks()) {
             if (chunk.hasLiquid()) {
                 heightChunkBounds = chunk.getLiquidHeightBounds();
-                if (heightChunkBounds.x > heightBounds.x) {
-                    heightBounds.x = heightChunkBounds.x;
+                if (heightChunkBounds.getX() > x) {
+                    x = heightChunkBounds.getX();
                 }
-                if (heightChunkBounds.y < heightBounds.y) {
-                    heightBounds.y = heightChunkBounds.y;
+                if (heightChunkBounds.getY() < y) {
+                    y = heightChunkBounds.getY();
                 }
             }
         }
 
-        return heightBounds;
+        return new Point2D(x, y);
     }
 
     public int getVersion() {
@@ -1141,8 +1142,12 @@ public class ADT extends FileReader {
         Canvas canvas = new Canvas(mapSize, mapSize);
         PixelWriter pixelWriter = canvas.getGraphicsContext2D().getPixelWriter();
         pane.getChildren().add(canvas);
-        pane.setPrefHeight(128);
-        pane.setPrefWidth(128);
+        pane.setPrefHeight(CHUNK_TILE_MAP_LENGTH*SIZE_TILE_MAP);
+        pane.setPrefWidth(CHUNK_TILE_MAP_LENGTH*SIZE_TILE_MAP);
+        pane.setMinHeight(pane.getPrefHeight());
+        pane.setMinWidth(pane.getPrefWidth());
+        pane.setMaxHeight(pane.getPrefHeight());
+        pane.setMaxWidth(pane.getPrefWidth());
 
         List<MCNK> mapChunks = getMapChunks();
         MCNK chunk;
@@ -1174,21 +1179,27 @@ public class ADT extends FileReader {
 
     private Pane renderHoleTileMap() throws FileReaderException {
         Pane pane = new Pane();
-        Group tileGroup = new Group();
+        int mapSize = ADT.SIZE_TILE_MAP * CHUNK_TILE_MAP_LENGTH;
+        Canvas canvas = new Canvas(mapSize, mapSize);
+        pane.setPrefHeight(mapSize);
+        pane.setPrefWidth(mapSize);
+        pane.setMinHeight(pane.getPrefHeight());
+        pane.setMinWidth(pane.getPrefWidth());
+        pane.setMaxHeight(pane.getPrefHeight());
+        pane.setMaxWidth(pane.getPrefWidth());                
+        PixelWriter pixelWriter = canvas.getGraphicsContext2D().getPixelWriter();
 
         int idx = 0;
         int idy = 0;
         List<MCNK> mapChunks = getMapChunks();
         for (MCNK chunk : mapChunks) {
             for (int i = 0; i < CHUNK_TILE_MAP_LENGTH; i++) {
-                for (int j = 0; j < CHUNK_TILE_MAP_LENGTH; j++) {
-                    Rectangle tile = new Rectangle((i * MapUnit.UNIT_SIZE) + (idx * MapUnit.CHUNK_SIZE), (j * MapUnit.UNIT_SIZE) + (idy * MapUnit.CHUNK_SIZE), MapUnit.UNIT_SIZE, MapUnit.UNIT_SIZE);
+                for (int j = 0; j < CHUNK_TILE_MAP_LENGTH; j++) {                    
                     if (chunk.isHole(i, j)) {
-                        tile.setFill(Color.WHITE);
+                        pixelWriter.setColor(i + (idx * CHUNK_TILE_MAP_LENGTH), j + (idy * CHUNK_TILE_MAP_LENGTH), Color.WHITE);                        
                     } else {
-                        tile.setFill(Color.BLACK);
-                    }
-                    tileGroup.getChildren().add(tile);
+                        pixelWriter.setColor(i + (idx * CHUNK_TILE_MAP_LENGTH), j + (idy * CHUNK_TILE_MAP_LENGTH), Color.BLACK);
+                    }                    
                 }
             }
 
@@ -1199,7 +1210,7 @@ public class ADT extends FileReader {
             }
         }
 
-        pane.getChildren().add(tileGroup);
+        pane.getChildren().add(canvas);
         return pane;
     }
 

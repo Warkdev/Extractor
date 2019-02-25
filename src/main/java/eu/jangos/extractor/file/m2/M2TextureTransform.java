@@ -15,42 +15,42 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
-import com.sun.javafx.geom.Vec4f;
+import eu.jangos.extractor.file.common.Point4D;
+import javafx.geometry.Point3D;
 
 /**
  *
  * @author Warkdev
  */
 public class M2TextureTransform {
-    private M2Track<Vec3f> translation;
-    private M2Track<Vec4f> rotation;
-    private M2Track<Vec3f> scaling;
+    private M2Track<Point3D> translation;
+    private M2Track<Point4D> rotation;
+    private M2Track<Point3D> scaling;
 
     public M2TextureTransform() {
     }
 
-    public M2Track<Vec3f> getTranslation() {
+    public M2Track<Point3D> getTranslation() {
         return translation;
     }
 
-    public void setTranslation(M2Track<Vec3f> translation) {
+    public void setTranslation(M2Track<Point3D> translation) {
         this.translation = translation;
     }
 
-    public M2Track<Vec4f> getRotation() {
+    public M2Track<Point4D> getRotation() {
         return rotation;
     }
 
-    public void setRotation(M2Track<Vec4f> rotation) {
+    public void setRotation(M2Track<Point4D> rotation) {
         this.rotation = rotation;
     }
 
-    public M2Track<Vec3f> getScaling() {
+    public M2Track<Point3D> getScaling() {
         return scaling;
     }
 
-    public void setScaling(M2Track<Vec3f> scaling) {
+    public void setScaling(M2Track<Point3D> scaling) {
         this.scaling = scaling;
     }
     

@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 import java.nio.ByteBuffer;
 
 /**
@@ -33,10 +33,9 @@ public class M2SkinSection {
     private short boneComboIndex;
     private short boneInfluences;
     private short centerBoneIndex;
-    private Vec3f centerPosition;
+    private Point3D centerPosition;
 
-    public M2SkinSection() {
-        this.centerPosition = new Vec3f();
+    public M2SkinSection() {        
     }
 
     public void read(ByteBuffer data) {
@@ -50,7 +49,7 @@ public class M2SkinSection {
         this.boneComboIndex = data.getShort();
         this.boneInfluences = data.getShort();
         this.centerBoneIndex = data.getShort();
-        this.centerPosition.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.centerPosition = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
     }
     
     public short getId() {
@@ -133,11 +132,11 @@ public class M2SkinSection {
         this.centerBoneIndex = centerBoneIndex;
     }
 
-    public Vec3f getCenterPosition() {
+    public Point3D getCenterPosition() {
         return centerPosition;
     }
 
-    public void setCenterPosition(Vec3f centerPosition) {
+    public void setCenterPosition(Point3D centerPosition) {
         this.centerPosition = centerPosition;
     }
     

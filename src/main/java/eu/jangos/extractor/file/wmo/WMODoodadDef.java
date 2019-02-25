@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.wmo;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 import eu.jangos.extractor.file.common.CImVector;
 import eu.jangos.extractor.file.common.Quaternion;
 import java.nio.ByteBuffer;
@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
 public class WMODoodadDef {
     private int nameIndex;
     private int flag;
-    private Vec3f position = new Vec3f();
+    private Point3D position;
     private Quaternion orientation = new Quaternion();
     private float scale;
     private CImVector color = new CImVector();
@@ -43,7 +43,7 @@ public class WMODoodadDef {
         byte b3 = data.get();
         this.nameIndex = (b3 & 0x0F) << 16 | (b2 & 0xFF) << 8 | (b1 & 0xFF);
         this.flag = data.get();
-        this.position.set(data.getFloat(), data.getFloat(), data.getFloat());
+        this.position = new Point3D(data.getFloat(), data.getFloat(), data.getFloat());
         this.orientation.set(data.getFloat(), data.getFloat(), data.getFloat(), data.getFloat());        
         this.scale = data.getFloat();
         this.color.setB(data.get());
@@ -68,11 +68,11 @@ public class WMODoodadDef {
         this.flag = flag;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 

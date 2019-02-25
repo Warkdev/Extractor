@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -25,7 +25,7 @@ public class M2Event {
     private int identifier;
     private int data;
     private int bone;
-    private Vec3f position;
+    private Point3D position;
     private M2TrackBase enabled;
 
     public M2Event() {
@@ -55,11 +55,11 @@ public class M2Event {
         this.bone = bone;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 

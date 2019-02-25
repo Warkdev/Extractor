@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 
 /**
  *
@@ -26,10 +26,10 @@ public class M2Camera {
     private float fov;
     private float farClip;
     private float nearClip;
-    private M2Track<M2SplineKey<Vec3f>> positions;
-    private Vec3f positionBase;
-    private M2Track<M2SplineKey<Vec3f>> targetPosition;
-    private Vec3f targetPositionBase;
+    private M2Track<M2SplineKey<Point3D>> positions;
+    private Point3D positionBase;
+    private M2Track<M2SplineKey<Point3D>> targetPosition;
+    private Point3D targetPositionBase;
     private M2Track<M2SplineKey<Float>> roll;
 
     public M2Camera() {
@@ -67,35 +67,35 @@ public class M2Camera {
         this.nearClip = nearClip;
     }
 
-    public M2Track<M2SplineKey<Vec3f>> getPositions() {
+    public M2Track<M2SplineKey<Point3D>> getPositions() {
         return positions;
     }
 
-    public void setPositions(M2Track<M2SplineKey<Vec3f>> positions) {
+    public void setPositions(M2Track<M2SplineKey<Point3D>> positions) {
         this.positions = positions;
     }
 
-    public Vec3f getPositionBase() {
+    public Point3D getPositionBase() {
         return positionBase;
     }
 
-    public void setPositionBase(Vec3f positionBase) {
+    public void setPositionBase(Point3D positionBase) {
         this.positionBase = positionBase;
     }
 
-    public M2Track<M2SplineKey<Vec3f>> getTargetPosition() {
+    public M2Track<M2SplineKey<Point3D>> getTargetPosition() {
         return targetPosition;
     }
 
-    public void setTargetPosition(M2Track<M2SplineKey<Vec3f>> targetPosition) {
+    public void setTargetPosition(M2Track<M2SplineKey<Point3D>> targetPosition) {
         this.targetPosition = targetPosition;
     }
 
-    public Vec3f getTargetPositionBase() {
+    public Point3D getTargetPositionBase() {
         return targetPositionBase;
     }
 
-    public void setTargetPositionBase(Vec3f targetPositionBase) {
+    public void setTargetPositionBase(Point3D targetPositionBase) {
         this.targetPositionBase = targetPositionBase;
     }
 

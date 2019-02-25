@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.m2;
 
-import com.sun.javafx.geom.Vec3f;
+import javafx.geometry.Point3D;
 
 /**
  * This block specifies a bunch of locations on the body - hands, shoulders, head, back, knees etc. 
@@ -31,7 +31,7 @@ public class M2Attachment {
     // see BogBeast.m2 in vanilla for a model having values here
     private short unknown;
     // relative to bone; Often this value is the same as bone's pivot point 
-    private Vec3f position;
+    private Point3D position;
     // whether or not the attached model is animated when this model is. only a bool is used. default is true.
     private M2Track<Boolean> animateAttached;
 
@@ -62,11 +62,11 @@ public class M2Attachment {
         this.unknown = unknown;
     }
 
-    public Vec3f getPosition() {
+    public Point3D getPosition() {
         return position;
     }
 
-    public void setPosition(Vec3f position) {
+    public void setPosition(Point3D position) {
         this.position = position;
     }
 
