@@ -8,7 +8,10 @@
             <goals>                
                 <goal>javafx:run</goal>                     
             </goals>            
-        </action>
+            <properties>
+                <exec.args>-Dprism.order=j2d -Xmx2048m</exec.args>
+            </properties>
+        </action>        
         <action>
             <actionName>debug</actionName>
             <packagings>

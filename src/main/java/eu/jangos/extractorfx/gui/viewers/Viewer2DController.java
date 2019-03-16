@@ -250,8 +250,7 @@ public class Viewer2DController implements Initializable {
         this.model = model;            
         Scene testScene = new Scene(renderedModel);        
         this.pane.setContent(renderedModel);
-        renderedModel.layout();        
-        System.out.println(this.pane.getContent());
+        renderedModel.layout();                
         this.pane.getContent().getTransforms().add(new Rotate(180, Rotate.Y_AXIS));
         this.pane.getContent().getTransforms().add(new Rotate(90, Rotate.Z_AXIS));
         renderedModel.setEffect(dropShadow);

@@ -39,7 +39,7 @@
             </MenuBar>
          </top>
          <center>
-             <fx:include fx:id="viewer2D" source="viewers\Viewer2D.fxml" />
+             <fx:include fx:id="viewer2D" source="viewers/Viewer2D.fxml" />
          </center>
          <bottom>
             <StatusBar fx:id="statusBar" text="" BorderPane.alignment="CENTER" />
@@ -49,22 +49,22 @@
               <tabs>
                 <Tab text="WDT">
                     <content>
-                        <fx:include fx:id="wdtTab" source="asset\AssetTab.fxml" />
+                        <fx:include fx:id="wdtTab" source="asset/AssetTab.fxml" />
                     </content>
                 </Tab>
                 <Tab text="ADT">
                   <content>
-                        <fx:include fx:id="adtTab" source="asset\AssetTab.fxml" />
+                        <fx:include fx:id="adtTab" source="asset/AssetTab.fxml" />
                   </content>
                 </Tab>
                 <Tab text="WMO">
                   <content>
-                        <fx:include fx:id="wmoTab" source="asset\AssetTab.fxml" />
+                        <fx:include fx:id="wmoTab" source="asset/AssetTab.fxml" />
                   </content>
                 </Tab>
                   <Tab text="M2">
                     <content>
-                        <fx:include fx:id="modelTab" source="asset\AssetTab.fxml" />
+                        <fx:include fx:id="modelTab" source="asset/AssetTab.fxml" />
                     </content>
                   </Tab>
               </tabs>
