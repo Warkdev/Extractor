@@ -174,17 +174,24 @@ public class MainController implements Initializable {
                     }                   
                     pane = model.render2D(renderType);                                        
                     logger.info("Rendering finished!");
-                    updateMessage("Rendering finished!");
+                    updateMessage("Rendering finished!");                    
                 } catch (IOException | MPQException mioe) {
                     logger.error("Error while initializing the file");
                     updateMessage("Error while initializing the file");
+                    throw mioe;
                 } catch (FileReaderException fre) {
                     logger.error("Error while reading the model");
-                    updateMessage("Error while reading the model");
+                    updateMessage("Error while reading the model");                    
+                    throw fre;
                 } catch (ModelRendererException mre) {
                     logger.error("Error while rendering the model");
-                    updateMessage("Error while rendering the model");
-                }
+                    updateMessage("Error while rendering the model");                    
+                    throw mre;
+                } catch (UnsupportedOperationException uoe) {
+                    logger.error("This method is not supported");
+                    updateMessage("This method is not supported");                    
+                    throw uoe;
+                }                
                 return pane;
             }
         };
@@ -196,7 +203,7 @@ public class MainController implements Initializable {
                 viewer2DController.displayModel(model, (Pane) task.getValue());
                 viewer2D.setVisible(true);
             }
-        });
+        });                
         
         task.setOnFailed(new EventHandler() {
             @Override

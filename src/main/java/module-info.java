@@ -33,7 +33,7 @@ module eu.jangos.extractorfx {
     requires detour.tile.cache;    
     requires detour.extras;
     requires gson;
-    requires controlsfx;   
+    requires controlsfx;
     requires javafx.controls;        
     requires javafx.swing;
     requires javafx.fxml;  
