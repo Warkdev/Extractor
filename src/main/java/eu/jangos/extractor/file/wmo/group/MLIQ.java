@@ -16,7 +16,7 @@
 package eu.jangos.extractor.file.wmo.group;
 
 import javafx.geometry.Point3D;
-import eu.mangos.shared.flags.FlagUtils;
+import eu.jangos.utils.FlagUtils;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;

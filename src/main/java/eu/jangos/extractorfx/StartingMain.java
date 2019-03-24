@@ -15,12 +15,14 @@
  */
 package eu.jangos.extractorfx;
 
+import java.io.IOException;
+
 /**
  * Workaround for bug for fatty jar
  * @author Warkdev
  */
 public class StartingMain {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         ExtractorFx.main(args);
     }
 }

@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>eu.jangos</groupId>
-    <artifactId>JaNGOSExtractor</artifactId>
+    <artifactId>Extractor</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <build>
@@ -26,7 +26,7 @@
                         <option>--add-exports</option>
                         <option>javafx.base/com.sun.javafx.runtime=controlsfx</option>
                     </options>
-                    <commandlineArgs>-Xmx2048m -Dprism.order=sw</commandlineArgs>                    
+                    <commandlineArgs>--wowpath="D:\Downloads\WOW-NOSTALGEEK\WOW-NOSTALGEEK\Data"</commandlineArgs>                    
                 </configuration>
             </plugin>
             <plugin>
@@ -101,8 +101,8 @@
             <version>0.3.0</version>
         </dependency>
         <dependency>
-            <groupId>eu.mangos</groupId>
-            <artifactId>MangosSharedEnum</artifactId>
+            <groupId>eu.jangos</groupId>
+            <artifactId>Utils</artifactId>
             <version>1.0</version>
         </dependency>
 
@@ -149,56 +149,57 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
             <classifier>win</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
             <classifier>mac</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
             <classifier>linux</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-swing</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
             <classifier>win</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-swing</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
             <classifier>mac</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-swing</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
             <classifier>linux</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
             <classifier>win</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
             <classifier>mac</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
             <classifier>linux</classifier>
         </dependency>
     </dependencies>
+    <name>Extractor</name>
 </project>

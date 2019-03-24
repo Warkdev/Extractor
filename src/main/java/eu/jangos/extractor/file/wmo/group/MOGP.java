@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.wmo.group;
 
-import eu.mangos.shared.flags.FlagUtils;
+import eu.jangos.utils.FlagUtils;
 import java.nio.ByteBuffer;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Point3D;

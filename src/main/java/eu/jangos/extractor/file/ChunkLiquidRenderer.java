@@ -16,9 +16,8 @@
 package eu.jangos.extractor.file;
 
 import static eu.jangos.extractor.file.ChunkLiquidRenderer.LIQUID_FLAG_LENGTH;
-import eu.jangos.extractorfx.rendering.PolygonMesh;
 import eu.jangos.extractorfx.rendering.Render2DType;
-import eu.mangos.shared.flags.FlagUtils;
+import eu.jangos.utils.FlagUtils;
 import java.util.List;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.PixelWriter;

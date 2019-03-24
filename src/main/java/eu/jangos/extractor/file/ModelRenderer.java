@@ -15,6 +15,7 @@
  */
 package eu.jangos.extractor.file;
 
+import eu.jangos.extractor.file.ObjectRendererIndices;
 import eu.jangos.extractor.file.common.Quaternion;
 import eu.jangos.extractor.file.exception.FileReaderException;
 import eu.jangos.extractor.file.exception.MPQException;
@@ -479,4 +480,12 @@ public abstract class ModelRenderer {
     public void setModelCache(Map<String, M2> modelCache) {
         this.modelCache = modelCache;
     }
+
+    public List<ObjectRendererIndices> getRenderedObjectsList() {
+        return renderedObjectsList;
+    }
+
+    public List<ObjectRendererIndices> getRenderedLiquidList() {
+        return renderedLiquidList;
+    }       
 }

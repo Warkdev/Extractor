@@ -15,7 +15,7 @@
  */
 package eu.jangos.extractor.file.wdt;
 
-import eu.mangos.shared.flags.FlagUtils;
+import eu.jangos.utils.FlagUtils;
 import java.nio.ByteBuffer;
 
 /**

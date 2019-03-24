@@ -27,7 +27,7 @@ import eu.jangos.extractor.file.wmo.group.MLIQ;
 import eu.jangos.extractor.file.wmo.group.MOBA;
 import eu.jangos.extractor.file.wmo.group.MOGP;
 import eu.jangos.extractor.file.wmo.group.MOPY;
-import eu.mangos.shared.flags.FlagUtils;
+import eu.jangos.utils.FlagUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;

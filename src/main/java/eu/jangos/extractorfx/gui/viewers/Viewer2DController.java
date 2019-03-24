@@ -45,11 +45,7 @@ import org.slf4j.LoggerFactory;
 public class Viewer2DController implements Initializable {
 
     private static final Logger logger = LoggerFactory.getLogger(Viewer2DController.class);
-
-    //@FXML    
-    //private ParallelCamera camera;
-    //@FXML
-    //private Group group;
+    
     @FXML
     private TitledPane pane;
 

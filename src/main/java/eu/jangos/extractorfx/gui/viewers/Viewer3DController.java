@@ -15,9 +15,17 @@
  */
 package eu.jangos.extractorfx.gui.viewers;
 
+import eu.jangos.extractor.file.ModelRenderer;
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
+import javafx.scene.control.TitledPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.transform.Rotate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FXML Controller class
@@ -26,12 +34,36 @@ import javafx.fxml.Initializable;
  */
 public class Viewer3DController implements Initializable {
 
+    private static final Logger logger = LoggerFactory.getLogger(Viewer3DController.class);
+
+    @FXML
+    private TitledPane pane;
+
+    private ModelRenderer model;
+    
     /**
      * Initializes the controller class.
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // TODO
+        logger.info("Initializing 3D Viewer");
+        
+        this.pane.setFocusTraversable(false);
+        
+        logger.info("3D Viewer initialized!");
     }    
     
+    public void displayModel(ModelRenderer model) {
+        logger.info("Rendering model..");
+        if (model == null) {
+            logger.error("Model is null, nothing to render.");
+            return;
+        }
+
+        this.model = model;                            
+
+        
+        
+        logger.info("Model rendered!");
+    }
 }

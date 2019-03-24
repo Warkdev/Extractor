@@ -137,7 +137,12 @@ public class MainController implements Initializable {
         this.modelTabController.clearListItems();
 
         File directory = this.dirChooser.showDialog(stage);
+        if (directory == null) {
+            return;
+        }
+        
         logger.debug("Selected directory: " + directory.getAbsolutePath());
+                
         if (this.mpqManager != null) {
             this.mpqManager.setDirectory(directory);
         } else {

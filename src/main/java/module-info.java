@@ -24,7 +24,7 @@ module eu.jangos.extractorfx {
     requires objenesis;
     requires org.tukaani.xz;
     requires obj;
-    requires MangosSharedEnum;
+    requires Utils;
     requires org.apache.commons.io;
     requires org.apache.commons.lang3;
     requires recast;
@@ -37,7 +37,7 @@ module eu.jangos.extractorfx {
     requires javafx.controls;        
     requires javafx.swing;
     requires javafx.fxml;  
-    requires JMPQ3;
+    requires JMPQ3;    
     
     opens eu.jangos.extractorfx to javafx.fxml;
     opens eu.jangos.extractorfx.gui to javafx.fxml;

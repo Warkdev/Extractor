@@ -1,25 +1,56 @@
-#ant specific
-dist/
-build/
+#
+# Project specific excludes
+#
 
-#netbeans specific
-core
-nbproject/*
-!nbproject/project.properties
-!nbproject/project.xml
-target/*
+#
+# Default excludes
+#
+
+# Binaries
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.war
+*.ear
+*.sar
+*.class
+
+# Maven 
+target/
+shade/
+
+# IntelliJ project files 
+*.iml
+*.iws
+*.ipr
+.idea/
+
+# eclipse project file
+.settings/
+.classpath
+.project
+
+# NetBeans specific
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
 nbactions.xml
 nb-configuration.xml
 
-#java specific
-*.class
-*.jar
 
-#general swap/backup files
-*.so
-*.log
-*.out
-*~
+# OS
+.DS_Store
+
+# Misc
 *.swp
-*.DS_Store
-*.lock
+release.properties
+pom.xml.releaseBackup
+pom.xml.tag
+/nbproject/
