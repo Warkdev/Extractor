@@ -395,7 +395,7 @@ public abstract class ModelRenderer {
      * @param attitude The first rotation angle.
      * @param heading The second rotation angle.
      * @param bank The last rotation angle.
-     * @return A Rotate object with Axis & Rotation angle around that axis.
+     * @return A Rotate object with Axis and Rotation angle around that axis.
      */
     protected Rotate getAngleAndPivot(double attitude, double heading, double bank) {
         Rotate rotate = new Rotate();

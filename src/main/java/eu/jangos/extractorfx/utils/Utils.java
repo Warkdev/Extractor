@@ -173,10 +173,9 @@ public class Utils {
     /**
      * 
      * @param dMesh
-     * @param location 
-     * @see https://github.com/recastnavigation/recastnavigation/blob/05b2b8da80037887d3e79af8a59a8f0f8ed02602/DebugUtils/Source/RecastDebugDraw.cpp
-     * @see 
+     * @param location      
      */
+    //see https://github.com/recastnavigation/recastnavigation/blob/05b2b8da80037887d3e79af8a59a8f0f8ed02602/DebugUtils/Source/RecastDebugDraw.cpp
     public static void savePolygonDetailMesh(PolyMeshDetail dMesh, String location) {
         if(dMesh == null) {
             return;

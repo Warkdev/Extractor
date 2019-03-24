@@ -1,0 +1,1 @@
+moduleSearchIndex = [{"l":"eu.jangos.extractorfx"}]

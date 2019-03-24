@@ -77,4 +77,12 @@
                 <add-modules>javafx.controls</add-modules>
             </properties>
         </action>
+        <action>
+            <actionName>CUSTOM-fat jar</actionName>
+            <displayName>fat jar</displayName>
+            <goals>
+                <goal>compile</goal>
+                <goal>package</goal>
+            </goals>
+        </action>
     </actions>
