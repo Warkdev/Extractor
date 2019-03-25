@@ -64,7 +64,7 @@ public class MainController implements Initializable {
 
     @FXML
     private BorderPane borderPane;
-    
+
     @FXML
     private VBox wdtTab;
     @FXML
@@ -106,8 +106,6 @@ public class MainController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         this.dirChooser = new DirectoryChooser();
         this.dirChooser.setTitle("Select the directory where MPQ files are stored");
-        // Debug
-        this.dirChooser.setInitialDirectory(new File("D:\\Downloads\\WOW-NOSTALGEEK\\WOW-NOSTALGEEK"));
 
         this.wdtTabController.setMediator(this);
         this.wdtTabController.setModel(new WDT());
@@ -120,11 +118,11 @@ public class MainController implements Initializable {
 
         this.modelTabController.setMediator(this);
         this.modelTabController.setModel(new M2());
-                
+
         BorderPane.setMargin(this.viewer2D, Insets.EMPTY);
         BorderPane.setAlignment(this.viewer2D, Pos.TOP_LEFT);
         this.viewer2D.setVisible(false);
-        
+
     }
 
     @FXML
@@ -140,9 +138,9 @@ public class MainController implements Initializable {
         if (directory == null) {
             return;
         }
-        
+
         logger.debug("Selected directory: " + directory.getAbsolutePath());
-                
+
         if (this.mpqManager != null) {
             this.mpqManager.setDirectory(directory);
         } else {
@@ -161,11 +159,11 @@ public class MainController implements Initializable {
         logger.info("MPQ directory opened..");
     }
 
-    public void render2D(Render2DType renderType, String filename, ModelRenderer model) {        
+    public void render2D(Render2DType renderType, String filename, ModelRenderer model) {
         if (model == null) {
             return;
         }
-            
+
         Task task = new Task<Pane>() {
             @Override
             protected Pane call() throws Exception {
@@ -176,53 +174,53 @@ public class MainController implements Initializable {
                     if (((FileReader) model).getFilename() == null || !((FileReader) model).getFilename().equals(filename)) {
                         // Avoid init twice the same file.
                         ((FileReader) model).init(mpqManager, filename, true);
-                    }                   
-                    pane = model.render2D(renderType);                                        
+                    }
+                    pane = model.render2D(renderType);
                     logger.info("Rendering finished!");
-                    updateMessage("Rendering finished!");                    
+                    updateMessage("Rendering finished!");
                 } catch (IOException | MPQException mioe) {
                     logger.error("Error while initializing the file");
                     updateMessage("Error while initializing the file");
                     throw mioe;
                 } catch (FileReaderException fre) {
                     logger.error("Error while reading the model");
-                    updateMessage("Error while reading the model");                    
+                    updateMessage("Error while reading the model");
                     throw fre;
                 } catch (ModelRendererException mre) {
                     logger.error("Error while rendering the model");
-                    updateMessage("Error while rendering the model");                    
+                    updateMessage("Error while rendering the model");
                     throw mre;
                 } catch (UnsupportedOperationException uoe) {
                     logger.error("This method is not supported");
-                    updateMessage("This method is not supported");                    
+                    updateMessage("This method is not supported");
                     throw uoe;
-                }                
+                }
                 return pane;
             }
         };
-        
+
         task.setOnSucceeded(new EventHandler() {
             @Override
-            public void handle(Event event) {  
+            public void handle(Event event) {
                 logger.info("Task succeeded!");
                 viewer2DController.displayModel(model, (Pane) task.getValue());
                 viewer2D.setVisible(true);
             }
-        });                
-        
+        });
+
         task.setOnFailed(new EventHandler() {
             @Override
-            public void handle(Event event) {                
+            public void handle(Event event) {
                 logger.info("Task failed!");
                 task.getException().printStackTrace();
                 viewer2D.setVisible(false);
             }
         });
-        
-        statusBar.textProperty().bind(task.messageProperty());        
+
+        statusBar.textProperty().bind(task.messageProperty());
         Thread thread = new Thread(task);
         thread.setDaemon(true);
-        thread.start();        
+        thread.start();
     }
 
     @FXML
