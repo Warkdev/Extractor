@@ -1,17 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <actions>
         <action>
+            <actionName>CUSTOM-Fat JAR</actionName>
+            <displayName>Fat JAR</displayName>
+            <goals>                
+                <goal>compile</goal>                
+                <goal>package</goal>                     
+            </goals>
+        </action>
+        <action>
             <actionName>run</actionName>
             <packagings>
                 <packaging>jar</packaging>
             </packagings>
-            <goals>                
-                <goal>javafx:run</goal>                     
-            </goals>            
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.5.0:exec</goal>
+            </goals>
             <properties>
-                <exec.args>-Xmx4096m</exec.args>
+                <exec.args>-Xms2048m -Xmx4096m -classpath %classpath eu.jangos.extractorfx.StartingMain</exec.args>
+                <exec.executable>java</exec.executable>
             </properties>
-        </action>        
+        </action>
         <action>
             <actionName>debug</actionName>
             <packagings>
@@ -19,10 +29,10 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
-                <goal>org.codehaus.mojo:exec-maven-plugin:1.6.0:java</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.5.0:exec</goal>
             </goals>
             <properties>
-                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath eu.jangos.extractorfx.ExtractorFx -Xms1024 -Xmx2096</exec.args>
+                <exec.args>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address} -Xms2048m -Xmx4096m -classpath %classpath eu.jangos.extractorfx.StartingMain</exec.args>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
             </properties>
@@ -34,55 +44,17 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
-                <goal>org.codehaus.mojo:exec-maven-plugin:1.6.0:java</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.5.0:exec</goal>
             </goals>
             <properties>
-                <exec.args>-classpath %classpath eu.jangos.extractorfx.ExtractorFx -Xms1024 -Xmx2096</exec.args>
+                <exec.args>-Xms2048m -Xmx4096m -classpath %classpath eu.jangos.extractorfx.StartingMain</exec.args>
                 <exec.executable>java</exec.executable>
             </properties>
-        </action>
-        <action>
-            <actionName>build</actionName>
-            <packagings>
-                <packaging>*</packaging>
-            </packagings>
-            <goals>
-                <goal>javafx:compile</goal>
-            </goals>
-        </action>
-        <action>
-            <actionName>rebuild</actionName>
-            <packagings>
-                <packaging>*</packaging>
-            </packagings>
-            <goals>
-                <goal>clean</goal>
-                <goal>javafx:compile</goal>
-            </goals>
-        </action>
-        <action>
-            <actionName>run.single.main</actionName>
-            <packagings>
-                <packaging>*</packaging>
-            </packagings>
-            <goals>
-                <goal>process-classes</goal>
-                <goal>org.codehaus.mojo:exec-maven-plugin:1.6.0:exec</goal>
-            </goals>
-            <properties>
-                <exec.args>-classpath %classpath ${packageClassName}</exec.args>
-                <exec.executable>java</exec.executable>
-                <exec.classpathScope>${classPathScope}</exec.classpathScope>
-                <module-path>"C:\Program Files (x86)\Java\javafx-sdk-11.0.2\lib"</module-path>
-                <add-modules>javafx.controls</add-modules>
-            </properties>
-        </action>
-        <action>
-            <actionName>CUSTOM-fat jar</actionName>
-            <displayName>fat jar</displayName>
-            <goals>
-                <goal>compile</goal>
-                <goal>package</goal>
-            </goals>
-        </action>
+        </action>        
+        
+        
+        
+        
+        
+        
     </actions>
