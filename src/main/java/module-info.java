@@ -38,6 +38,7 @@ module eu.jangos.extractorfx {
     requires javafx.swing;
     requires javafx.fxml;  
     requires JMPQ3;    
+    requires ehcache;
     
     opens eu.jangos.extractorfx to javafx.fxml;
     opens eu.jangos.extractorfx.gui to javafx.fxml;

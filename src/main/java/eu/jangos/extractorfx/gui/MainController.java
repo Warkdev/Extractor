@@ -50,6 +50,11 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.apache.commons.io.FilenameUtils;
 import org.controlsfx.control.StatusBar;
+import org.ehcache.CacheManager;
+import org.ehcache.config.builders.CacheManagerBuilder;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +66,9 @@ import org.slf4j.LoggerFactory;
 public class MainController implements Initializable {
 
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
-
+    private static final String CACHE_2D = "2d";
+    private static final String CACHE_3D = "3d";
+    
     @FXML
     private BorderPane borderPane;
 
@@ -99,6 +106,15 @@ public class MainController implements Initializable {
 
     private MPQManager mpqManager;
 
+    private CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder()
+          .withCache(CACHE_2D,
+                    CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, Pane.class,
+                                              ResourcePoolsBuilder.heap(100))
+               .build())
+          .build(true);        
+    
+    private Cache<String, Pane> cache2D = cacheManager.getCache(CACHE_2D, String.class, Pane.class);
+    
     /**
      * Initializes the controller class.
      */
@@ -162,14 +178,29 @@ public class MainController implements Initializable {
     public void render2D(Render2DType renderType, String filename, ModelRenderer model) {
         if (model == null) {
             return;
-        }
-
-        Task task = new Task<Pane>() {
+        }        
+        
+        Task task = new Task<TaskResult>() {
             @Override
-            protected Pane call() throws Exception {
+            protected TaskResult call() throws Exception {
+                String baseName = FilenameUtils.getBaseName(filename);
                 Pane pane = null;
-                logger.info("Rendering 2D model " + renderType + " for file " + FilenameUtils.getBaseName(filename));
-                updateMessage("Rendering 2D model " + renderType + " for file " + FilenameUtils.getBaseName(filename));
+                logger.info("Rendering 2D model " + renderType + " for file " + baseName);
+                updateMessage("Rendering 2D model " + renderType + " for file " + baseName);
+                
+                                
+                logger.info("Looking in cache.");
+                logger.debug("Looking for key "+baseName+File.separator+renderType);
+                pane = cache2D.get(baseName+File.separator+renderType);                
+                
+                if(pane != null) {
+                    logger.info("Rendered canvas found in cache, displaying it.");
+                    updateMessage("Rendering displayed from cache!");
+                    return new TaskResult(pane, true);
+                }                
+                    
+                logger.info("Nothing found in cache, rendering canvas.");
+                
                 try {
                     if (((FileReader) model).getFilename() == null || !((FileReader) model).getFilename().equals(filename)) {
                         // Avoid init twice the same file.
@@ -195,15 +226,18 @@ public class MainController implements Initializable {
                     updateMessage("This method is not supported");
                     throw uoe;
                 }
-                return pane;
+                
+                cache2D.put(baseName+File.separator+renderType, pane);
+                return new TaskResult(pane, false);
             }
         };
 
         task.setOnSucceeded(new EventHandler() {
             @Override
             public void handle(Event event) {
-                logger.info("Task succeeded!");
-                viewer2DController.displayModel(model, (Pane) task.getValue());
+                logger.info("Task succeeded!");           
+                TaskResult result = (TaskResult) task.getValue();
+                viewer2DController.displayModel(model, result.getPane(), result.isCache());
                 viewer2D.setVisible(true);
             }
         });

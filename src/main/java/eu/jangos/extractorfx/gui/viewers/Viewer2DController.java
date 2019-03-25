@@ -236,7 +236,7 @@ public class Viewer2DController implements Initializable {
         }
     }
 
-    public void displayModel(ModelRenderer model, Pane renderedModel) {
+    public void displayModel(ModelRenderer model, Pane renderedModel, boolean fromCache) {
         logger.info("Rendering model..");
         if (model == null) {
             logger.error("Model is null, nothing to render.");
@@ -244,12 +244,18 @@ public class Viewer2DController implements Initializable {
         }
 
         this.model = model;            
-        Scene testScene = new Scene(renderedModel);        
+        if(!fromCache) {
+            Scene testScene = new Scene(renderedModel);
+            renderedModel.layout();            
+            renderedModel.setEffect(dropShadow);
+        }
+        
         this.pane.setContent(renderedModel);
-        renderedModel.layout();                
-        this.pane.getContent().getTransforms().add(new Rotate(180, Rotate.Y_AXIS));
-        this.pane.getContent().getTransforms().add(new Rotate(90, Rotate.Z_AXIS));
-        renderedModel.setEffect(dropShadow);
+        
+        if(!fromCache) {
+            this.pane.getContent().getTransforms().add(new Rotate(180, Rotate.Y_AXIS));
+            this.pane.getContent().getTransforms().add(new Rotate(90, Rotate.Z_AXIS));
+        }
 
         logger.info("Model rendered!");
     }
