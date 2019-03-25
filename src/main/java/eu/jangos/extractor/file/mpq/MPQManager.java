@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018 Warkdev.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,19 +37,19 @@ import systems.crigges.jmpq3.MPQOpenOption;
 public class MPQManager {
 
     private static final Logger logger = LoggerFactory.getLogger(MPQManager.class);
-    
+
     private static final String EXTENSION_WDT = "wdt";
     private static final String EXTENSION_ADT = "adt";
     private static final String EXTENSION_WMO = "wmo";
-    private static final String EXTENSION_M2 = "m2";    
-    
+    private static final String EXTENSION_M2 = "m2";
+
     private File directory;
     private Map<String, ExtendedMPQEditor> mapEditors;
     private List<String> listWMO;
     private List<String> listADT;
     private List<String> listWDT;
     private List<String> listM2;
-    
+
     public MPQManager(String directory) throws MPQException {
         this.mapEditors = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         this.directory = new File(directory);
@@ -57,7 +57,7 @@ public class MPQManager {
         this.listWMO = new ArrayList<>();
         this.listWDT = new ArrayList<>();
         this.listM2 = new ArrayList<>();
-        
+
         init();
     }
 
@@ -65,25 +65,25 @@ public class MPQManager {
         if(!directory.isDirectory()) {
             throw new MPQException("The provided path is not a directory");
         }
-        
+
         buildListMpqEditors();
     }
-    
-    private void buildListMpqEditors() {      
+
+    private void buildListMpqEditors() {
         clearEditors();
-        
+
         ExtendedMPQEditor editor;
         String extension;
-        for (String mpq : directory.list(new SuffixFileFilter(".mpq", IOCase.INSENSITIVE))) {            
+        for (String mpq : directory.list(new SuffixFileFilter(".mpq", IOCase.INSENSITIVE))) {
             try {
-                editor = new ExtendedMPQEditor(new File(this.directory.getAbsoluteFile()+"\\"+mpq), MPQOpenOption.READ_ONLY);
+                editor = new ExtendedMPQEditor(new File(this.directory.getAbsoluteFile()+"/"+mpq), MPQOpenOption.READ_ONLY);
                 for (String file : editor.getFileNames()) {
                     // If the file path already exist, we simply check if the MPQ is more recent.
                     file = file.toLowerCase();
                     if(this.mapEditors.containsKey(file)) {
                         if(this.mapEditors.get(file).getPatchValue() < editor.getPatchValue()) {
                             this.mapEditors.put(file, editor);
-                        }                        
+                        }
                     } else {
                         this.mapEditors.put(file, editor);
                         extension = FilenameUtils.getExtension(file);
@@ -101,24 +101,24 @@ public class MPQManager {
                                     this.listWMO.add(file);
                                 }
                                 break;
-                            case EXTENSION_M2:                                
+                            case EXTENSION_M2:
                                 this.listM2.add(file);
                                 break;
                         }
                     }
-                    
+
                 }
             } catch(IOException ex) {
                 logger.warn("Impossible to open MPQ file "+mpq+", the file will be discarded from merged loading.");
             }
         }
     }
-    
+
     public ExtendedMPQEditor getMPQForFile(String file) throws MPQException {
         if(!this.mapEditors.containsKey(file)) {
             throw new MPQException("The requested file "+file+" is not contained in the loaded MPQs.");
         }
-        
+
         return this.mapEditors.get(file);
     }
 
@@ -165,8 +165,8 @@ public class MPQManager {
 
     public void setListM2(List<String> listM2) {
         this.listM2 = listM2;
-    }        
-    
+    }
+
     private void clearEditors() {
         for(ExtendedMPQEditor editor : this.mapEditors.values()) {
             try {
@@ -179,5 +179,5 @@ public class MPQManager {
         listM2.clear();
         listWDT.clear();
         listWMO.clear();
-    }                
+    }
 }
