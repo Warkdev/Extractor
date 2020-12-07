@@ -81,7 +81,7 @@
         <dependency>
             <groupId>com.github.inwc3</groupId>
             <artifactId>JMPQ3</artifactId>
-            <version>1.7.7</version>
+            <version>1.7.14</version>
         </dependency>
         <dependency>
             <groupId>de.javagl</groupId>
