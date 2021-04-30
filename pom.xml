@@ -127,7 +127,7 @@
         <dependency>
             <groupId>org.recast4j</groupId>
             <artifactId>detour-extras</artifactId>
-            <version>1.0.7</version>
+            <version>1.4.4</version>
         </dependency>
         <dependency>
             <groupId>org.controlsfx</groupId>
